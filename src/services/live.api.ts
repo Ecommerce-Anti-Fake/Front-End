@@ -164,6 +164,16 @@ export async function getBroadcastCredentials(
   return readJson<BroadcastCredentials>(response);
 }
 
+export async function startLiveSession(
+  sessionId: string,
+): Promise<LiveSession> {
+  const response = await authFetch(
+    `${BASE_URL}/api/live/sessions/${encodeURIComponent(sessionId)}/start`,
+    { method: "POST", headers: { Accept: "application/json" } },
+  );
+  return readJson<LiveSession>(response);
+}
+
 export async function refreshLiveRecording(
   sessionId: string,
 ): Promise<{ ready: boolean; recordingUrl?: string }> {
@@ -176,7 +186,7 @@ export async function refreshLiveRecording(
 
 export async function updateLiveSessionStatus(
   sessionId: string,
-  status: LiveSessionStatus,
+  status: Extract<LiveSessionStatus, "ENDED" | "CANCELLED">,
 ): Promise<LiveSession> {
   const response = await authFetch(
     `${BASE_URL}/api/live/sessions/${encodeURIComponent(sessionId)}/status`,

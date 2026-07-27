@@ -20,6 +20,7 @@ import {
   getBroadcastCredentials,
   refreshLiveRecording,
   listLiveSessions,
+  startLiveSession,
   updateLiveSessionStatus,
   type BroadcastCredentials,
   type LiveSession,
@@ -144,7 +145,7 @@ export default function SellerLivePage() {
 
   const changeStatus = async (
     sessionId: string,
-    status: LiveSessionStatus,
+    status: Extract<LiveSessionStatus, "ENDED" | "CANCELLED">,
   ) => {
     setActionId(sessionId);
     try {
@@ -154,6 +155,24 @@ export default function SellerLivePage() {
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Không thể cập nhật phiên live",
+      );
+    } finally {
+      setActionId("");
+    }
+  };
+
+  const startBroadcast = async (sessionId: string) => {
+    setActionId(sessionId);
+    try {
+      await startLiveSession(sessionId);
+      setCredentials(await getBroadcastCredentials(sessionId));
+      toast.success("Đang chờ OBS kết nối với Cloudflare");
+      await load();
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Không thể chuẩn bị phiên livestream",
       );
     } finally {
       setActionId("");
@@ -384,9 +403,13 @@ export default function SellerLivePage() {
                   <>
                     <button
                       type="button"
-                      onClick={() => void changeStatus(session.id, "LIVE")}
+                      disabled={actionId === session.id}
+                      onClick={() => void startBroadcast(session.id)}
                     >
-                      <Play size={15} /> Bắt đầu
+                      <Play size={15} />{" "}
+                      {session.providerStatus === "STARTING"
+                        ? "Mở lại OBS"
+                        : "Bắt đầu"}
                     </button>
                     <button
                       type="button"

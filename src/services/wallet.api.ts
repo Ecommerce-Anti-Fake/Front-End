@@ -11,6 +11,11 @@ export type Wallet = {
   pendingBalance: string;
   lockedBalance: string;
   status: string;
+  codAmountDue?: string;
+  requiredTopUpAmount?: string;
+  hasCodDebt?: boolean;
+  hasOverdueCodDebt?: boolean;
+  nextCodDebtDueAt?: string | null;
 };
 
 export type WalletTransaction = {
@@ -70,19 +75,29 @@ export type PayoutAccount = {
   createdAt: string;
 };
 
-export type PayoutAccountInput = {
-  bankBin: string;
-  bankCode: string;
-  bankName: string;
-  accountNumber: string;
+export type SupportedBank = {
+  bin: string;
+  code: string;
+  name: string;
+  shortName: string;
+  logo: string | null;
+  lookupSupported: boolean;
+};
+
+export type BankAccountVerification = {
+  verificationId: string;
+  bank: Pick<SupportedBank, "bin" | "code" | "name" | "shortName" | "logo">;
+  accountNumberMasked: string;
   accountHolder: string;
+  expiresAt: string;
 };
 
 export type WithdrawalAuthorizationOperation = "CREATE_PAYOUT_ACCOUNT" | "DELETE_PAYOUT_ACCOUNT" | "CREATE_WITHDRAWAL";
 export type WithdrawalAuthorizationChannel = "PHONE" | "EMAIL";
-export type WithdrawalChallengePayload = Partial<PayoutAccountInput> & {
+export type WithdrawalChallengePayload = {
   shopId?: string;
   payoutAccountId?: string;
+  bankAccountVerificationId?: string;
   amount?: string;
   operation: WithdrawalAuthorizationOperation;
   channel: WithdrawalAuthorizationChannel;
@@ -102,6 +117,20 @@ export type WalletTopUp = {
   amount: string;
   currency: string;
   status: string;
+};
+
+export type CodShopSettlement = {
+  id: string;
+  orderId?: string;
+  orderShopGroupId?: string;
+  platformFeeAmount?: string;
+  affiliateAmount?: string;
+  obligationAmount?: string;
+  settledAmount?: string;
+  status: "PENDING" | "OUTSTANDING" | "SETTLED" | "REVERSED" | string;
+  dueAt: string | null;
+  settledAt: string | null;
+  createdAt?: string;
 };
 
 export type PlatformWalletSnapshot = {
@@ -159,9 +188,69 @@ export const createWalletTopUp = async (amount: string, idempotencyKey: string):
     method: "POST", headers: jsonHeaders, body: JSON.stringify({ amount, idempotencyKey }),
   }), "Không thể tạo yêu cầu nạp tiền");
 
+export const fetchSupportedBanks = async (): Promise<SupportedBank[]> =>
+  unwrap(await authFetch(`${BASE_URL}/api/wallet/banks`, {
+    method: "GET", headers: { Accept: "application/json" },
+  }), "Không thể tải danh sách ngân hàng");
+
+export const verifyMyBankAccount = async (
+  bankBin: string,
+  accountNumber: string,
+): Promise<BankAccountVerification> => unwrap(await authFetch(
+  `${BASE_URL}/api/wallet/me/payout-account-verifications`,
+  { method: "POST", headers: jsonHeaders, body: JSON.stringify({ bankBin, accountNumber }) },
+), "Không thể kiểm tra tài khoản ngân hàng");
+
+export const fetchMyPayoutAccounts = async (): Promise<PayoutAccount[]> =>
+  unwrap(await authFetch(`${BASE_URL}/api/wallet/me/payout-accounts`, {
+    method: "GET", headers: { Accept: "application/json" },
+  }), "Không thể tải tài khoản nhận tiền");
+
+export const createMyPayoutAccount = async (
+  verificationId: string,
+  authorizationToken: string,
+): Promise<PayoutAccount> => unwrap(await authFetch(`${BASE_URL}/api/wallet/me/payout-accounts`, {
+  method: "POST",
+  headers: jsonHeaders,
+  body: JSON.stringify({ verificationId, authorizationToken }),
+}), "Không thể thêm tài khoản nhận tiền");
+
+export const createMyWithdrawal = async (payload: CreateWithdrawalPayload): Promise<WalletWithdrawal> =>
+  unwrap(await authFetch(`${BASE_URL}/api/wallet/me/withdrawals`, {
+    method: "POST", headers: jsonHeaders, body: JSON.stringify(payload),
+  }), "Không thể tạo yêu cầu rút tiền");
+
+export const fetchMyWithdrawals = async (): Promise<WalletWithdrawal[]> => {
+  const payload: any = await unwrap(await authFetch(`${BASE_URL}/api/wallet/me/withdrawals`, {
+    method: "GET", headers: { Accept: "application/json" },
+  }), "Không thể tải danh sách rút tiền");
+  return Array.isArray(payload?.items) ? payload.items : Array.isArray(payload) ? payload : [];
+};
+
+export const cancelMyWithdrawal = async (id: string) => unwrap(await authFetch(
+  `${BASE_URL}/api/wallet/me/withdrawals/${id}/cancel`,
+  { method: "POST", headers: { Accept: "application/json" } },
+), "Không thể hủy yêu cầu rút tiền");
+
 export const fetchShopWallet = async (shopId: string): Promise<Wallet> => unwrap(await authFetch(
   `${BASE_URL}/api/shops/${shopId}/wallet`, { method: "GET", headers: { Accept: "application/json" } },
 ), "Không thể tải ví shop");
+
+export const createShopWalletTopUp = async (
+  shopId: string,
+  amount: string,
+  idempotencyKey: string,
+): Promise<WalletTopUp> => unwrap(await authFetch(`${BASE_URL}/api/shops/${shopId}/wallet/top-ups`, {
+  method: "POST", headers: jsonHeaders, body: JSON.stringify({ amount, idempotencyKey }),
+}), "Không thể tạo yêu cầu nạp tiền cho shop");
+
+export const fetchShopCodSettlements = async (shopId: string): Promise<CodShopSettlement[]> => {
+  const payload: any = await unwrap(await authFetch(
+    `${BASE_URL}/api/shops/${shopId}/wallet/cod-settlements`,
+    { method: "GET", headers: { Accept: "application/json" } },
+  ), "Không thể tải nghĩa vụ COD");
+  return Array.isArray(payload?.items) ? payload.items : Array.isArray(payload) ? payload : [];
+};
 
 export const fetchShopWalletTransactions = async (shopId: string, page = 1, limit = 20): Promise<WalletTransactionsResponse> => {
   const response = await authFetch(`${BASE_URL}/api/shops/${shopId}/wallet/transactions?page=${page}&limit=${limit}`, {
@@ -193,10 +282,19 @@ export const fetchShopPayoutAccounts = async (shopId: string): Promise<PayoutAcc
   }), "Không thể tải tài khoản nhận tiền");
 
 export const createShopPayoutAccount = async (
-  shopId: string, payload: PayoutAccountInput & { authorizationToken: string },
+  shopId: string, payload: { verificationId: string; authorizationToken: string },
 ): Promise<PayoutAccount> => unwrap(await authFetch(`${BASE_URL}/api/shops/${shopId}/wallet/payout-accounts`, {
   method: "POST", headers: jsonHeaders, body: JSON.stringify(payload),
 }), "Không thể thêm tài khoản nhận tiền");
+
+export const verifyShopBankAccount = async (
+  shopId: string,
+  bankBin: string,
+  accountNumber: string,
+): Promise<BankAccountVerification> => unwrap(await authFetch(
+  `${BASE_URL}/api/shops/${shopId}/wallet/payout-account-verifications`,
+  { method: "POST", headers: jsonHeaders, body: JSON.stringify({ bankBin, accountNumber }) },
+), "Không thể kiểm tra tài khoản ngân hàng");
 
 export const disableShopPayoutAccount = async (shopId: string, payoutAccountId: string, authorizationToken: string) =>
   unwrap(await authFetch(`${BASE_URL}/api/shops/${shopId}/wallet/payout-accounts/${payoutAccountId}`, {
