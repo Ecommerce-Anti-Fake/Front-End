@@ -1,10 +1,17 @@
 import { io } from "socket.io-client";
 import { getToken } from "../ultil/auth";
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const SOCKET_URL = (
+  import.meta.env.VITE_SOCKET_URL ||
+  import.meta.env.VITE_API_BASE_URL ||
+  window.location.origin
+)
+  .trim()
+  .replace(/\/api\/?$/, "")
+  .replace(/\/$/, "");
 
 export const socket = io(
-  `${BASE_URL}`,
+  SOCKET_URL,
   {
     path: '/api/socket.io',
     autoConnect: false,
