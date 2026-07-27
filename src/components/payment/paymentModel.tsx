@@ -10,13 +10,29 @@ import {
   ShieldCheck,
   Wallet,
 } from "lucide-react";
-import { usePayOS, type PayOSConfig } from "@payos/payos-checkout";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import {
+  usePayOS as createPayOSCheckout,
+  type PayOSConfig,
+} from "@payos/payos-checkout";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import "../../css/components/payment/paymentModel.css";
 import { fetchOrderDetail } from "../../services/order.api";
 import { formatVnd } from "../../ultil/currency";
+import {
+  getPayOSCheckoutRoutes,
+  parsePayOSCheckoutMessage,
+  parsePayOSCheckoutState,
+  type OrderPayOSCheckoutState,
+  type PayOSCheckoutState,
+} from "./payosCheckoutState";
 
 type PaymentModelProps = {
   amount?: number;
@@ -25,30 +41,37 @@ type PaymentModelProps = {
   onSupport?: () => void;
 };
 
-type CheckoutState = {
-  orderId: string;
-  orderCode: string | number;
-  checkoutUrl?: string;
-  paymentLinkId: string;
-};
-
-const successStatuses = new Set(["PAID", "SUCCESS", "SUCCEEDED"]);
+const successStatuses = new Set(["PAID"]);
 const failedStatuses = new Set(["FAILED", "CANCELLED", "CANCELED", "EXPIRED"]);
 
-const firstValue = <T,>(...values: Array<T | undefined | null>) =>
-  values.find((value) => value !== undefined && value !== null);
+const getCheckoutCopy = (checkout: PayOSCheckoutState | null) => {
+  if (checkout?.flow === "USER_WALLET_TOP_UP") {
+    return {
+      title: "Nạp tiền vào ví",
+      description: "Quét mã QR PayOS bên dưới để hoàn tất yêu cầu nạp tiền.",
+      referenceLabel: "Mã nạp tiền",
+      reference: checkout.topUpId,
+      autoNote: "Số dư sẽ được cập nhật sau khi webhook xác nhận thanh toán.",
+    };
+  }
 
-const isCheckoutState = (value: unknown): value is CheckoutState => {
-  if (!value || typeof value !== "object") return false;
+  if (checkout?.flow === "SHOP_WALLET_TOP_UP") {
+    return {
+      title: "Nạp tiền vào ví shop",
+      description: "Quét mã QR PayOS bên dưới để hoàn tất yêu cầu nạp tiền.",
+      referenceLabel: "Mã nạp tiền",
+      reference: checkout.topUpId,
+      autoNote: "Số dư shop sẽ được cập nhật sau khi webhook xác nhận thanh toán.",
+    };
+  }
 
-  const checkout = value as Partial<CheckoutState>;
-
-  return Boolean(
-    checkout.orderId &&
-      checkout.orderCode &&
-      typeof checkout.paymentLinkId === "string" &&
-      checkout.paymentLinkId.length > 0,
-  );
+  return {
+    title: "Thanh toán đơn hàng",
+    description: "Quét mã QR PayOS bên dưới để hoàn tất giao dịch.",
+    referenceLabel: "Mã đơn hàng",
+    reference: checkout?.orderCode ?? "Chưa có",
+    autoNote: "Hệ thống chỉ xác nhận thành công khi đơn hàng đã được ghi nhận PAID.",
+  };
 };
 
 export default function PaymentModel({
@@ -59,172 +82,284 @@ export default function PaymentModel({
 }: PaymentModelProps) {
   const location = useLocation();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const checkout = location.state?.checkout;
-  const hasCheckout = isCheckoutState(checkout);
+  const checkout = useMemo(
+    () => parsePayOSCheckoutState(location.state?.checkout),
+    [location.state?.checkout],
+  );
+  const routes = useMemo(
+    () =>
+      checkout
+        ? getPayOSCheckoutRoutes(checkout.flow)
+        : {
+            backPath: "/checkout",
+            successPath: "/payment-success",
+            cancelPath: "/payment-failed",
+          },
+    [checkout],
+  );
+  const copy = useMemo(() => getCheckoutCopy(checkout), [checkout]);
   const navigatedRef = useRef(false);
+  const checkingRef = useRef(false);
   const [embedError, setEmbedError] = useState("");
+  const [embedReady, setEmbedReady] = useState(false);
   const [checkingPayment, setCheckingPayment] = useState(false);
+  const [statusMessage, setStatusMessage] = useState("");
   const [openingPayos, setOpeningPayos] = useState(false);
 
-  const displayAmount = Number(firstValue(amount, location.state?.amount, 0));
-  const displayOrderCode = String(
-    firstValue(
-      orderCode,
-      hasCheckout ? checkout.orderCode : undefined,
-      hasCheckout ? checkout.orderId : undefined,
-      "Đang tạo",
-    ),
+  const isOrderCheckout = checkout?.flow === "ORDER";
+  const displayAmount = Number(checkout?.amount ?? amount ?? 0);
+  const displayReference = String(
+    orderCode ?? (isOrderCheckout ? checkout.orderCode : copy.reference),
   );
-  const checkoutUrl = hasCheckout ? checkout.checkoutUrl : "";
-  const paymentLinkId = hasCheckout ? checkout.paymentLinkId : "";
 
-  const finishPayment = (
-    result: "success" | "failed",
-    paymentStatus: string,
-    reason?: string,
-  ) => {
-    if (navigatedRef.current) return;
-    navigatedRef.current = true;
+  const finishOrderPayment = useCallback(
+    (
+      orderCheckout: OrderPayOSCheckoutState,
+      result: "success" | "failed",
+      paymentStatus: string,
+      reason?: string,
+    ) => {
+      if (navigatedRef.current) return;
+      navigatedRef.current = true;
 
-    navigate(result === "success" ? "/payment-success" : "/payment-failed", {
-      replace: true,
-      state: {
-        checkout: hasCheckout ? checkout : undefined,
-        paymentMethod: "PAYOS",
-        paymentStatus,
-        reason,
-      },
-    });
-  };
+      navigate(result === "success" ? "/payment-success" : "/payment-failed", {
+        replace: true,
+        state: {
+          checkout: orderCheckout,
+          paymentMethod: "PAYOS",
+          paymentStatus,
+          reason,
+        },
+      });
+    },
+    [navigate],
+  );
 
-  const checkPaymentNow = async () => {
-    if (!hasCheckout || checkingPayment) return;
+  const checkPaymentNow = useCallback(async () => {
+    if (checkout?.flow !== "ORDER" || checkingRef.current) return;
 
+    checkingRef.current = true;
     setCheckingPayment(true);
+    setStatusMessage("");
 
     try {
       const order = await fetchOrderDetail(checkout.orderId);
       const paymentStatus = String(order.paymentStatus ?? "").toUpperCase();
 
       if (successStatuses.has(paymentStatus)) {
-        finishPayment("success", paymentStatus);
+        finishOrderPayment(checkout, "success", paymentStatus);
         return;
       }
 
       if (failedStatuses.has(paymentStatus)) {
-        finishPayment("failed", paymentStatus, "Thanh toán không thành công");
+        finishOrderPayment(
+          checkout,
+          "failed",
+          paymentStatus,
+          "Thanh toán không thành công",
+        );
         return;
       }
+
+      setStatusMessage(
+        "Thanh toán đang chờ backend xác nhận. Bạn có thể tiếp tục chờ trên trang này.",
+      );
     } catch (error) {
-      setEmbedError(
+      setStatusMessage(
         error instanceof Error
           ? error.message
           : "Không thể kiểm tra trạng thái thanh toán",
       );
     } finally {
+      checkingRef.current = false;
       setCheckingPayment(false);
     }
-  };
-
-  const openPayosPage = () => {
-    if (!checkoutUrl) return;
-    setOpeningPayos(true);
-    window.open(checkoutUrl, "_blank", "noopener,noreferrer");
-    window.setTimeout(() => setOpeningPayos(false), 900);
-  };
-
-  const payOSConfig = useMemo<PayOSConfig>(
-    () => ({
-      RETURN_URL: "https://api.antifake.io.vn/api/orders/payos/return",
-      ELEMENT_ID: "payos-checkout-frame",
-      CHECKOUT_URL: hasCheckout ? checkout.paymentLinkId : "",
-      embedded: true,
-      onSuccess: () => navigate("/payment-success"),
-    }),
-    [hasCheckout, checkout, navigate],
-  );
-
-  const { open } = usePayOS(payOSConfig);
+  }, [checkout, finishOrderPayment]);
 
   useEffect(() => {
-    if (!paymentLinkId) return;
+    if (!checkout) return;
+
+    const elementId = "payos-checkout-frame";
+    const container = document.getElementById(elementId);
+    if (!container) {
+      const missingContainerTimeout = window.setTimeout(
+        () => setEmbedError("Không tìm thấy vùng hiển thị biểu mẫu PayOS."),
+        0,
+      );
+      return () => window.clearTimeout(missingContainerTimeout);
+    }
+
+    container.replaceChildren();
+    let frameLoaded = false;
+    let disposed = false;
+
+    const handleSuccess = () => {
+      if (disposed || navigatedRef.current) return;
+
+      if (checkout.flow === "ORDER") {
+        setStatusMessage(
+          "PayOS đã tiếp nhận giao dịch. Đang chờ backend xác nhận đơn hàng PAID...",
+        );
+        void checkPaymentNow();
+        return;
+      }
+
+      navigatedRef.current = true;
+      navigate(routes.successPath, {
+        replace: true,
+        state: {
+          topUpId: checkout.topUpId,
+          paymentLinkId: checkout.paymentLinkId,
+        },
+      });
+    };
+
+    const handleCancel = () => {
+      if (disposed || navigatedRef.current) return;
+
+      if (checkout.flow === "ORDER") {
+        finishOrderPayment(
+          checkout,
+          "failed",
+          "CANCELLED",
+          "Người dùng đã hủy thanh toán",
+        );
+        return;
+      }
+
+      navigatedRef.current = true;
+      navigate(routes.cancelPath, { replace: true });
+    };
+
+    const handleExit = () => {
+      if (disposed || navigatedRef.current) return;
+      navigatedRef.current = true;
+      navigate(routes.backPath, { replace: true });
+    };
+
+    const config: PayOSConfig = {
+      RETURN_URL: `${window.location.origin}/payment`,
+      ELEMENT_ID: elementId,
+      CHECKOUT_URL: checkout.checkoutUrl,
+      embedded: true,
+      onSuccess: handleSuccess,
+      onCancel: handleCancel,
+      onExit: handleExit,
+    };
+    const payOS = createPayOSCheckout(config);
 
     try {
-      open();
+      payOS.open();
     } catch (error) {
-      setEmbedError(
-        error instanceof Error
-          ? error.message
-          : "Không thể nhúng mã QR PayOS vào trang",
+      const openErrorTimeout = window.setTimeout(
+        () =>
+          setEmbedError(
+            error instanceof Error
+              ? error.message
+              : "Không thể nhúng biểu mẫu PayOS vào trang.",
+          ),
+        0,
       );
+      return () => window.clearTimeout(openErrorTimeout);
     }
-  }, [paymentLinkId, open]);
+
+    const frame = container.querySelector("iframe");
+    if (!frame) {
+      const missingFrameTimeout = window.setTimeout(
+        () => setEmbedError("PayOS không tạo được biểu mẫu thanh toán."),
+        0,
+      );
+      return () => window.clearTimeout(missingFrameTimeout);
+    }
+
+    frame.title = "Biểu mẫu thanh toán PayOS";
+
+    const handleLoad = () => {
+      frameLoaded = true;
+      if (!disposed) setEmbedReady(true);
+    };
+    const handleError = () => {
+      if (!disposed) {
+        setEmbedError(
+          "Biểu mẫu PayOS không tải được. Bạn có thể chủ động mở trang PayOS để tiếp tục.",
+        );
+      }
+    };
+
+    frame.addEventListener("load", handleLoad);
+    frame.addEventListener("error", handleError);
+
+    const handleNextPayOSMessage = (event: MessageEvent) => {
+      if (
+        event.origin !== "https://next.pay.payos.vn" ||
+        event.source !== frame.contentWindow
+      ) {
+        return;
+      }
+
+      const checkoutEvent = parsePayOSCheckoutMessage(event.data);
+      if (checkoutEvent === "SUCCESS") handleSuccess();
+      if (checkoutEvent === "CANCEL") handleCancel();
+      if (checkoutEvent === "EXIT") handleExit();
+    };
+    window.addEventListener("message", handleNextPayOSMessage);
+
+    const timeoutId = window.setTimeout(() => {
+      if (!disposed && !frameLoaded) {
+        setEmbedError(
+          "Biểu mẫu PayOS phản hồi quá lâu. Bạn có thể chủ động mở trang PayOS để tiếp tục.",
+        );
+      }
+    }, 8000);
+
+    return () => {
+      disposed = true;
+      window.clearTimeout(timeoutId);
+      frame.removeEventListener("load", handleLoad);
+      frame.removeEventListener("error", handleError);
+      window.removeEventListener("message", handleNextPayOSMessage);
+
+      if (container.contains(frame)) {
+        try {
+          payOS.exit();
+        } catch {
+          container.replaceChildren();
+        }
+      } else {
+        container.replaceChildren();
+      }
+    };
+  }, [checkout, checkPaymentNow, finishOrderPayment, navigate, routes]);
 
   useEffect(() => {
-    const status =
-      searchParams.get("status") ??
-      searchParams.get("code") ??
-      searchParams.get("paymentStatus");
-    const cancel = searchParams.get("cancel");
-
-    if (cancel === "true") {
-      finishPayment("failed", "CANCELLED", "Người dùng đã hủy thanh toán");
-      return;
-    }
-
-    if (!status) return;
-
-    const normalizedStatus = status.toUpperCase();
-    if (successStatuses.has(normalizedStatus) || normalizedStatus === "00") {
-      finishPayment("success", "PAID");
-      return;
-    }
-
-    if (failedStatuses.has(normalizedStatus)) {
-      finishPayment("failed", normalizedStatus, "Thanh toán không thành công");
-    }
-  }, [searchParams]);
-
-  useEffect(() => {
-    if (!hasCheckout) return;
+    if (checkout?.flow !== "ORDER") return;
 
     const intervalId = window.setInterval(() => {
-      if (!navigatedRef.current) {
-        checkPaymentNow();
-      }
+      if (!navigatedRef.current) void checkPaymentNow();
     }, 3500);
 
     return () => window.clearInterval(intervalId);
-  }, [hasCheckout, checkout?.orderId]);
+  }, [checkout, checkPaymentNow]);
 
-  useEffect(() => {
-    if (!paymentLinkId) return;
-
-    const timeoutId = window.setTimeout(() => {
-      const frame = document.querySelector("#payos-checkout-frame iframe");
-      if (!frame && !navigatedRef.current) {
-        setEmbedError(
-          "Mã QR PayOS chưa hiển thị. Bạn có thể mở trang PayOS để tiếp tục thanh toán.",
-        );
-      }
-    }, 4500);
-
-    return () => window.clearTimeout(timeoutId);
-  }, [paymentLinkId]);
+  const openPayosPage = () => {
+    if (!checkout || !embedError) return;
+    setOpeningPayos(true);
+    window.open(checkout.checkoutUrl, "_blank", "noopener,noreferrer");
+    window.setTimeout(() => setOpeningPayos(false), 900);
+  };
 
   return (
     <section className="payment-model-page">
       <div className="payment-model-shell">
         <header className="payment-model-header">
           <div>
-            <h1>Thanh toán đơn hàng</h1>
-            <p>Quét mã QR PayOS bên dưới để hoàn tất giao dịch.</p>
+            <h1>{copy.title}</h1>
+            <p>{copy.description}</p>
           </div>
 
           <div className="payment-order-code">
-            <span>Mã đơn hàng</span>
-            <strong>{displayOrderCode}</strong>
+            <span>{copy.referenceLabel}</span>
+            <strong>{displayReference}</strong>
           </div>
         </header>
 
@@ -235,11 +370,29 @@ export default function PaymentModel({
               Giao dịch an toàn
             </div>
 
-            {paymentLinkId ? (
+            {checkout ? (
               <>
-                <div id="payos-checkout-frame" className="payment-embed-frame" />
+                <div
+                  id="payos-checkout-frame"
+                  className="payment-embed-frame"
+                  aria-busy={!embedReady}
+                />
+                {!embedReady && !embedError ? (
+                  <div
+                    className="payment-embed-status"
+                    role="status"
+                    aria-live="polite"
+                  >
+                    <Loader2 size={16} className="payment-spin" />
+                    Đang tải biểu mẫu PayOS...
+                  </div>
+                ) : null}
                 {embedError ? (
-                  <div className="payment-embed-alert" role="alert">
+                  <div
+                    className="payment-embed-alert"
+                    role="alert"
+                    aria-live="assertive"
+                  >
                     <AlertTriangle size={18} />
                     <div>
                       <strong>Không thể hiển thị QR ổn định</strong>
@@ -249,56 +402,67 @@ export default function PaymentModel({
                 ) : null}
               </>
             ) : (
-              <div className="payment-qr-frame">
-                <div className="payment-qr-placeholder">
-                  <span>Chưa có thông tin thanh toán</span>
-                </div>
+              <div className="payment-invalid-state" role="alert">
+                <AlertTriangle size={28} />
+                <strong>Không thể bắt đầu thanh toán</strong>
+                <p>
+                  Thông tin PayOS bị thiếu hoặc không hợp lệ. Vui lòng quay lại
+                  màn trước để tạo lại yêu cầu thanh toán.
+                </p>
               </div>
             )}
 
-            <strong className="payment-amount">{formatVnd(displayAmount)}</strong>
-            <p className="payment-auto-note">
-              Hệ thống tự kiểm tra kết quả sau khi bạn thanh toán
-            </p>
+            {checkout ? (
+              <>
+                <strong className="payment-amount">
+                  {formatVnd(displayAmount)}
+                </strong>
+                <p className="payment-auto-note">{copy.autoNote}</p>
+              </>
+            ) : null}
 
-            {paymentLinkId ? (
+            {checkout && (embedError || isOrderCheckout) ? (
               <div className="payment-link-actions">
-                <button
-                  type="button"
-                  className="payment-open-link"
-                  onClick={openPayosPage}
-                  disabled={openingPayos}
-                >
-                  {openingPayos ? (
-                    <Loader2 size={16} className="payment-spin" />
-                  ) : (
-                    <ExternalLink size={16} />
-                  )}
-                  Mở trang PayOS
-                </button>
-                <button
-                  type="button"
-                  className="payment-check-btn"
-                  onClick={checkPaymentNow}
-                  disabled={checkingPayment}
-                >
-                  {checkingPayment ? (
-                    <Loader2 size={16} className="payment-spin" />
-                  ) : (
-                    <RefreshCw size={16} />
-                  )}
-                  Kiểm tra thanh toán
-                </button>
+                {embedError ? (
+                  <button
+                    type="button"
+                    className="payment-open-link"
+                    onClick={openPayosPage}
+                    disabled={openingPayos}
+                  >
+                    {openingPayos ? (
+                      <Loader2 size={16} className="payment-spin" />
+                    ) : (
+                      <ExternalLink size={16} />
+                    )}
+                    Mở trang PayOS
+                  </button>
+                ) : null}
+                {isOrderCheckout ? (
+                  <button
+                    type="button"
+                    className="payment-check-btn"
+                    onClick={() => void checkPaymentNow()}
+                    disabled={checkingPayment}
+                  >
+                    {checkingPayment ? (
+                      <Loader2 size={16} className="payment-spin" />
+                    ) : (
+                      <RefreshCw size={16} />
+                    )}
+                    Kiểm tra thanh toán
+                  </button>
+                ) : null}
               </div>
             ) : null}
 
-            {checkingPayment ? (
+            {statusMessage ? (
               <div
                 className="payment-checking-note"
                 role="status"
                 aria-live="polite"
               >
-                Đang kiểm tra kết quả thanh toán từ đơn hàng...
+                {statusMessage}
               </div>
             ) : null}
 
@@ -329,7 +493,7 @@ export default function PaymentModel({
                 </li>
                 <li>
                   <span>2</span>
-                  Chọn chức năng "Quét mã QR".
+                  Chọn chức năng &quot;Quét mã QR&quot;.
                 </li>
                 <li>
                   <span>3</span>
@@ -346,7 +510,7 @@ export default function PaymentModel({
               <button
                 type="button"
                 className="payment-back-btn"
-                onClick={onBack ?? (() => navigate(-1))}
+                onClick={onBack ?? (() => navigate(routes.backPath))}
               >
                 <ArrowLeft size={18} />
                 Quay lại

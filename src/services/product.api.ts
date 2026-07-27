@@ -292,13 +292,23 @@ export const checkoutBuyNow = async (
   const checkout = {
     ...result,
     orderId: result?.orderId ?? result?.id,
-    orderCode: result?.orderCode ?? result?.code,
-    checkoutUrl: result?.checkoutUrl ?? result?.paymentUrl,
-    paymentLinkId: result?.paymentLinkId,
+    orderCode:
+      result?.orderCode ?? result?.payOSOrderCode ?? result?.code,
+    checkoutUrl:
+      result?.checkoutUrl ??
+      result?.payOSCheckoutUrl ??
+      result?.paymentUrl,
+    paymentLinkId: result?.paymentLinkId ?? result?.payOSPaymentLinkId,
   };
 
-  if (payload.paymentMethod === "PAYOS" && !checkout.paymentLinkId) {
-    throw new Error("API mua ngay PAYOS thiếu paymentLinkId");
+  if (
+    payload.paymentMethod === "PAYOS" &&
+    (!checkout.orderId ||
+      checkout.orderCode == null ||
+      !checkout.checkoutUrl ||
+      !checkout.paymentLinkId)
+  ) {
+    throw new Error("API mua ngay PAYOS thiếu thông tin liên kết thanh toán");
   }
 
   return checkout;

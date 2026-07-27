@@ -3,7 +3,7 @@ import {
   Clock,
   CreditCard,
   Headphones,
-  RefreshCw,
+  ReceiptText,
   ShieldX,
   SmartphoneNfc,
   WifiOff,
@@ -68,10 +68,10 @@ export default function PaymentFailedPage() {
           <button
             type="button"
             className="payment-retry-btn"
-            onClick={() => navigate("/payment")}
+            onClick={() => navigate("/profile/orders")}
           >
-            <RefreshCw size={18} />
-            Thử lại ngay
+            <ReceiptText size={18} />
+            Xem đơn hàng
           </button>
 
           <button

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { AlertTriangle, Building2, CircleDollarSign, Plus, RefreshCw, ShieldCheck } from "lucide-react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import PayoutAccountModal from "../../../../components/wallet/payoutAccountModal";
 import TransactionTable from "../../../../components/wallet/transactionTable";
@@ -43,6 +43,7 @@ const withdrawalStatus: Record<string, string> = {
 
 export default function SellerWallet() {
   const { shopId } = useSellerShop();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
@@ -99,6 +100,8 @@ export default function SellerWallet() {
   useEffect(() => {
     if (searchParams.get("topUp") === "returned") {
       toast.info("Đã quay lại từ PayOS. Hãy làm mới nếu webhook chưa kịp cập nhật số dư.");
+    } else if (searchParams.get("topUp") === "cancelled") {
+      toast.info("Bạn đã hủy yêu cầu nạp tiền cho shop.");
     }
   }, [searchParams]);
 
@@ -171,7 +174,19 @@ export default function SellerWallet() {
         String(numericAmount),
         crypto.randomUUID(),
       );
-      window.location.assign(topUp.checkoutUrl);
+      navigate("/payment", {
+        state: {
+          checkout: {
+            flow: "SHOP_WALLET_TOP_UP",
+            topUpId: topUp.topUpId,
+            shopId,
+            paymentLinkId: topUp.paymentLinkId,
+            checkoutUrl: topUp.checkoutUrl,
+            amount: topUp.amount,
+            currency: topUp.currency,
+          },
+        },
+      });
     } catch (requestError) {
       toast.error(
         requestError instanceof Error

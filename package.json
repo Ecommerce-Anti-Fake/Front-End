@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:payos": "node --test --experimental-strip-types test/payos-checkout-state.test.mjs"
   },
   "dependencies": {
     "@payos/payos-checkout": "^1.0.8",

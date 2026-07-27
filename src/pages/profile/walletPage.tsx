@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import {
   ArrowDownToLine,
@@ -44,6 +44,7 @@ const withdrawalLabels: Record<string, string> = {
 };
 
 export default function WalletPage() {
+  const navigate = useNavigate();
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
   const [payoutAccounts, setPayoutAccounts] = useState<PayoutAccount[]>([]);
@@ -90,6 +91,8 @@ export default function WalletPage() {
   useEffect(() => {
     if (searchParams.get("topUp") === "returned") {
       toast.info("Đã quay lại từ PayOS. Số dư sẽ cập nhật sau khi webhook xác nhận.");
+    } else if (searchParams.get("topUp") === "cancelled") {
+      toast.info("Bạn đã hủy yêu cầu nạp tiền.");
     }
   }, [searchParams]);
 
@@ -103,7 +106,18 @@ export default function WalletPage() {
     setSubmitting(true);
     try {
       const result = await createWalletTopUp(String(numericAmount), crypto.randomUUID());
-      window.location.assign(result.checkoutUrl);
+      navigate("/payment", {
+        state: {
+          checkout: {
+            flow: "USER_WALLET_TOP_UP",
+            topUpId: result.topUpId,
+            paymentLinkId: result.paymentLinkId,
+            checkoutUrl: result.checkoutUrl,
+            amount: result.amount,
+            currency: result.currency,
+          },
+        },
+      });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Không thể tạo link nạp tiền");
     } finally {

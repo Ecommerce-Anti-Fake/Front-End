@@ -136,8 +136,11 @@ export default function CheckoutSummary({
 
       navigate("/payment", {
         state: {
-          checkout,
-          amount: total,
+          checkout: {
+            ...checkout,
+            flow: "ORDER",
+            amount: total,
+          },
         },
       });
     } catch (error) {

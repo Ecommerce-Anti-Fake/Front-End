@@ -10,16 +10,45 @@ import type {
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
+const asRecord = (value: unknown): Record<string, unknown> | undefined =>
+  value && typeof value === "object"
+    ? (value as Record<string, unknown>)
+    : undefined;
+
 const pickCheckoutValue = (
-  data: any,
+  data: unknown,
   key: "orderId" | "orderCode" | "checkoutUrl" | "paymentLinkId",
-) =>
-  data?.[key] ??
-  data?.data?.[key] ??
-  data?.order?.[key] ??
-  data?.data?.order?.[key] ??
-  data?.orders?.[0]?.[key] ??
-  data?.data?.orders?.[0]?.[key];
+) => {
+  const aliases = {
+    orderId: ["orderId", "id"],
+    orderCode: ["orderCode", "payOSOrderCode", "code"],
+    checkoutUrl: ["checkoutUrl", "payOSCheckoutUrl", "paymentUrl"],
+    paymentLinkId: ["paymentLinkId", "payOSPaymentLinkId"],
+  } as const;
+  const root = asRecord(data);
+  const nestedData = asRecord(root?.data);
+  const rootOrders = Array.isArray(root?.orders) ? root.orders : [];
+  const nestedOrders = Array.isArray(nestedData?.orders)
+    ? nestedData.orders
+    : [];
+  const containers = [
+    root,
+    nestedData,
+    asRecord(root?.order),
+    asRecord(nestedData?.order),
+    asRecord(rootOrders[0]),
+    asRecord(nestedOrders[0]),
+  ];
+
+  for (const container of containers) {
+    for (const alias of aliases[key]) {
+      const value = container?.[alias];
+      if (value !== undefined && value !== null) return value;
+    }
+  }
+
+  return undefined;
+};
 
 const getApiErrorMessage = async (response: Response, fallback: string) => {
   const text = await response.text();
@@ -123,15 +152,20 @@ export const checkoutCart = async (
 
   const checkout = {
     ...data,
-    orderId: pickCheckoutValue(data, "orderId") ?? data?.id ?? data?.data?.id,
-    orderCode:
-      pickCheckoutValue(data, "orderCode") ?? data?.code ?? data?.data?.code,
-    checkoutUrl: pickCheckoutValue(data, "checkoutUrl") ?? data?.paymentUrl,
+    orderId: pickCheckoutValue(data, "orderId"),
+    orderCode: pickCheckoutValue(data, "orderCode"),
+    checkoutUrl: pickCheckoutValue(data, "checkoutUrl"),
     paymentLinkId: pickCheckoutValue(data, "paymentLinkId"),
   };
 
-  if (payload.paymentMethod === "PAYOS" && !checkout.paymentLinkId) {
-    throw new Error("API checkout PAYOS thiếu paymentLinkId");
+  if (
+    payload.paymentMethod === "PAYOS" &&
+    (!checkout.orderId ||
+      checkout.orderCode == null ||
+      !checkout.checkoutUrl ||
+      !checkout.paymentLinkId)
+  ) {
+    throw new Error("API checkout PAYOS thiếu thông tin liên kết thanh toán");
   }
 
   return checkout;
