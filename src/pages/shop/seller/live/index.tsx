@@ -1,7 +1,6 @@
 import {
   CalendarClock,
   ExternalLink,
-  Play,
   Radio,
   RefreshCw,
   Square,
@@ -9,26 +8,26 @@ import {
   Activity,
   XCircle,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
-import BroadcastCredentialsPanel from "../../../../components/live/broadcastCredentialsPanel";
 import LiveOperationsPanel from "../../../../components/live/liveOperationsPanel";
 import { useSellerShop } from "../../../../contexts/sellerShopContext";
 import {
   createLiveSession,
-  getBroadcastCredentials,
-  refreshLiveRecording,
   listLiveSessions,
-  startLiveSession,
   updateLiveSessionStatus,
-  type BroadcastCredentials,
   type LiveSession,
   type LiveSessionStatus,
 } from "../../../../services/live.api";
+import { getOrCreateLiveRtcClientId } from "../../../../services/live-rtc";
 import { fetchShopOffers, type ShopOffer } from "../../../../services/shop.api";
 import { fetchShopVouchers } from "../../../../services/voucher.api";
 import "../../../../css/pages/sellerLive.css";
+
+const AgoraHostStudio = lazy(
+  () => import("../../../../components/live/agoraHostStudio"),
+);
 
 const statusLabel: Record<LiveSessionStatus, string> = {
   SCHEDULED: "Đã lên lịch",
@@ -61,8 +60,7 @@ export default function SellerLivePage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [actionId, setActionId] = useState("");
-  const [credentials, setCredentials] =
-    useState<BroadcastCredentials | null>(null);
+  const [studioSession, setStudioSession] = useState<LiveSession | null>(null);
   const [operationsSession, setOperationsSession] =
     useState<LiveSession | null>(null);
   const [form, setForm] = useState({
@@ -106,7 +104,8 @@ export default function SellerLivePage() {
   }, [shopId]);
 
   useEffect(() => {
-    void load();
+    const loadId = window.setTimeout(() => void load(), 0);
+    return () => window.clearTimeout(loadId);
   }, [load]);
 
   const submit = async (event: React.FormEvent) => {
@@ -114,7 +113,8 @@ export default function SellerLivePage() {
     if (!form.title.trim() || !form.startAt) return;
     setSubmitting(true);
     try {
-      const created = await createLiveSession({
+      await createLiveSession({
+        clientId: getOrCreateLiveRtcClientId(),
         shopId,
         title: form.title.trim(),
         description: form.description.trim() || undefined,
@@ -123,7 +123,6 @@ export default function SellerLivePage() {
         offerIds: form.offerIds,
         voucherIds: form.voucherIds,
       });
-      setCredentials(created.broadcastCredentials ?? null);
       toast.success("Đã tạo lịch livestream");
       setForm({
         title: "",
@@ -161,58 +160,6 @@ export default function SellerLivePage() {
     }
   };
 
-  const startBroadcast = async (sessionId: string) => {
-    setActionId(sessionId);
-    try {
-      await startLiveSession(sessionId);
-      setCredentials(await getBroadcastCredentials(sessionId));
-      toast.success("Đang chờ OBS kết nối với Cloudflare");
-      await load();
-    } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Không thể chuẩn bị phiên livestream",
-      );
-    } finally {
-      setActionId("");
-    }
-  };
-
-  const showCredentials = async (sessionId: string) => {
-    setActionId(sessionId);
-    try {
-      setCredentials(await getBroadcastCredentials(sessionId));
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Không thể lấy cấu hình OBS",
-      );
-    } finally {
-      setActionId("");
-    }
-  };
-
-  const refreshRecording = async (sessionId: string) => {
-    setActionId(sessionId);
-    try {
-      const result = await refreshLiveRecording(sessionId);
-      toast[result.ready ? "success" : "info"](
-        result.ready
-          ? "Bản phát lại đã sẵn sàng"
-          : "Cloudflare vẫn đang xử lý bản phát lại",
-      );
-      await load();
-    } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Không thể kiểm tra bản phát lại",
-      );
-    } finally {
-      setActionId("");
-    }
-  };
-
   const toggleOffer = (offerId: string) =>
     setForm((current) => ({
       ...current,
@@ -237,7 +184,7 @@ export default function SellerLivePage() {
             <Radio size={15} /> LIVE COMMERCE
           </span>
           <h1>Livestream của shop</h1>
-          <p>Lên lịch, cấu hình OBS và bán sản phẩm trong thời gian thực.</p>
+          <p>Lên lịch, mở studio và bán sản phẩm trong thời gian thực.</p>
         </div>
         <button type="button" onClick={() => void load()} disabled={loading}>
           <RefreshCw size={17} /> Làm mới
@@ -250,7 +197,7 @@ export default function SellerLivePage() {
             <Video size={20} />
             <div>
               <h2>Tạo phiên livestream</h2>
-              <p>Cloudflare sẽ cấp server và stream key dùng trong OBS.</p>
+              <p>Camera và micro được phát trực tiếp qua Agora.</p>
             </div>
           </div>
           <label>
@@ -349,7 +296,7 @@ export default function SellerLivePage() {
           </fieldset>
           <button className="seller-live-primary" disabled={submitting}>
             <CalendarClock size={17} />
-            {submitting ? "Đang tạo..." : "Tạo lịch và lấy stream key"}
+            {submitting ? "Đang tạo..." : "Tạo lịch livestream"}
           </button>
         </form>
 
@@ -358,7 +305,7 @@ export default function SellerLivePage() {
             <CalendarClock size={20} />
             <div>
               <h2>Các phiên của shop</h2>
-              <p>OBS kết nối sẽ tự chuyển phiên sang trạng thái đang phát.</p>
+              <p>Mở studio để kiểm tra thiết bị trước khi bắt đầu phát.</p>
             </div>
           </div>
           {!loading && sessions.length === 0 && (
@@ -379,9 +326,6 @@ export default function SellerLivePage() {
                   {new Date(session.startAt).toLocaleString("vi-VN")} ·{" "}
                   {session.offers.length} sản phẩm
                 </p>
-                {session.providerStatus && (
-                  <small>Đường truyền: {session.providerStatus}</small>
-                )}
               </div>
               <div className="seller-live-actions">
                 <button
@@ -393,49 +337,28 @@ export default function SellerLivePage() {
                 {["SCHEDULED", "LIVE"].includes(session.status) && (
                   <button
                     type="button"
-                    disabled={actionId === session.id}
-                    onClick={() => void showCredentials(session.id)}
+                    onClick={() => setStudioSession(session)}
                   >
-                    <Radio size={15} /> OBS
+                    <Radio size={15} /> Mở studio
                   </button>
                 )}
                 {session.status === "SCHEDULED" && (
-                  <>
-                    <button
-                      type="button"
-                      disabled={actionId === session.id}
-                      onClick={() => void startBroadcast(session.id)}
-                    >
-                      <Play size={15} />{" "}
-                      {session.providerStatus === "STARTING"
-                        ? "Mở lại OBS"
-                        : "Bắt đầu"}
-                    </button>
-                    <button
-                      type="button"
-                      className="danger"
-                      onClick={() => void changeStatus(session.id, "CANCELLED")}
-                    >
-                      <XCircle size={15} /> Hủy
-                    </button>
-                  </>
+                  <button
+                    type="button"
+                    className="danger"
+                    onClick={() => void changeStatus(session.id, "CANCELLED")}
+                  >
+                    <XCircle size={15} /> Hủy
+                  </button>
                 )}
                 {session.status === "LIVE" && (
                   <button
                     type="button"
                     className="danger"
+                    disabled={actionId === session.id}
                     onClick={() => void changeStatus(session.id, "ENDED")}
                   >
                     <Square size={14} /> Kết thúc
-                  </button>
-                )}
-                {session.status === "ENDED" && !session.recordingUrl && (
-                  <button
-                    type="button"
-                    disabled={actionId === session.id}
-                    onClick={() => void refreshRecording(session.id)}
-                  >
-                    <RefreshCw size={15} /> Kiểm tra replay
                   </button>
                 )}
                 {session.status !== "CANCELLED" && (
@@ -449,11 +372,24 @@ export default function SellerLivePage() {
         </section>
       </div>
 
-      {credentials && (
-        <BroadcastCredentialsPanel
-          credentials={credentials}
-          onClose={() => setCredentials(null)}
-        />
+      {studioSession && (
+        <Suspense
+          fallback={
+            <div className="seller-live-studio" role="status">
+              Đang tải Agora Studio...
+            </div>
+          }
+        >
+          <AgoraHostStudio
+            key={studioSession.id}
+            session={studioSession}
+            onClose={() => setStudioSession(null)}
+            onSessionChanged={async (updated) => {
+              setStudioSession(updated);
+              await load();
+            }}
+          />
+        </Suspense>
       )}
       {operationsSession && (
         <LiveOperationsPanel

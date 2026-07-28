@@ -151,7 +151,7 @@
 
 .seller-live-form,
 .seller-live-sessions,
-.seller-live-credentials {
+.seller-live-studio {
   border: 1px solid var(--live-border);
   border-radius: 12px;
   background: #fff;
@@ -179,8 +179,7 @@
 }
 
 .seller-live-form > label,
-.seller-live-form-row label,
-.seller-live-credentials label {
+.seller-live-form-row label {
   display: grid;
   gap: 7px;
   margin-bottom: 15px;
@@ -190,8 +189,7 @@
 }
 
 .seller-live-form input,
-.seller-live-form textarea,
-.seller-live-credentials input {
+.seller-live-form textarea {
   width: 100%;
   border: 1px solid #ddcece;
   border-radius: 8px;
@@ -200,8 +198,7 @@
   font: inherit;
 }
 
-.seller-live-form input,
-.seller-live-credentials input {
+.seller-live-form input {
   min-height: 42px;
   padding: 0 12px;
 }
@@ -359,30 +356,31 @@
   text-align: center;
 }
 
-.seller-live-credentials {
+.seller-live-studio {
   position: fixed;
-  z-index: 100;
+  z-index: 1300;
   right: 24px;
   bottom: 24px;
-  width: min(460px, calc(100vw - 32px));
+  width: min(680px, calc(100vw - 32px));
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
   padding: 20px;
   box-shadow: 0 18px 48px rgb(46 39 39 / 18%);
 }
 
-.seller-live-credentials header {
+.seller-live-studio header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 20px;
 }
 
-.seller-live-credentials header h2 {
+.seller-live-studio header h2 {
   margin: 5px 0 14px;
   font-size: 20px;
 }
 
-.seller-live-credentials header button,
-.seller-live-credentials label button {
+.seller-live-studio header button {
   display: grid;
   place-items: center;
   border: 0;
@@ -401,32 +399,89 @@
   letter-spacing: 0.08em;
 }
 
-.seller-live-security-note {
-  margin: 0 0 16px;
-  padding: 10px 12px;
-  border-left: 3px solid #e5a035;
-  background: #fff8e9;
-  color: #6f5327;
-  font-size: 13px;
+.seller-live-studio-preview {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 10px;
+  background: #111;
 }
 
-.seller-live-credentials label span {
+.seller-live-studio-preview > div,
+.seller-live-studio-preview video {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+}
+
+.seller-live-studio-preview > span {
+  position: absolute;
+  inset: 0;
   display: grid;
-  grid-template-columns: 1fr 42px;
-  border: 1px solid #ddcece;
-  border-radius: 8px;
+  place-items: center;
+  color: #fff;
 }
 
-.seller-live-credentials label span input {
-  border: 0;
-}
-
-.seller-live-credentials ol {
-  margin: 12px 0 0;
-  padding-left: 21px;
+.seller-live-studio-state {
+  margin-top: 12px;
   color: var(--live-muted);
   font-size: 13px;
-  line-height: 1.65;
+  font-weight: 700;
+}
+
+.seller-live-studio-state.live {
+  color: #b42332;
+}
+
+.seller-live-studio-error {
+  margin: 8px 0 0;
+  color: #b42332;
+  font-size: 13px;
+}
+
+.seller-live-studio-warning {
+  margin: 8px 0 0;
+  color: #7a5617;
+  font-size: 13px;
+}
+
+.seller-live-studio-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.seller-live-studio-controls button {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid var(--live-border);
+  border-radius: 8px;
+  padding: 0 14px;
+  background: #fff;
+  color: #433838;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.seller-live-studio-controls button.primary {
+  border-color: var(--live-accent);
+  background: var(--live-accent);
+  color: #fff;
+}
+
+.seller-live-studio-controls button.danger {
+  border-color: #f0c7cc;
+  color: #b42332;
+}
+
+.seller-live-studio-controls button:disabled {
+  cursor: wait;
+  opacity: 0.6;
 }
 
 @media (max-width: 1000px) {
@@ -458,7 +513,7 @@
     justify-content: flex-start;
   }
 
-  .seller-live-credentials {
+  .seller-live-studio {
     right: 16px;
     bottom: 16px;
   }

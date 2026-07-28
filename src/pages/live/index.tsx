@@ -9,11 +9,10 @@ import {
   ThumbsUp,
   Zap,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import LiveChat from "../../components/live/liveChat";
-import LivePlayer from "../../components/live/livePlayer";
 import LiveProducts from "../../components/live/liveProducts";
 import { useLiveRealtime } from "../../hooks/useLiveRealtime";
 import {
@@ -23,6 +22,8 @@ import {
 } from "../../services/live.api";
 import { getToken } from "../../ultil/auth";
 import "../../css/components/live/liveRoom.css";
+
+const LivePlayer = lazy(() => import("../../components/live/livePlayer"));
 
 const reactionOptions = [
   { type: "LIKE" as const, label: "Thích", icon: ThumbsUp },
@@ -39,31 +40,72 @@ export default function LiveRoomPage() {
   const [error, setError] = useState("");
   const [reminding, setReminding] = useState(false);
   const realtime = useLiveRealtime(id);
+  const sessionStatus = session?.status;
 
   useEffect(() => {
-    let active = true;
-    setLoading(true);
-    void getLiveSession(id)
-      .then((value) => {
-        if (active) {
-          setSession(value);
-          setError("");
-        }
-      })
-      .catch((requestError) => {
-        if (active) {
-          setError(
-            requestError instanceof Error
-              ? requestError.message
-              : "Không thể tải livestream",
-          );
-        }
-      })
-      .finally(() => active && setLoading(false));
+    const abortController = new AbortController();
+    const loadId = window.setTimeout(() => {
+      setLoading(true);
+      void getLiveSession(id, abortController.signal)
+        .then((value) => {
+          if (!abortController.signal.aborted) {
+            setSession(value);
+            setError("");
+          }
+        })
+        .catch((requestError) => {
+          if (
+            !abortController.signal.aborted &&
+            !(
+              requestError instanceof DOMException &&
+              requestError.name === "AbortError"
+            )
+          ) {
+            setError(
+              requestError instanceof Error
+                ? requestError.message
+                : "Không thể tải livestream",
+            );
+          }
+        })
+        .finally(() => !abortController.signal.aborted && setLoading(false));
+    }, 0);
     return () => {
-      active = false;
+      window.clearTimeout(loadId);
+      abortController.abort();
     };
   }, [id]);
+
+  useEffect(() => {
+    if (!id || !sessionStatus || !["SCHEDULED", "LIVE"].includes(sessionStatus)) {
+      return;
+    }
+
+    const abortController = new AbortController();
+    let inFlight = false;
+    const intervalMs = sessionStatus === "SCHEDULED" ? 3_000 : 15_000;
+    const refresh = async () => {
+      if (inFlight) return;
+      inFlight = true;
+      try {
+        const refreshed = await getLiveSession(id, abortController.signal);
+        if (!abortController.signal.aborted) setSession(refreshed);
+      } catch (requestError) {
+        if (
+          requestError instanceof DOMException &&
+          requestError.name === "AbortError"
+        )
+          return;
+      } finally {
+        inFlight = false;
+      }
+    };
+    const intervalId = window.setInterval(() => void refresh(), intervalMs);
+    return () => {
+      abortController.abort();
+      window.clearInterval(intervalId);
+    };
+  }, [id, sessionStatus]);
 
   const setReminder = async () => {
     if (!getToken()) {
@@ -110,7 +152,17 @@ export default function LiveRoomPage() {
   return (
     <div className="live-room-page">
       <main className="live-main">
-        <LivePlayer session={session} />
+        <Suspense
+          fallback={
+            <section className="live-player">
+              <div className="live-player-placeholder" role="status">
+                Đang tải trình phát...
+              </div>
+            </section>
+          }
+        >
+          <LivePlayer key={session.id} session={session} />
+        </Suspense>
         <section className="live-session-summary">
           <div>
             <p className="live-session-shop">

@@ -24,11 +24,18 @@
   background: #000;
 }
 
-.live-player iframe {
+.live-player-video {
   display: block;
   width: 100%;
   aspect-ratio: 16/9;
-  border: 0;
+  background: #000;
+}
+
+.live-player-video > div,
+.live-player-video video {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
 }
 
 .live-player-placeholder {
@@ -57,6 +64,29 @@
 .live-player-placeholder > svg {
   position: relative;
   z-index: 1;
+}
+
+.live-player-overlay {
+  position: absolute;
+  inset: 0;
+  min-height: 0;
+}
+
+.live-player-audio-button {
+  position: absolute;
+  z-index: 101;
+  right: 14px;
+  bottom: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 0;
+  border-radius: 8px;
+  padding: 10px 14px;
+  background: #fff;
+  color: #2e2727;
+  font-weight: 700;
+  cursor: pointer;
 }
 
 .stream-live-header {

@@ -39,14 +39,11 @@ export type LiveSession = {
   coverUrl?: string | null;
   startAt: string;
   status: LiveSessionStatus;
-  playbackUrl?: string | null;
   streamProvider?: string | null;
   streamLatencyTargetMs?: number | null;
   providerStatus?: string | null;
   actualStartedAt?: string | null;
   actualEndedAt?: string | null;
-  recordingUrl?: string | null;
-  recordingRetentionDays?: number | null;
   reminderCount: number;
   viewerHasReminder: boolean;
   offers: LiveOffer[];
@@ -54,12 +51,8 @@ export type LiveSession = {
   createdAt: string;
 };
 
-export type BroadcastCredentials = {
-  ingestUrl: string;
-  streamKey: string;
-};
-
 export type CreateLiveSessionInput = {
+  clientId: string;
   shopId: string;
   title: string;
   description?: string;
@@ -69,9 +62,16 @@ export type CreateLiveSessionInput = {
   voucherIds?: string[];
 };
 
-export type CreatedLiveSession = LiveSession & {
-  broadcastCredentials?: BroadcastCredentials;
+export type AgoraRtcAccess = {
+  appId: string;
+  channelName: string;
+  uid: number;
+  token: string;
+  role: "PUBLISHER" | "SUBSCRIBER";
+  expiresAt: string;
 };
+
+export type CreatedLiveSession = LiveSession & AgoraRtcAccess;
 
 export type LiveComment = {
   id: string;
@@ -132,11 +132,15 @@ export async function listLiveSessions(input: {
 
 export async function getLiveSession(
   sessionId: string,
+  signal?: AbortSignal,
 ): Promise<LiveSession> {
   const url = `${BASE_URL}/api/live/sessions/${encodeURIComponent(sessionId)}`;
   const response = getToken()
-    ? await authFetch(url, { headers: { Accept: "application/json" } })
-    : await fetch(url, { headers: { Accept: "application/json" } });
+    ? await authFetch(url, {
+        headers: { Accept: "application/json" },
+        signal,
+      })
+    : await fetch(url, { headers: { Accept: "application/json" }, signal });
   return readJson<LiveSession>(response);
 }
 
@@ -145,6 +149,7 @@ export async function createLiveSession(
 ): Promise<CreatedLiveSession> {
   const response = await authFetch(`${BASE_URL}/api/live/sessions`, {
     method: "POST",
+    cache: "no-store",
     headers: {
       Accept: "application/json",
       "Content-Type": "application/json",
@@ -154,39 +159,43 @@ export async function createLiveSession(
   return readJson<CreatedLiveSession>(response);
 }
 
-export async function getBroadcastCredentials(
+export async function joinLiveSession(
   sessionId: string,
-): Promise<BroadcastCredentials> {
-  const response = await authFetch(
-    `${BASE_URL}/api/live/sessions/${encodeURIComponent(sessionId)}/broadcast-credentials`,
-    { method: "POST", headers: { Accept: "application/json" } },
-  );
-  return readJson<BroadcastCredentials>(response);
+  clientId: string,
+  signal?: AbortSignal,
+): Promise<AgoraRtcAccess> {
+  const url = `${BASE_URL}/api/live/sessions/${encodeURIComponent(sessionId)}/join`;
+  const init: RequestInit = {
+    method: "POST",
+    cache: "no-store",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ clientId }),
+    signal,
+  };
+  const response = getToken()
+    ? await authFetch(url, init)
+    : await fetch(url, init);
+  return readJson<AgoraRtcAccess>(response);
 }
 
 export async function startLiveSession(
   sessionId: string,
+  signal?: AbortSignal,
 ): Promise<LiveSession> {
   const response = await authFetch(
     `${BASE_URL}/api/live/sessions/${encodeURIComponent(sessionId)}/start`,
-    { method: "POST", headers: { Accept: "application/json" } },
+    { method: "POST", headers: { Accept: "application/json" }, signal },
   );
   return readJson<LiveSession>(response);
-}
-
-export async function refreshLiveRecording(
-  sessionId: string,
-): Promise<{ ready: boolean; recordingUrl?: string }> {
-  const response = await authFetch(
-    `${BASE_URL}/api/live/sessions/${encodeURIComponent(sessionId)}/recording/refresh`,
-    { method: "POST", headers: { Accept: "application/json" } },
-  );
-  return readJson<{ ready: boolean; recordingUrl?: string }>(response);
 }
 
 export async function updateLiveSessionStatus(
   sessionId: string,
   status: Extract<LiveSessionStatus, "ENDED" | "CANCELLED">,
+  signal?: AbortSignal,
 ): Promise<LiveSession> {
   const response = await authFetch(
     `${BASE_URL}/api/live/sessions/${encodeURIComponent(sessionId)}/status`,
@@ -197,6 +206,7 @@ export async function updateLiveSessionStatus(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ status }),
+      signal,
     },
   );
   return readJson<LiveSession>(response);
