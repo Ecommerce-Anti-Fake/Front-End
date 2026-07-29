@@ -11,6 +11,25 @@ type RtcAccessIdentity = {
   role: "PUBLISHER" | "SUBSCRIBER";
 };
 
+export function createPreparationGate<T>(prepare: () => Promise<T>) {
+  let promise: Promise<T> | null = null;
+  return {
+    run(): Promise<T> {
+      if (!promise) {
+        const current = prepare();
+        promise = current;
+        void current.catch(() => {
+          if (promise === current) promise = null;
+        });
+      }
+      return promise;
+    },
+    clear() {
+      promise = null;
+    },
+  };
+}
+
 export function getOrCreateLiveRtcClientId(
   storage: ClientIdStorage = window.sessionStorage,
   createId: () => string = () => crypto.randomUUID(),
@@ -67,8 +86,30 @@ export function getLiveMediaErrorMessage(error: unknown): string {
   ) {
     return "Camera hoặc micro đang được ứng dụng khác sử dụng";
   }
+  if (
+    markers.includes("OverconstrainedError") ||
+    markers.includes("CONSTRAINT_NOT_SATISFIED")
+  ) {
+    return "Thiết bị không hỗ trợ cấu hình camera hoặc micro được yêu cầu";
+  }
+  if (
+    markers.includes("TOKEN_EXPIRED") ||
+    markers.includes("INVALID_TOKEN")
+  ) {
+    return "Quyền truy cập Agora đã hết hạn, hãy chuẩn bị lại studio";
+  }
   if (error && typeof error === "object" && "message" in error) {
-    return String(error.message);
+    const message = String(error.message);
+    const normalized = message.toLowerCase();
+    if (
+      normalized.includes("publisher") ||
+      normalized.includes("lease") ||
+      normalized.includes("studio khác") ||
+      normalized.includes("tab khác")
+    ) {
+      return "Một tab khác đang giữ quyền phát của phiên livestream này";
+    }
+    return message;
   }
   return "Không thể chuẩn bị studio";
 }

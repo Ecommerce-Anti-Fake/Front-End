@@ -1,4 +1,8 @@
 import { authFetch, getToken } from "../ultil/auth";
+import {
+  buildLiveSessionFormData,
+  type CreateLiveSessionFormInput,
+} from "./live-form";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
 
@@ -10,6 +14,15 @@ export type LiveSessionStatus =
 
 export type LiveOffer = {
   offerId: string;
+  title: string;
+  price: number;
+  currency: string;
+  availableQuantity: number;
+  thumbnailUrl?: string | null;
+};
+
+export type PinnedLiveOffer = {
+  id: string;
   title: string;
   price: number;
   currency: string;
@@ -46,21 +59,14 @@ export type LiveSession = {
   actualEndedAt?: string | null;
   reminderCount: number;
   viewerHasReminder: boolean;
+  pinnedOfferId: string | null;
+  pinnedOffer: PinnedLiveOffer | null;
   offers: LiveOffer[];
   vouchers: LiveVoucher[];
   createdAt: string;
 };
 
-export type CreateLiveSessionInput = {
-  clientId: string;
-  shopId: string;
-  title: string;
-  description?: string;
-  coverUrl?: string;
-  startAt: string;
-  offerIds: string[];
-  voucherIds?: string[];
-};
+export type CreateLiveSessionInput = CreateLiveSessionFormInput;
 
 export type AgoraRtcAccess = {
   appId: string;
@@ -100,6 +106,11 @@ export type LiveAnalytics = {
   unitsSold: number;
   grossRevenue: number;
   reactions: LiveReactionAggregate;
+};
+
+export type LiveMutationResult = {
+  success: true;
+  message: string;
 };
 
 async function readJson<T>(response: Response): Promise<T> {
@@ -146,15 +157,16 @@ export async function getLiveSession(
 
 export async function createLiveSession(
   input: CreateLiveSessionInput,
+  signal?: AbortSignal,
 ): Promise<CreatedLiveSession> {
   const response = await authFetch(`${BASE_URL}/api/live/sessions`, {
     method: "POST",
     cache: "no-store",
     headers: {
       Accept: "application/json",
-      "Content-Type": "application/json",
     },
-    body: JSON.stringify(input),
+    body: buildLiveSessionFormData(input),
+    signal,
   });
   return readJson<CreatedLiveSession>(response);
 }
@@ -162,6 +174,7 @@ export async function createLiveSession(
 export async function joinLiveSession(
   sessionId: string,
   clientId: string,
+  role?: "PUBLISHER" | "SUBSCRIBER",
   signal?: AbortSignal,
 ): Promise<AgoraRtcAccess> {
   const url = `${BASE_URL}/api/live/sessions/${encodeURIComponent(sessionId)}/join`;
@@ -172,13 +185,89 @@ export async function joinLiveSession(
       Accept: "application/json",
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ clientId }),
+    body: JSON.stringify({ clientId, ...(role ? { role } : {}) }),
     signal,
   };
   const response = getToken()
     ? await authFetch(url, init)
     : await fetch(url, init);
   return readJson<AgoraRtcAccess>(response);
+}
+
+export async function heartbeatLivePublisherLease(
+  sessionId: string,
+  clientId: string,
+  signal?: AbortSignal,
+): Promise<LiveMutationResult> {
+  const response = await authFetch(
+    `${BASE_URL}/api/live/sessions/${encodeURIComponent(sessionId)}/publisher-lease/heartbeat`,
+    {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ clientId }),
+      signal,
+    },
+  );
+  return readJson<LiveMutationResult>(response);
+}
+
+export async function releaseLivePublisherLease(
+  sessionId: string,
+  clientId: string,
+  signal?: AbortSignal,
+): Promise<LiveMutationResult> {
+  const response = await authFetch(
+    `${BASE_URL}/api/live/sessions/${encodeURIComponent(sessionId)}/publisher-lease`,
+    {
+      method: "DELETE",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ clientId }),
+      signal,
+    },
+  );
+  return readJson<LiveMutationResult>(response);
+}
+
+export async function updateLivePinnedOffer(
+  sessionId: string,
+  offerId: string | null,
+): Promise<LiveMutationResult> {
+  const response = await authFetch(
+    `${BASE_URL}/api/live/sessions/${encodeURIComponent(sessionId)}/pinned-offer`,
+    {
+      method: "PATCH",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ offerId }),
+    },
+  );
+  return readJson<LiveMutationResult>(response);
+}
+
+export async function replaceLiveSessionOffers(
+  sessionId: string,
+  offerIds: string[],
+): Promise<LiveMutationResult> {
+  const response = await authFetch(
+    `${BASE_URL}/api/live/sessions/${encodeURIComponent(sessionId)}/offers`,
+    {
+      method: "PATCH",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ offerIds }),
+    },
+  );
+  return readJson<LiveMutationResult>(response);
 }
 
 export async function startLiveSession(

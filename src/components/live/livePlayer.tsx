@@ -131,7 +131,11 @@ export default function LivePlayer({ session }: { session: LiveSession }) {
       renewal = (async () => {
         if (!access || disposed) return;
         setPlayerState("renewing");
-        const renewed = await joinLiveSession(session.id, clientId);
+        const renewed = await joinLiveSession(
+          session.id,
+          clientId,
+          "SUBSCRIBER",
+        );
         if (disposed) return;
         if (!isCompatibleRtcAccess(access, renewed)) {
           throw new Error("Thông tin gia hạn Agora không khớp phiên đang xem");
@@ -186,6 +190,7 @@ export default function LivePlayer({ session }: { session: LiveSession }) {
         const nextAccess = await joinLiveSession(
           session.id,
           clientId,
+          "SUBSCRIBER",
           abortController.signal,
         );
         access = nextAccess;

@@ -10,17 +10,16 @@ import {
 import { getToken } from "../../ultil/auth";
 import "../../css/pages/liveDiscovery.css";
 
-type Filter = "all" | "live" | "upcoming";
+type Filter = "live" | "upcoming";
 
 const filters: Array<{ value: Filter; label: string }> = [
-  { value: "all", label: "Tất cả" },
   { value: "live", label: "Đang phát" },
   { value: "upcoming", label: "Sắp diễn ra" },
 ];
 
 export default function LiveDiscoveryPage() {
   const navigate = useNavigate();
-  const [filter, setFilter] = useState<Filter>("all");
+  const [filter, setFilter] = useState<Filter>("live");
   const [query, setQuery] = useState("");
   const [submittedQuery, setSubmittedQuery] = useState("");
   const [sessions, setSessions] = useState<LiveSession[]>([]);
@@ -29,26 +28,29 @@ export default function LiveDiscoveryPage() {
 
   useEffect(() => {
     let active = true;
-    setLoading(true);
-    void listLiveSessions({ filter, q: submittedQuery })
-      .then((items) => {
-        if (active) {
-          setSessions(items);
-          setError("");
-        }
-      })
-      .catch((requestError) => {
-        if (active) {
-          setError(
-            requestError instanceof Error
-              ? requestError.message
-              : "Không thể tải livestream",
-          );
-        }
-      })
-      .finally(() => active && setLoading(false));
+    const loadId = window.setTimeout(() => {
+      setLoading(true);
+      void listLiveSessions({ filter, q: submittedQuery })
+        .then((items) => {
+          if (active) {
+            setSessions(items);
+            setError("");
+          }
+        })
+        .catch((requestError) => {
+          if (active) {
+            setError(
+              requestError instanceof Error
+                ? requestError.message
+                : "Không thể tải livestream",
+            );
+          }
+        })
+        .finally(() => active && setLoading(false));
+    }, 0);
     return () => {
       active = false;
+      window.clearTimeout(loadId);
     };
   }, [filter, submittedQuery]);
 
@@ -135,9 +137,7 @@ export default function LiveDiscoveryPage() {
                 <span className={`live-status ${session.status.toLowerCase()}`}>
                   {session.status === "LIVE"
                     ? "Đang phát"
-                    : session.status === "SCHEDULED"
-                      ? "Sắp diễn ra"
-                      : "Phát lại"}
+                    : "Sắp diễn ra"}
                 </span>
               </div>
               <div className="live-discovery-body">

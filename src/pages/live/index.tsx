@@ -13,6 +13,7 @@ import { lazy, Suspense, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import LiveChat from "../../components/live/liveChat";
+import LivePinnedOffer from "../../components/live/livePinnedOffer";
 import LiveProducts from "../../components/live/liveProducts";
 import { useLiveRealtime } from "../../hooks/useLiveRealtime";
 import {
@@ -39,7 +40,7 @@ export default function LiveRoomPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [reminding, setReminding] = useState(false);
-  const realtime = useLiveRealtime(id);
+  const realtime = useLiveRealtime(id, setSession);
   const sessionStatus = session?.status;
 
   useEffect(() => {
@@ -163,6 +164,12 @@ export default function LiveRoomPage() {
         >
           <LivePlayer key={session.id} session={session} />
         </Suspense>
+        {session.pinnedOffer && (
+          <LivePinnedOffer
+            offer={session.pinnedOffer}
+            sessionId={session.id}
+          />
+        )}
         <section className="live-session-summary">
           <div>
             <p className="live-session-shop">

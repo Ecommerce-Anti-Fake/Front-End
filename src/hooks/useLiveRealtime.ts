@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   getLiveReactionAggregate,
+  getLiveSession,
   listLiveComments,
   type LiveComment,
   type LiveReactionAggregate,
+  type LiveSession,
 } from "../services/live.api";
 import { connectLiveSocket, socket } from "../services/socket";
+import { isPinnedOfferEventForSession } from "../services/live-offer";
 import { getToken } from "../ultil/auth";
 
 type LiveAck =
@@ -18,7 +21,10 @@ const emptyAggregate = (sessionId: string): LiveReactionAggregate => ({
   total: 0,
 });
 
-export function useLiveRealtime(sessionId: string) {
+export function useLiveRealtime(
+  sessionId: string,
+  onSessionChanged?: (session: LiveSession) => void,
+) {
   const [comments, setComments] = useState<LiveComment[]>([]);
   const [reactions, setReactions] = useState<LiveReactionAggregate>(
     emptyAggregate(sessionId),
@@ -27,12 +33,18 @@ export function useLiveRealtime(sessionId: string) {
   const [error, setError] = useState("");
   const canInteract = Boolean(getToken());
 
+  const recoverSession = useCallback(async () => {
+    if (!sessionId || !onSessionChanged) return;
+    onSessionChanged(await getLiveSession(sessionId));
+  }, [onSessionChanged, sessionId]);
+
   const recover = useCallback(async () => {
     if (!sessionId) return;
     try {
       const [commentItems, aggregate] = await Promise.all([
         listLiveComments(sessionId),
         getLiveReactionAggregate(sessionId),
+        recoverSession(),
       ]);
       setComments(commentItems);
       setReactions(aggregate);
@@ -44,7 +56,7 @@ export function useLiveRealtime(sessionId: string) {
           : "Không thể tải tương tác trực tiếp",
       );
     }
-  }, [sessionId]);
+  }, [recoverSession, sessionId]);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -91,25 +103,33 @@ export function useLiveRealtime(sessionId: string) {
         setReactions(event.aggregate);
       }
     };
+    const onOfferPinned = (event: { sessionId?: string }) => {
+      if (isPinnedOfferEventForSession(sessionId, event)) {
+        void recoverSession();
+      }
+    };
 
     socket.on("connect", onConnect);
     socket.on("disconnect", onDisconnect);
     socket.on("live:comment.created", onComment);
     socket.on("live:reaction.aggregate", onAggregate);
     socket.on("live:reaction.created", onReaction);
+    socket.on("live:offer-pinned", onOfferPinned);
     connectLiveSocket();
     if (socket.connected) onConnect();
-    void recover();
+    const recoveryId = window.setTimeout(() => void recover(), 0);
 
     return () => {
+      window.clearTimeout(recoveryId);
       if (heartbeatId) window.clearInterval(heartbeatId);
       socket.off("connect", onConnect);
       socket.off("disconnect", onDisconnect);
       socket.off("live:comment.created", onComment);
       socket.off("live:reaction.aggregate", onAggregate);
       socket.off("live:reaction.created", onReaction);
+      socket.off("live:offer-pinned", onOfferPinned);
     };
-  }, [recover, sessionId]);
+  }, [recover, recoverSession, sessionId]);
 
   const sendComment = useCallback(
     (body: string) =>

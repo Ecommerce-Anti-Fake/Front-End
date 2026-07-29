@@ -200,6 +200,88 @@
   background: #fff;
 }
 
+.live-pinned-offer {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 12px;
+  border: 1px solid #f7c7cc;
+  border-radius: 14px;
+  background: linear-gradient(100deg, #fff7f7, #fff);
+}
+
+.live-pinned-offer-image {
+  display: grid;
+  overflow: hidden;
+  aspect-ratio: 1;
+  place-items: center;
+  border-radius: 10px;
+  background: #f2f4f7;
+  color: #b42318;
+}
+
+.live-pinned-offer-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.live-pinned-offer > div:nth-child(2) {
+  display: grid;
+  gap: 3px;
+}
+
+.live-pinned-offer span,
+.live-pinned-offer a,
+.live-pinned-offer button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.live-pinned-offer span {
+  color: #b42318;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.live-pinned-offer h2 {
+  margin: 0;
+  font-size: 17px;
+}
+
+.live-pinned-offer strong {
+  color: #c91c1c;
+}
+
+.live-pinned-offer small {
+  color: #667085;
+}
+
+.live-pinned-offer > a,
+.live-pinned-offer > button {
+  justify-content: center;
+  min-height: 42px;
+  border: 0;
+  border-radius: 9px;
+  padding: 0 16px;
+  background: #c91c1c;
+  color: #fff;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.live-pinned-offer.sold-out {
+  border-color: #d0d5dd;
+  background: #f9fafb;
+}
+
+.live-pinned-offer > button:disabled {
+  background: #98a2b3;
+  cursor: not-allowed;
+}
+
 .live-session-summary h1 {
   margin: 5px 0 8px;
   font-size: 23px;
@@ -587,6 +669,13 @@
   }
   .live-vouchers > div {
     grid-template-columns: 1fr;
+  }
+  .live-pinned-offer {
+    grid-template-columns: 72px minmax(0, 1fr);
+  }
+  .live-pinned-offer > a,
+  .live-pinned-offer > button {
+    grid-column: 1 / -1;
   }
   .stream-live-header {
     top: 5px;

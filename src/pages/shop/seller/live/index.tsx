@@ -1,14 +1,23 @@
 import {
   CalendarClock,
   ExternalLink,
+  ImagePlus,
   Radio,
   RefreshCw,
   Square,
+  Trash2,
   Video,
   Activity,
   XCircle,
 } from "lucide-react";
-import { lazy, Suspense, useCallback, useEffect, useState } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import LiveOperationsPanel from "../../../../components/live/liveOperationsPanel";
@@ -21,6 +30,10 @@ import {
   type LiveSessionStatus,
 } from "../../../../services/live.api";
 import { getOrCreateLiveRtcClientId } from "../../../../services/live-rtc";
+import {
+  createLiveCoverPreview,
+  validateLiveCoverFile,
+} from "../../../../services/live-form";
 import { fetchShopOffers, type ShopOffer } from "../../../../services/shop.api";
 import { fetchShopVouchers } from "../../../../services/voucher.api";
 import "../../../../css/pages/sellerLive.css";
@@ -63,10 +76,15 @@ export default function SellerLivePage() {
   const [studioSession, setStudioSession] = useState<LiveSession | null>(null);
   const [operationsSession, setOperationsSession] =
     useState<LiveSession | null>(null);
+  const [coverPreviewUrl, setCoverPreviewUrl] = useState("");
+  const coverPreviewRef = useRef<ReturnType<
+    typeof createLiveCoverPreview
+  > | null>(null);
+  const submitAbortRef = useRef<AbortController | null>(null);
   const [form, setForm] = useState({
     title: "",
     description: "",
-    coverUrl: "",
+    coverImage: null as File | null,
     startAt: initialStartAt(),
     offerIds: [] as string[],
     voucherIds: [] as string[],
@@ -108,9 +126,33 @@ export default function SellerLivePage() {
     return () => window.clearTimeout(loadId);
   }, [load]);
 
+  useEffect(
+    () => () => {
+      submitAbortRef.current?.abort();
+      coverPreviewRef.current?.revoke();
+    },
+    [],
+  );
+
+  const clearCover = () => {
+    coverPreviewRef.current?.revoke();
+    coverPreviewRef.current = null;
+    setCoverPreviewUrl("");
+    setForm((current) => ({ ...current, coverImage: null }));
+  };
+
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!form.title.trim() || !form.startAt) return;
+    if (!form.title.trim() || !form.startAt || submitting) return;
+    if (form.coverImage) {
+      const validationError = validateLiveCoverFile(form.coverImage);
+      if (validationError) {
+        toast.error(validationError);
+        return;
+      }
+    }
+    const abortController = new AbortController();
+    submitAbortRef.current = abortController;
     setSubmitting(true);
     try {
       await createLiveSession({
@@ -118,28 +160,55 @@ export default function SellerLivePage() {
         shopId,
         title: form.title.trim(),
         description: form.description.trim() || undefined,
-        coverUrl: form.coverUrl.trim() || undefined,
+        coverImage: form.coverImage ?? undefined,
         startAt: new Date(form.startAt).toISOString(),
         offerIds: form.offerIds,
         voucherIds: form.voucherIds,
-      });
+      }, abortController.signal);
       toast.success("Đã tạo lịch livestream");
+      coverPreviewRef.current?.revoke();
+      coverPreviewRef.current = null;
+      setCoverPreviewUrl("");
       setForm({
         title: "",
         description: "",
-        coverUrl: "",
+        coverImage: null,
         startAt: initialStartAt(),
         offerIds: [],
         voucherIds: [],
       });
       await load();
     } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        toast.info("Đã dừng chờ tạo phiên. Đang kiểm tra lại danh sách...");
+        await load();
+        return;
+      }
       toast.error(
         error instanceof Error ? error.message : "Không thể tạo livestream",
       );
     } finally {
+      if (submitAbortRef.current === abortController) {
+        submitAbortRef.current = null;
+      }
       setSubmitting(false);
     }
+  };
+
+  const selectCover = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] ?? null;
+    event.target.value = "";
+    if (!file) return;
+    const validationError = validateLiveCoverFile(file);
+    if (validationError) {
+      toast.error(validationError);
+      return;
+    }
+    coverPreviewRef.current?.revoke();
+    const preview = createLiveCoverPreview(file);
+    coverPreviewRef.current = preview;
+    setCoverPreviewUrl(preview.url);
+    setForm((current) => ({ ...current, coverImage: file }));
   };
 
   const changeStatus = async (
@@ -175,6 +244,19 @@ export default function SellerLivePage() {
         ? current.voucherIds.filter((id) => id !== voucherId)
         : [...current.voucherIds, voucherId],
     }));
+
+  const handleOperationsSessionChanged = useCallback(
+    async (updated: LiveSession) => {
+      setOperationsSession(updated);
+      setSessions((current) =>
+        current.map((session) =>
+          session.id === updated.id ? updated : session,
+        ),
+      );
+      await load();
+    },
+    [load],
+  );
 
   return (
     <main className="seller-live-page">
@@ -239,14 +321,29 @@ export default function SellerLivePage() {
             <label>
               Ảnh bìa
               <input
-                type="url"
-                value={form.coverUrl}
-                onChange={(event) =>
-                  setForm({ ...form, coverUrl: event.target.value })
-                }
-                placeholder="https://..."
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={selectCover}
               />
             </label>
+          </div>
+          <div className="seller-live-cover-picker">
+            {coverPreviewUrl ? (
+              <div className="seller-live-cover-preview">
+                <img src={coverPreviewUrl} alt="Xem trước ảnh bìa livestream" />
+                <button
+                  type="button"
+                  onClick={clearCover}
+                >
+                  <Trash2 size={15} /> Xóa ảnh
+                </button>
+              </div>
+            ) : (
+              <p>
+                <ImagePlus size={18} /> Ảnh bìa tùy chọn, khuyến nghị tỷ lệ
+                16:9. JPG, PNG hoặc WebP, tối đa 5 MB.
+              </p>
+            )}
           </div>
           <fieldset>
             <legend>Sản phẩm ghim ({form.offerIds.length})</legend>
@@ -296,8 +393,19 @@ export default function SellerLivePage() {
           </fieldset>
           <button className="seller-live-primary" disabled={submitting}>
             <CalendarClock size={17} />
-            {submitting ? "Đang tạo..." : "Tạo lịch livestream"}
+            {submitting
+              ? "Đang tải ảnh và tạo phiên..."
+              : "Tạo lịch livestream"}
           </button>
+          {submitting && (
+            <button
+              className="seller-live-cancel-submit"
+              type="button"
+              onClick={() => submitAbortRef.current?.abort()}
+            >
+              Dừng chờ
+            </button>
+          )}
         </form>
 
         <section className="seller-live-sessions" aria-busy={loading}>
@@ -394,7 +502,9 @@ export default function SellerLivePage() {
       {operationsSession && (
         <LiveOperationsPanel
           session={operationsSession}
+          offers={offers}
           onClose={() => setOperationsSession(null)}
+          onSessionChanged={handleOperationsSessionChanged}
         />
       )}
     </main>
