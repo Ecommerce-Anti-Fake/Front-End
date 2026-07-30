@@ -1,0 +1,139 @@
+name: Deploy frontend to VPS
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: antifake-frontend-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy production
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          command_timeout: 20m
+          script_stop: true
+          script: |
+            set -Eeuo pipefail
+
+            APP_DIR="/var/www/antifake/frontend"
+            DIST_DIR="$APP_DIR/dist"
+            BACKUP_DIR="$APP_DIR/dist.previous"
+            HEALTH_URL="https://antifake.io.vn"
+
+            cd "$APP_DIR"
+
+            echo "========================================"
+            echo "1. Kiểm tra repository"
+            echo "========================================"
+
+            if ! git diff --quiet || ! git diff --cached --quiet; then
+              echo "ERROR: Repository frontend trên VPS có thay đổi chưa commit."
+              git status --short
+              exit 1
+            fi
+
+            PREVIOUS_COMMIT="$(git rev-parse HEAD)"
+            echo "Commit hiện tại: $PREVIOUS_COMMIT"
+
+            rollback() {
+              EXIT_CODE=$?
+              trap - ERR
+
+              echo "========================================"
+              echo "Deploy thất bại, bắt đầu rollback"
+              echo "========================================"
+
+              cd "$APP_DIR"
+
+              git reset --hard "$PREVIOUS_COMMIT"
+
+              if [ -d "$BACKUP_DIR" ]; then
+                rm -rf "$DIST_DIR"
+                mv "$BACKUP_DIR" "$DIST_DIR"
+              fi
+
+              nginx -t
+              systemctl reload nginx
+
+              echo "Rollback frontend hoàn tất."
+              exit "$EXIT_CODE"
+            }
+
+            trap rollback ERR
+
+            echo "========================================"
+            echo "2. Lấy source code mới"
+            echo "========================================"
+
+            git fetch origin main
+            git checkout main
+            git pull --ff-only origin main
+
+            echo "Commit mới: $(git rev-parse HEAD)"
+
+            echo "========================================"
+            echo "3. Cài dependencies"
+            echo "========================================"
+
+            npm ci
+
+            echo "========================================"
+            echo "4. Sao lưu bản build hiện tại"
+            echo "========================================"
+
+            rm -rf "$BACKUP_DIR"
+
+            if [ -d "$DIST_DIR" ]; then
+              cp -a "$DIST_DIR" "$BACKUP_DIR"
+            fi
+
+            echo "========================================"
+            echo "5. Build frontend"
+            echo "========================================"
+
+            npm run build
+
+            echo "========================================"
+            echo "6. Kiểm tra Nginx"
+            echo "========================================"
+
+            nginx -t
+            systemctl reload nginx
+
+            echo "========================================"
+            echo "7. Health check"
+            echo "========================================"
+
+            sleep 3
+
+            curl \
+              --fail \
+              --silent \
+              --show-error \
+              --retry 10 \
+              --retry-delay 3 \
+              --retry-all-errors \
+              "$HEALTH_URL" \
+              > /dev/null
+
+            rm -rf "$BACKUP_DIR"
+            trap - ERR
+
+            echo "========================================"
+            echo "Frontend deployment completed successfully."
+            echo "Commit: $(git rev-parse HEAD)"
+            echo "========================================"
