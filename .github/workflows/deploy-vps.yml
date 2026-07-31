@@ -1,4 +1,4 @@
-name: Deploy backend to VPS
+name: Deploy frontend to VPS
 
 on:
   push:
@@ -7,14 +7,14 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: antifake-backend-production
+  group: antifake-frontend-production
   cancel-in-progress: false
 
 jobs:
   deploy:
     name: Deploy production
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 20
 
     steps:
       - name: Record deploy start time
@@ -29,13 +29,14 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
-          command_timeout: 30m
+          command_timeout: 20m
           script: |
             set -Eeuo pipefail
 
-            APP_DIR="/var/www/antifake/backend"
-            APP_NAME="antifake-backend"
-            HEALTH_URL="https://api.antifake.io.vn/api/health"
+            APP_DIR="/var/www/antifake/frontend"
+            DIST_DIR="$APP_DIR/dist"
+            BACKUP_DIR="$APP_DIR/dist.previous"
+            HEALTH_URL="https://antifake.io.vn"
 
             cd "$APP_DIR"
 
@@ -44,18 +45,18 @@ jobs:
             echo "========================================"
 
             if ! git diff --quiet || ! git diff --cached --quiet; then
-              echo "ERROR: Repository backend trên VPS có thay đổi chưa commit."
+              echo "ERROR: Repository frontend trên VPS có thay đổi chưa commit."
               git status --short
               exit 1
             fi
 
             PREVIOUS_COMMIT="$(git rev-parse HEAD)"
-            echo "Phiên bản hiện tại: $PREVIOUS_COMMIT"
+            echo "Commit hiện tại: $PREVIOUS_COMMIT"
 
             rollback() {
               EXIT_CODE=$?
 
-              # Ngăn rollback bị gọi lặp lại nếu chính rollback gặp lỗi.
+              # Ngăn rollback bị gọi lại nếu chính quá trình rollback gặp lỗi.
               trap - ERR
               set +e
 
@@ -65,22 +66,29 @@ jobs:
 
               cd "$APP_DIR"
 
-              echo "Khôi phục source code về: $PREVIOUS_COMMIT"
+              echo "Khôi phục source code về commit: $PREVIOUS_COMMIT"
               git reset --hard "$PREVIOUS_COMMIT"
 
-              echo "Cài lại dependencies của phiên bản trước."
-              npm ci
+              if [ -d "$BACKUP_DIR" ]; then
+                echo "Khôi phục thư mục dist trước đó."
 
-              echo "Build lại phiên bản trước."
-              npm run build
+                rm -rf "$DIST_DIR"
+                mv "$BACKUP_DIR" "$DIST_DIR"
+              else
+                echo "WARNING: Không tìm thấy bản sao lưu dist.previous."
+              fi
 
-              echo "Khởi động lại ứng dụng."
-              pm2 restart "$APP_NAME" --update-env
-              pm2 save
+              echo "Kiểm tra cấu hình Nginx."
+
+              if nginx -t; then
+                echo "Reload Nginx."
+                systemctl reload nginx
+              else
+                echo "ERROR: Cấu hình Nginx không hợp lệ khi rollback."
+              fi
 
               echo "========================================"
-              echo "Rollback source code hoàn tất."
-              echo "Lưu ý: Prisma migration không được tự động rollback."
+              echo "Rollback frontend hoàn tất."
               echo "========================================"
 
               exit "$EXIT_CODE"
@@ -97,7 +105,7 @@ jobs:
             git pull --ff-only origin main
 
             NEW_COMMIT="$(git rev-parse HEAD)"
-            echo "Phiên bản mới: $NEW_COMMIT"
+            echo "Commit mới: $NEW_COMMIT"
 
             echo "========================================"
             echo "3. Cài dependencies"
@@ -106,30 +114,46 @@ jobs:
             npm ci
 
             echo "========================================"
-            echo "4. Build ứng dụng"
+            echo "4. Sao lưu bản build hiện tại"
+            echo "========================================"
+
+            rm -rf "$BACKUP_DIR"
+
+            if [ -d "$DIST_DIR" ]; then
+              cp -a "$DIST_DIR" "$BACKUP_DIR"
+              echo "Đã sao lưu dist vào dist.previous."
+            else
+              echo "Chưa có thư mục dist cũ để sao lưu."
+            fi
+
+            echo "========================================"
+            echo "5. Build frontend"
             echo "========================================"
 
             npm run build
 
+            if [ ! -d "$DIST_DIR" ]; then
+              echo "ERROR: Build hoàn tất nhưng không tìm thấy thư mục dist."
+              exit 1
+            fi
+
+            if [ ! -f "$DIST_DIR/index.html" ]; then
+              echo "ERROR: Không tìm thấy dist/index.html."
+              exit 1
+            fi
+
             echo "========================================"
-            echo "5. Chạy Prisma migration"
+            echo "6. Kiểm tra và reload Nginx"
             echo "========================================"
 
-            npm run prisma:merge
-            npx prisma migrate deploy
-
-            echo "========================================"
-            echo "6. Restart ứng dụng"
-            echo "========================================"
-
-            pm2 restart "$APP_NAME" --update-env
-            pm2 save
+            nginx -t
+            systemctl reload nginx
 
             echo "========================================"
             echo "7. Health check"
             echo "========================================"
 
-            sleep 8
+            sleep 3
 
             curl \
               --fail \
@@ -139,19 +163,24 @@ jobs:
               --retry 10 \
               --retry-delay 3 \
               --retry-all-errors \
+              --header "Cache-Control: no-cache" \
               "$HEALTH_URL" \
               > /dev/null
 
             echo "Health check thành công."
 
+            # Xóa bản backup sau khi deploy và health check thành công.
+            rm -rf "$BACKUP_DIR"
+
+            # Tắt rollback vì quá trình deploy đã hoàn tất.
             trap - ERR
 
             echo "========================================"
-            echo "Backend deployment completed successfully."
+            echo "Frontend deployment completed successfully."
             echo "Commit: $NEW_COMMIT"
             echo "========================================"
 
-      - name: Telegram - backend deploy notification
+      - name: Telegram - frontend deploy notification
         if: ${{ always() }}
         continue-on-error: true
         env:
@@ -176,7 +205,6 @@ jobs:
 
           echo "Job status: ${JOB_STATUS}"
 
-          # Tính tổng thời gian deploy.
           END_TIME="$(date +%s)"
 
           if [ -n "${DEPLOY_START:-}" ]; then
@@ -185,7 +213,6 @@ jobs:
             TOTAL_SECONDS=0
           fi
 
-          # Tránh giá trị âm trong trường hợp thời gian không hợp lệ.
           if [ "$TOTAL_SECONDS" -lt 0 ]; then
             TOTAL_SECONDS=0
           fi
@@ -202,46 +229,43 @@ jobs:
             DEPLOY_TIME="${SECONDS}s"
           fi
 
-          # workflow_dispatch có thể không có head_commit.message.
+          # Khi chạy workflow_dispatch có thể không có head_commit.message.
           if [ -z "${COMMIT_MESSAGE:-}" ]; then
             COMMIT_MESSAGE="Chạy workflow thủ công"
           fi
 
-          # Nội dung thông báo thay đổi theo trạng thái của job.
           case "$JOB_STATUS" in
             success)
-              TITLE="🚀 AntiFake Backend Deploy Thành Công"
+              TITLE="🎨 AntiFake Frontend Deploy Thành Công"
               TIME_LABEL="Thời gian deploy"
 
               RESULT_MESSAGE="$(printf '%s\n' \
                 '🟢 Deploy: SUCCESS' \
                 '🟢 Health Check: PASSED' \
-                '🔗 API: https://api.antifake.io.vn')"
+                '🔗 Website: https://antifake.io.vn')"
               ;;
 
             failure)
-              TITLE="❌ AntiFake Backend Deploy Thất Bại"
+              TITLE="❌ AntiFake Frontend Deploy Thất Bại"
               TIME_LABEL="Thời gian chạy"
 
               RESULT_MESSAGE="$(printf '%s\n' \
                 '🔴 Deploy: FAILED' \
-                '🟡 Rollback: Kiểm tra log để xác nhận kết quả rollback' \
-                '⚠️ Prisma migration không tự động rollback')"
+                '🟡 Rollback: Kiểm tra log để xác nhận kết quả rollback')"
               ;;
 
             cancelled)
-              TITLE="⚠️ AntiFake Backend Deploy Đã Bị Hủy"
+              TITLE="⚠️ AntiFake Frontend Deploy Đã Bị Hủy"
               TIME_LABEL="Thời gian chạy"
 
               RESULT_MESSAGE="$(printf '%s\n' \
                 '🟠 Deploy: CANCELLED' \
-                'ℹ️ Kiểm tra log để xác định trạng thái ứng dụng')"
+                'ℹ️ Kiểm tra log để xác định trạng thái website')"
               ;;
 
             *)
-              TITLE="⚠️ AntiFake Backend Deploy Có Trạng Thái Không Xác Định"
+              TITLE="⚠️ AntiFake Frontend Deploy Có Trạng Thái Không Xác Định"
               TIME_LABEL="Thời gian chạy"
-
               RESULT_MESSAGE="🟠 Trạng thái: ${JOB_STATUS}"
               ;;
           esac
