@@ -51,7 +51,10 @@ jobs:
 
             rollback() {
               EXIT_CODE=$?
+
+              # Ngăn hàm rollback tự kích hoạt lại khi chính rollback gặp lỗi.
               trap - ERR
+              set +e
 
               echo "========================================"
               echo "Deploy thất bại, bắt đầu rollback"
@@ -59,13 +62,18 @@ jobs:
 
               cd "$APP_DIR"
 
+              echo "Khôi phục source code về: $PREVIOUS_COMMIT"
               git reset --hard "$PREVIOUS_COMMIT"
 
               if [ -d "$BACKUP_DIR" ]; then
+                echo "Khôi phục thư mục dist trước đó."
                 rm -rf "$DIST_DIR"
                 mv "$BACKUP_DIR" "$DIST_DIR"
+              else
+                echo "WARNING: Không tìm thấy bản sao lưu dist.previous."
               fi
 
+              echo "Kiểm tra và reload Nginx."
               nginx -t
               systemctl reload nginx
 
@@ -83,7 +91,8 @@ jobs:
             git checkout main
             git pull --ff-only origin main
 
-            echo "Commit mới: $(git rev-parse HEAD)"
+            NEW_COMMIT="$(git rev-parse HEAD)"
+            echo "Commit mới: $NEW_COMMIT"
 
             echo "========================================"
             echo "3. Cài dependencies"
@@ -99,6 +108,9 @@ jobs:
 
             if [ -d "$DIST_DIR" ]; then
               cp -a "$DIST_DIR" "$BACKUP_DIR"
+              echo "Đã sao lưu dist vào dist.previous."
+            else
+              echo "Chưa có thư mục dist cũ để sao lưu."
             fi
 
             echo "========================================"
@@ -106,6 +118,16 @@ jobs:
             echo "========================================"
 
             npm run build
+
+            if [ ! -d "$DIST_DIR" ]; then
+              echo "ERROR: Build hoàn tất nhưng không tìm thấy thư mục dist."
+              exit 1
+            fi
+
+            if [ ! -f "$DIST_DIR/index.html" ]; then
+              echo "ERROR: Không tìm thấy dist/index.html."
+              exit 1
+            fi
 
             echo "========================================"
             echo "6. Kiểm tra Nginx"
@@ -124,16 +146,150 @@ jobs:
               --fail \
               --silent \
               --show-error \
+              --location \
               --retry 10 \
               --retry-delay 3 \
               --retry-all-errors \
+              --header "Cache-Control: no-cache" \
               "$HEALTH_URL" \
               > /dev/null
+
+            echo "Health check thành công."
 
             rm -rf "$BACKUP_DIR"
             trap - ERR
 
             echo "========================================"
             echo "Frontend deployment completed successfully."
-            echo "Commit: $(git rev-parse HEAD)"
+            echo "Commit: $NEW_COMMIT"
             echo "========================================"
+
+      - name: Telegram - frontend deploy success
+        if: success()
+        continue-on-error: true
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          REPOSITORY: ${{ github.repository }}
+          BRANCH: ${{ github.ref_name }}
+          ACTOR: ${{ github.actor }}
+          COMMIT_SHA: ${{ github.sha }}
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+          WORKFLOW: ${{ github.workflow }}
+          RUN_NUMBER: ${{ github.run_number }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_STARTED_AT: ${{ github.run_started_at }}
+        run: |
+          SHORT_SHA="${COMMIT_SHA:0:7}"
+          RUN_URL="https://github.com/${REPOSITORY}/actions/runs/${RUN_ID}"
+
+          START_TIME=$(date -d "$RUN_STARTED_AT" +%s)
+          END_TIME=$(date +%s)
+          TOTAL_SECONDS=$((END_TIME - START_TIME))
+
+          MINUTES=$((TOTAL_SECONDS / 60))
+          SECONDS=$((TOTAL_SECONDS % 60))
+          DEPLOY_TIME="${MINUTES}m ${SECONDS}s"
+
+          if [ -z "$COMMIT_MESSAGE" ]; then
+            COMMIT_MESSAGE="Chạy workflow thủ công hoặc không có nội dung commit"
+          fi
+
+          MESSAGE=$(cat <<EOF
+          🎨 AntiFake Frontend Deploy Thành Công
+
+          🌐 Môi trường: Production
+
+          📦 Repository: ${REPOSITORY}
+          🌿 Branch: ${BRANCH}
+
+          🔖 Commit:
+          ${SHORT_SHA} - ${COMMIT_MESSAGE}
+
+          👤 Người thực hiện: ${ACTOR}
+          🚀 Workflow: ${WORKFLOW}
+          🔢 Run: #${RUN_NUMBER}
+          ⏱️ Thời gian deploy: ${DEPLOY_TIME}
+
+          🟢 Health Check: PASSED
+          🔗 Website: https://antifake.io.vn
+
+          Chi tiết:
+          ${RUN_URL}
+          EOF
+          )
+
+          curl \
+            --fail \
+            --silent \
+            --show-error \
+            --request POST \
+            "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
+            --data-urlencode "text=${MESSAGE}" \
+            > /dev/null
+
+      - name: Telegram - frontend deploy failed
+        if: failure()
+        continue-on-error: true
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          REPOSITORY: ${{ github.repository }}
+          BRANCH: ${{ github.ref_name }}
+          ACTOR: ${{ github.actor }}
+          COMMIT_SHA: ${{ github.sha }}
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+          WORKFLOW: ${{ github.workflow }}
+          RUN_NUMBER: ${{ github.run_number }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_STARTED_AT: ${{ github.run_started_at }}
+        run: |
+          SHORT_SHA="${COMMIT_SHA:0:7}"
+          RUN_URL="https://github.com/${REPOSITORY}/actions/runs/${RUN_ID}"
+
+          START_TIME=$(date -d "$RUN_STARTED_AT" +%s)
+          END_TIME=$(date +%s)
+          TOTAL_SECONDS=$((END_TIME - START_TIME))
+
+          MINUTES=$((TOTAL_SECONDS / 60))
+          SECONDS=$((TOTAL_SECONDS % 60))
+          DEPLOY_TIME="${MINUTES}m ${SECONDS}s"
+
+          if [ -z "$COMMIT_MESSAGE" ]; then
+            COMMIT_MESSAGE="Chạy workflow thủ công hoặc không có nội dung commit"
+          fi
+
+          MESSAGE=$(cat <<EOF
+          ❌ AntiFake Frontend Deploy Thất Bại
+
+          🌐 Môi trường: Production
+
+          📦 Repository: ${REPOSITORY}
+          🌿 Branch: ${BRANCH}
+
+          🔖 Commit:
+          ${SHORT_SHA} - ${COMMIT_MESSAGE}
+
+          👤 Người thực hiện: ${ACTOR}
+          🚀 Workflow: ${WORKFLOW}
+          🔢 Run: #${RUN_NUMBER}
+          ⏱️ Thời gian chạy: ${DEPLOY_TIME}
+
+          🔴 Deploy: FAILED
+          🟡 Rollback: Đã kích hoạt quy trình rollback
+
+          Kiểm tra log:
+          ${RUN_URL}
+          EOF
+          )
+
+          curl \
+            --fail \
+            --silent \
+            --show-error \
+            --request POST \
+            "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
+            --data-urlencode "text=${MESSAGE}" \
+            > /dev/null
