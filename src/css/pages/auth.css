@@ -521,6 +521,15 @@
   color: #9f1239;
 }
 
+.verification-success {
+  margin: 0 0 20px;
+  padding: 12px;
+  border-radius: 10px;
+  background: #ecfdf5;
+  color: #047857;
+  text-align: center;
+}
+
 /* ===================== */
 /* MOBILE */
 /* ===================== */

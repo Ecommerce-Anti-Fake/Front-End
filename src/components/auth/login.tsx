@@ -1,33 +1,33 @@
 import { Eye, EyeOff, Lock, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import {
+  GoogleAuthProvider,
+  signInWithEmailAndPassword,
+  signInWithPopup,
+} from "firebase/auth";
 import { toast } from "sonner";
 import {
   AuthApiError,
-  confirmGoogleLink,
   firebaseLogin,
-  googleRegister,
   login,
-  resumeRegistration,
   type RegistrationDetails,
 } from "../../services/auth.api";
+import { clearTemporaryFirebaseSession } from "../../services/registration-verification.firebase";
 import { getFirebaseAuth } from "../../services/firebase";
 import { saveToken, saveUser } from "../../ultil/auth";
 import { useGlobalLoadingStore } from "../../store/globalLoadingStore";
 
 type Props = {
   onSwitch: () => void;
-  pendingGoogleLink: boolean;
-  onGoogleLinkHandled: () => void;
   onVerificationRequired: (registration: RegistrationDetails) => void;
+  verifiedNotice?: boolean;
 };
 
 export default function LoginPage({
   onSwitch,
-  pendingGoogleLink,
-  onGoogleLinkHandled,
   onVerificationRequired,
+  verifiedNotice = false,
 }: Props) {
   const navigate = useNavigate();
   const showLoading = useGlobalLoadingStore((state) => state.showLoading);
@@ -51,35 +51,22 @@ export default function LoginPage({
     setLoading(true);
     showLoading("Đang đăng nhập…");
     try {
+      if (username.includes("@")) {
+        const handledByFirebase = await tryFirebaseEmailLogin(
+          username.trim(),
+          password,
+          onVerificationRequired,
+        );
+        if (handledByFirebase) return;
+      }
+
       const data = await login({ username: username.trim(), password });
       saveToken(data.accessToken);
       saveUser(data.user);
-
-      if (pendingGoogleLink) {
-        const linked = await confirmGoogleLink(data.accessToken);
-        onGoogleLinkHandled();
-        if (!linked.success && linked.verificationRequired) {
-          toast.info("Hãy xác minh email trước khi hoàn tất liên kết Google.");
-          onVerificationRequired(linked.registration);
-          return;
-        }
-        toast.success("Đăng nhập và liên kết Google thành công");
-      } else {
-        toast.success("Đăng nhập thành công");
-      }
+      toast.success("Đăng nhập thành công");
       navigateByRole(data.user.role);
     } catch (caught) {
-      if (caught instanceof AuthApiError && caught.code === "ACCOUNT_VERIFICATION_REQUIRED") {
-        try {
-          const pending = await resumeRegistration({ username: username.trim(), password });
-          onVerificationRequired(pending.registration);
-          toast.info("Hãy hoàn tất xác minh tài khoản.");
-        } catch {
-          toast.error("Phiên xác minh đã hết hạn. Vui lòng đăng ký lại.");
-        }
-      } else {
-        toast.error(toMessage(caught));
-      }
+      toast.error(toMessage(caught));
     } finally {
       setLoading(false);
       hideLoading();
@@ -94,59 +81,69 @@ export default function LoginPage({
       provider.setCustomParameters({ prompt: "select_account" });
       const credential = await signInWithPopup(getFirebaseAuth(), provider);
       const idToken = await credential.user.getIdToken(true);
-
-      try {
-        const data = await firebaseLogin({ idToken });
-        saveToken(data.accessToken);
-        saveUser(data.user);
-        toast.success("Đăng nhập Google thành công");
-        navigateByRole(data.user.role);
-      } catch (caught) {
-        if (caught instanceof AuthApiError && caught.code === "ACCOUNT_VERIFICATION_REQUIRED") {
-          const pending = await googleRegister(idToken);
-          if (pending.kind === "PENDING_VERIFICATION") {
-            onVerificationRequired(pending.registration);
-            toast.info("Tài khoản Google cần xác minh email trước.");
-            return;
-          }
-        }
-        if (caught instanceof AuthApiError && caught.code === "GOOGLE_ACCOUNT_NOT_LINKED") {
-          toast.info("Google này chưa được đăng ký. Hãy chọn Đăng ký với Google.");
-          onSwitch();
-          return;
-        }
-        throw caught;
-      }
+      const data = await firebaseLogin({ idToken });
+      saveToken(data.accessToken);
+      saveUser(data.user);
+      await clearTemporaryFirebaseSession();
+      toast.success("Đăng nhập Google thành công");
+      navigateByRole(data.user.role);
     } catch (caught) {
-      toast.error(toMessage(caught));
+      if (caught instanceof AuthApiError && caught.code === "GOOGLE_ACCOUNT_NOT_LINKED") {
+        toast.info("Google này chưa được đăng ký. Hãy chọn Đăng ký với Google.");
+        onSwitch();
+      } else {
+        toast.error(toMessage(caught));
+      }
     } finally {
       setLoading(false);
       hideLoading();
     }
   };
 
-  const navigateByRole = (role: string) => navigate(role.toLowerCase() === "admin" ? "/admin" : "/");
+  const navigateByRole = (role: string) =>
+    navigate(role.toLowerCase() === "admin" ? "/admin" : "/");
 
   return (
     <div className="login-page">
       <div className="login-card">
-        <div className="login-logo"><img src="/brand/logo-antifake.png" alt="AntiFake" /></div>
+        <div className="login-logo">
+          <img src="/brand/logo-antifake.png" alt="AntiFake" />
+        </div>
         <h1>Chào mừng trở lại</h1>
-        <p className="login-subtitle">
-          {pendingGoogleLink ? "Đăng nhập tài khoản hiện có để liên kết Google" : "Truy cập tài khoản AntiFake của bạn"}
-        </p>
+        <p className="login-subtitle">Truy cập tài khoản AntiFake của bạn</p>
+
+        {verifiedNotice && (
+          <p className="verification-success" role="status" aria-live="polite">
+            Xác minh tài khoản thành công. Bạn có thể đăng nhập.
+          </p>
+        )}
 
         <form className="login-form" onSubmit={handleLogin}>
           <label htmlFor="login-username">Email hoặc số điện thoại</label>
           <div className="login-input">
             <User size={18} />
-            <input id="login-username" type="text" autoComplete="username" value={username} onChange={(event) => setUsername(event.target.value)} />
+            <input
+              id="login-username"
+              type="text"
+              autoComplete="username"
+              value={username}
+              onChange={(event) => setUsername(event.target.value)}
+            />
           </div>
 
-          <div className="login-password-header"><label htmlFor="login-password">Mật khẩu</label><button type="button">Quên mật khẩu?</button></div>
+          <div className="login-password-header">
+            <label htmlFor="login-password">Mật khẩu</label>
+            <button type="button">Quên mật khẩu?</button>
+          </div>
           <div className="login-input">
             <Lock size={18} />
-            <input id="login-password" type={showPassword ? "text" : "password"} autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} />
+            <input
+              id="login-password"
+              type={showPassword ? "text" : "password"}
+              autoComplete="current-password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+            />
             <button
               type="button"
               className="password-toggle"
@@ -156,23 +153,62 @@ export default function LoginPage({
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>
-          <button type="submit" className="login-btn" disabled={loading}>Đăng nhập</button>
+          <button type="submit" className="login-btn" disabled={loading}>
+            Đăng nhập
+          </button>
         </form>
 
-        {!pendingGoogleLink && (
-          <>
-            <div className="login-divider"><span>Hoặc tiếp tục với</span></div>
-            <div className="social-buttons">
-              <button type="button" onClick={() => void handleGoogleLogin()} disabled={loading}>
-                <GoogleMark /> Google
-              </button>
-            </div>
-            <div className="login-register">Chưa có tài khoản?<button type="button" onClick={onSwitch}>Đăng ký ngay</button></div>
-          </>
-        )}
+        <div className="login-divider"><span>Hoặc tiếp tục với</span></div>
+        <div className="social-buttons">
+          <button type="button" onClick={() => void handleGoogleLogin()} disabled={loading}>
+            <GoogleMark /> Google
+          </button>
+        </div>
+        <div className="login-register">
+          Chưa có tài khoản?
+          <button type="button" onClick={onSwitch}>Đăng ký ngay</button>
+        </div>
       </div>
     </div>
   );
+}
+
+async function tryFirebaseEmailLogin(
+  email: string,
+  password: string,
+  onVerificationRequired: (registration: RegistrationDetails) => void,
+) {
+  try {
+    const credential = await signInWithEmailAndPassword(
+      getFirebaseAuth(),
+      email,
+      password,
+    );
+    await credential.user.reload();
+    const idToken = await credential.user.getIdToken(true);
+    const data = await firebaseLogin({ idToken });
+    saveToken(data.accessToken);
+    saveUser(data.user);
+    await clearTemporaryFirebaseSession();
+    toast.success("Đăng nhập thành công");
+    window.location.assign(data.user.role.toLowerCase() === "admin" ? "/admin" : "/");
+    return true;
+  } catch (caught) {
+    if (caught instanceof AuthApiError && caught.code === "ACCOUNT_VERIFICATION_REQUIRED") {
+      if (caught.registration) {
+        onVerificationRequired(caught.registration);
+        toast.info("Hãy chọn một phương thức để hoàn tất xác minh tài khoản.");
+      } else {
+        toast.info("Tài khoản chưa được xác minh. Vui lòng đăng ký lại.");
+      }
+      return true;
+    }
+    if (caught instanceof AuthApiError && caught.code === "REGISTRATION_EXPIRED") {
+      toast.info("Phiên xác minh đã hết hạn. Vui lòng đăng ký lại.");
+      return true;
+    }
+    return false;
+  }
 }
 
 function GoogleMark() {

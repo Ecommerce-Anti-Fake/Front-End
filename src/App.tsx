@@ -24,6 +24,7 @@ import ShopReviews from "./components/shop/shopReviews";
 import { Toaster } from "sonner";
 import ProtectedRoute from "./routes/protectedRoute";
 import AuthPage from "./pages/auth";
+import EmailActionPage from "./pages/auth/email-action";
 import LiveRoomPage from "./pages/live";
 import LiveDiscoveryPage from "./pages/live/list";
 import CheckoutPage from "./pages/checkout";
@@ -134,6 +135,8 @@ function App() {
             {/* USER */}
             <Route element={<MainLayout />}>
               <Route path="/auth" element={<AuthPage />} />
+              <Route path="/login" element={<AuthPage />} />
+              <Route path="/auth/email-action" element={<EmailActionPage />} />
               <Route path="/" element={<HomePage />} />
               <Route path="/community" element={<CommunityPage />} />
               <Route

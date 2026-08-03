@@ -4,10 +4,9 @@ import { connectSocket } from "./socket";
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export interface RegisterRequest {
-  email: string;
+  idToken: string;
   phone: string;
   displayName: string;
-  password: string;
 }
 
 export interface LoginRequest {
@@ -60,16 +59,19 @@ export interface VerificationChallenge {
 export class AuthApiError extends Error {
   readonly code: string;
   readonly status: number;
+  readonly registration?: RegistrationDetails;
 
   constructor(
     message: string,
     code: string,
     status: number,
+    registration?: RegistrationDetails,
   ) {
     super(message);
     this.name = "AuthApiError";
     this.code = code;
     this.status = status;
+    this.registration = registration;
   }
 }
 
@@ -99,14 +101,14 @@ export const register = (payload: RegisterRequest) =>
     body: JSON.stringify(payload),
   });
 
-export const googleRegister = (idToken: string) =>
-  requestJson<
-    | ({ kind: "PENDING_VERIFICATION" } & RegistrationResponse)
-    | { kind: "LINK_REQUIRED"; email: string; expiresAt: string }
-  >("/api/auth/google-register", {
+export const googleRegister = async (idToken: string) => {
+  const data = await requestJson<LoginResponse>("/api/auth/google-register", {
     method: "POST",
     body: JSON.stringify({ idToken }),
   });
+  connectSocket(data.accessToken);
+  return data;
+};
 
 export const getRegistrationSession = () =>
   requestJson<RegistrationResponse>("/api/auth/registration-verifications/session");
@@ -195,7 +197,12 @@ async function requestJson<T>(path: string, init: RequestInit = {}): Promise<T> 
     const message = Array.isArray(data.message)
       ? data.message.join(" ")
       : data.message || "Yêu cầu xác thực thất bại";
-    throw new AuthApiError(message, data.code || data.error || "AUTH_REQUEST_FAILED", response.status);
+    throw new AuthApiError(
+      message,
+      data.code || data.error || "AUTH_REQUEST_FAILED",
+      response.status,
+      data.registration,
+    );
   }
   return (data?.data ?? data) as T;
 }

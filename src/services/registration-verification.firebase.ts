@@ -1,49 +1,65 @@
 import {
+  PhoneAuthProvider,
   RecaptchaVerifier,
-  isSignInWithEmailLink,
-  sendSignInLinkToEmail,
-  signInWithEmailLink,
-  signInWithPhoneNumber,
+  applyActionCode,
+  linkWithCredential,
+  sendEmailVerification,
   signOut,
-  type ConfirmationResult,
+  type User,
 } from "firebase/auth";
 import { getFirebaseAuth } from "./firebase";
 
-export async function sendRegistrationEmailLink(
-  email: string,
-  challengeId: string,
-  state: string,
-) {
-  const auth = getFirebaseAuth();
-  const callbackUrl = new URL("/auth", window.location.origin);
-  callbackUrl.searchParams.set("verifyEmail", "1");
-  callbackUrl.searchParams.set("challengeId", challengeId);
-  callbackUrl.searchParams.set("state", state);
+export const EMAIL_VERIFICATION_CONTINUE_URL =
+  "https://antifake.io.vn/login?verified=true";
 
-  await sendSignInLinkToEmail(auth, email, {
-    url: callbackUrl.toString(),
-    handleCodeInApp: true,
+export async function sendRegistrationEmailVerification() {
+  const auth = getFirebaseAuth();
+  const currentUser = requireCurrentUser(auth.currentUser);
+  await sendEmailVerification(currentUser, {
+    url: EMAIL_VERIFICATION_CONTINUE_URL,
+    handleCodeInApp: false,
   });
-  await signOut(auth).catch(() => undefined);
-}
-
-export async function completeRegistrationEmailLink(email: string, href: string) {
-  const auth = getFirebaseAuth();
-  if (!isSignInWithEmailLink(auth, href)) {
-    throw new Error("Link xác minh email không hợp lệ hoặc đã hết hạn");
-  }
-  const credential = await signInWithEmailLink(auth, email, href);
-  return credential.user.getIdToken(true);
 }
 
 export async function sendRegistrationPhoneOtp(
   phone: string,
   containerId: string,
-): Promise<{ confirmation: ConfirmationResult; verifier: RecaptchaVerifier }> {
+): Promise<{ verificationId: string; verifier: RecaptchaVerifier }> {
   const auth = getFirebaseAuth();
+  const currentUser = requireCurrentUser(auth.currentUser);
   const verifier = new RecaptchaVerifier(auth, containerId, { size: "invisible" });
-  const confirmation = await signInWithPhoneNumber(auth, toFirebasePhone(phone), verifier);
-  return { confirmation, verifier };
+  const provider = new PhoneAuthProvider(auth);
+  const verificationId = await provider.verifyPhoneNumber(
+    { phoneNumber: toFirebasePhone(phone), session: currentUser },
+    verifier,
+  );
+  return { verificationId, verifier };
+}
+
+export async function linkRegistrationPhoneOtp(
+  verificationId: string,
+  verificationCode: string,
+) {
+  const auth = getFirebaseAuth();
+  const currentUser = requireCurrentUser(auth.currentUser);
+  const credential = PhoneAuthProvider.credential(
+    verificationId,
+    verificationCode,
+  );
+  try {
+    await linkWithCredential(currentUser, credential);
+  } catch (error) {
+    if (getFirebaseErrorCode(error) !== "auth/provider-already-linked") {
+      throw error;
+    }
+    // The previous link may have succeeded while the backend request failed.
+  }
+  await currentUser.reload();
+  return currentUser.getIdToken(true);
+}
+
+export async function applyEmailVerificationActionCode(oobCode: string) {
+  await applyActionCode(getFirebaseAuth(), oobCode);
 }
 
 export function toFirebasePhone(phone: string) {
@@ -55,4 +71,17 @@ export function toFirebasePhone(phone: string) {
 
 export async function clearTemporaryFirebaseSession() {
   await signOut(getFirebaseAuth()).catch(() => undefined);
+}
+
+function requireCurrentUser(currentUser: User | null) {
+  if (!currentUser) {
+    throw new Error("Phiên Firebase hiện tại không còn hợp lệ");
+  }
+  return currentUser;
+}
+
+function getFirebaseErrorCode(error: unknown) {
+  return typeof error === "object" && error !== null && "code" in error
+    ? String((error as { code: unknown }).code)
+    : "";
 }

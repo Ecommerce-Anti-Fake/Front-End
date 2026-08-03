@@ -1,23 +1,25 @@
-import { CheckCircle2, Clock3, Mail, MessageSquareText, ShieldCheck } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { ConfirmationResult, RecaptchaVerifier } from "firebase/auth";
+import {
+  Clock3,
+  Mail,
+  MessageSquareText,
+  ShieldCheck,
+} from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { RecaptchaVerifier } from "firebase/auth";
 import { toast } from "sonner";
 import {
-  confirmRegistrationChallenge,
-  createRegistrationChallenge,
-  getEmailVerificationContext,
-  resendRegistrationChallenge,
+  firebaseLogin,
   type RegistrationDetails,
-  type VerificationChallenge,
 } from "../../services/auth.api";
 import {
   clearTemporaryFirebaseSession,
-  completeRegistrationEmailLink,
-  sendRegistrationEmailLink,
+  linkRegistrationPhoneOtp,
+  sendRegistrationEmailVerification,
   sendRegistrationPhoneOtp,
 } from "../../services/registration-verification.firebase";
+import { saveToken, saveUser } from "../../ultil/auth";
 
-type VerificationStep = "CHOOSE" | "EMAIL_SENT" | "PHONE_OTP" | "EMAIL_CALLBACK";
+type VerificationStep = "CHOOSE" | "EMAIL_SENT" | "PHONE_OTP";
 
 type Props = {
   registration: RegistrationDetails | null;
@@ -27,6 +29,8 @@ type Props = {
   onBackToLogin: () => void;
 };
 
+const RESEND_COOLDOWN_SECONDS = 60;
+
 export default function RegistrationVerification({
   registration,
   initialChannel,
@@ -34,96 +38,77 @@ export default function RegistrationVerification({
   onVerified,
   onBackToLogin,
 }: Props) {
-  const callbackParams = useMemo(() => readEmailCallbackParams(), []);
   const [step, setStep] = useState<VerificationStep>(
-    callbackParams ? "EMAIL_CALLBACK" : initialChannel === "PHONE" ? "PHONE_OTP" : "CHOOSE",
+    initialChannel ? (initialChannel === "PHONE" ? "PHONE_OTP" : "EMAIL_SENT") : "CHOOSE",
   );
-  const [challenge, setChallenge] = useState<VerificationChallenge | null>(null);
-  const [confirmation, setConfirmation] = useState<ConfirmationResult | null>(null);
+  const [verificationId, setVerificationId] = useState<string | null>(null);
   const [otp, setOtp] = useState("");
   const [secondsLeft, setSecondsLeft] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const verifierRef = useRef<RecaptchaVerifier | null>(null);
-  const autoStartedRef = useRef(false);
 
   useEffect(() => () => verifierRef.current?.clear(), []);
 
   useEffect(() => {
-    if (!challenge || challenge.channel !== "PHONE") return;
-    const update = () => {
-      setSecondsLeft(Math.max(0, Math.ceil((new Date(challenge.expiresAt).getTime() - Date.now()) / 1000)));
-    };
-    update();
-    const timer = window.setInterval(update, 1_000);
+    if (secondsLeft <= 0) return;
+    const timer = window.setInterval(() => {
+      setSecondsLeft((value) => Math.max(0, value - 1));
+    }, 1_000);
     return () => window.clearInterval(timer);
-  }, [challenge]);
+  }, [secondsLeft]);
 
-  const sendPhoneOtp = useCallback(async (nextChallenge: VerificationChallenge) => {
-    if (!registration?.phone) throw new Error("Phiên đăng ký không có số điện thoại hợp lệ");
-    verifierRef.current?.clear();
-    const result = await sendRegistrationPhoneOtp(registration.phone, "registration-recaptcha");
-    verifierRef.current = result.verifier;
-    setConfirmation(result.confirmation);
-    setChallenge(nextChallenge);
-    setOtp("");
-    setStep("PHONE_OTP");
-    toast.success("Mã OTP đã được gửi");
-  }, [registration]);
-
-  const startChannel = useCallback(async (channel: "EMAIL" | "PHONE") => {
-    if (!registration) return;
+  const startEmailVerification = useCallback(async () => {
+    if (!registration?.email || secondsLeft > 0) return;
     setLoading(true);
     setError(null);
     try {
-      const result = await createRegistrationChallenge(channel);
-      setChallenge(result.challenge);
-      if (channel === "EMAIL") {
-        if (!registration.email || !result.challenge.state) {
-          throw new Error("Phiên đăng ký không có email hợp lệ");
-        }
-        await sendRegistrationEmailLink(
-          registration.email,
-          result.challenge.id,
-          result.challenge.state,
-        );
-        setStep("EMAIL_SENT");
-        toast.success("Đã gửi link xác minh tới email của bạn");
-      } else {
-        await sendPhoneOtp(result.challenge);
-      }
+      await sendRegistrationEmailVerification();
+      setStep("EMAIL_SENT");
+      setSecondsLeft(RESEND_COOLDOWN_SECONDS);
+      toast.success("Đã gửi email xác minh. Vui lòng kiểm tra hộp thư.");
     } catch (caught) {
       setError(toMessage(caught));
     } finally {
       setLoading(false);
     }
-  }, [registration, sendPhoneOtp]);
+  }, [registration, secondsLeft]);
 
-  const resendPhoneOtp = async () => {
-    if (!challenge || secondsLeft > 0) return;
+  const startPhoneVerification = useCallback(async () => {
+    if (!registration?.phone || secondsLeft > 0) return;
     setLoading(true);
     setError(null);
     try {
-      const result = await resendRegistrationChallenge(challenge.id);
-      await sendPhoneOtp(result.challenge);
+      verifierRef.current?.clear();
+      const result = await sendRegistrationPhoneOtp(
+        registration.phone,
+        "registration-recaptcha",
+      );
+      verifierRef.current = result.verifier;
+      setVerificationId(result.verificationId);
+      setOtp("");
+      setStep("PHONE_OTP");
+      setSecondsLeft(RESEND_COOLDOWN_SECONDS);
+      toast.success("Mã OTP đã được gửi tới số điện thoại của bạn.");
     } catch (caught) {
       setError(toMessage(caught));
     } finally {
       setLoading(false);
     }
-  };
+  }, [registration, secondsLeft]);
 
   const verifyPhoneOtp = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!challenge || !confirmation || !/^\d{6}$/.test(otp) || secondsLeft <= 0) return;
+    if (!verificationId || !/^\d{6}$/.test(otp)) return;
     setLoading(true);
     setError(null);
     try {
-      const firebaseCredential = await confirmation.confirm(otp);
-      const idToken = await firebaseCredential.user.getIdToken(true);
-      await confirmRegistrationChallenge(challenge.id, { idToken });
+      const idToken = await linkRegistrationPhoneOtp(verificationId, otp);
+      const session = await firebaseLogin({ idToken });
+      saveToken(session.accessToken);
+      saveUser(session.user);
       await clearTemporaryFirebaseSession();
-      toast.success("Xác minh số điện thoại thành công");
+      toast.success("Xác minh số điện thoại thành công.");
       onVerified(completionTarget);
     } catch (caught) {
       setError(toMessage(caught));
@@ -131,43 +116,6 @@ export default function RegistrationVerification({
       setLoading(false);
     }
   };
-
-  const completeEmailCallback = useCallback(async (challengeId: string, state: string) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const context = await getEmailVerificationContext(challengeId, state);
-      const idToken = await completeRegistrationEmailLink(context.email, window.location.href);
-      await confirmRegistrationChallenge(challengeId, { idToken, state });
-      await clearTemporaryFirebaseSession();
-      window.history.replaceState({}, "", "/auth");
-      toast.success("Xác minh email thành công. Vui lòng đăng nhập.");
-      onVerified("LOGIN");
-    } catch (caught) {
-      setError(toMessage(caught));
-    } finally {
-      setLoading(false);
-    }
-  }, [onVerified]);
-
-  useEffect(() => {
-    if (!callbackParams || autoStartedRef.current) return;
-    autoStartedRef.current = true;
-    void completeEmailCallback(callbackParams.challengeId, callbackParams.state);
-  }, [callbackParams, completeEmailCallback]);
-
-  useEffect(() => {
-    if (
-      callbackParams ||
-      autoStartedRef.current ||
-      !registration ||
-      (registration.provider !== "GOOGLE" && initialChannel !== "PHONE")
-    ) {
-      return;
-    }
-    autoStartedRef.current = true;
-    void startChannel(initialChannel ?? "EMAIL");
-  }, [callbackParams, initialChannel, registration, startChannel]);
 
   return (
     <div className="register-page">
@@ -177,30 +125,46 @@ export default function RegistrationVerification({
         </div>
         <h1 id="verification-title">Xác minh tài khoản</h1>
 
+        {!registration && (
+          <div className="verification-status" role="alert">
+            <p>Phiên đăng ký không còn hợp lệ. Vui lòng đăng ký lại.</p>
+          </div>
+        )}
+
         {step === "CHOOSE" && registration && (
           <>
             <p className="register-subtitle">
-              Chọn cách nhận mã xác minh. Bạn không cần nhập lại thông tin.
+              Chọn một phương thức xác minh. Bạn không cần nhập lại thông tin.
             </p>
             <div className="verification-options">
-              <button type="button" onClick={() => void startChannel("EMAIL")} disabled={loading}>
+              <button type="button" onClick={() => void startEmailVerification()} disabled={loading}>
                 <Mail size={22} />
-                <span><b>Xác minh qua email</b><small>{maskEmail(registration.email)}</small></span>
+                <span><b>Xác minh bằng email</b><small>{maskEmail(registration.email)}</small></span>
               </button>
-              <button type="button" onClick={() => void startChannel("PHONE")} disabled={loading}>
+              <button type="button" onClick={() => void startPhoneVerification()} disabled={loading}>
                 <MessageSquareText size={22} />
-                <span><b>Nhận OTP qua SMS</b><small>{maskPhone(registration.phone)}</small></span>
+                <span><b>Xác minh bằng số điện thoại</b><small>{maskPhone(registration.phone)}</small></span>
               </button>
             </div>
           </>
         )}
 
         {step === "EMAIL_SENT" && (
-          <div className="verification-status" role="status">
+          <div className="verification-status" role="status" aria-live="polite">
             <Mail size={36} />
             <h2>Kiểm tra hộp thư của bạn</h2>
-            <p>Chúng tôi đã gửi link xác minh tới {maskEmail(registration?.email ?? null)}.</p>
-            <p className="verification-hint">Bấm link trong email để hoàn tất, sau đó hệ thống sẽ chuyển về đăng nhập.</p>
+            <p>Email xác minh đã được gửi tới {maskEmail(registration?.email ?? null)}.</p>
+            <p className="verification-hint">
+              Sau khi bấm link, hãy quay lại trang đăng nhập và đăng nhập lại để hệ thống xác minh token mới.
+            </p>
+            <button
+              type="button"
+              className="verification-link"
+              disabled={loading || secondsLeft > 0}
+              onClick={() => void startEmailVerification()}
+            >
+              {secondsLeft > 0 ? `Gửi lại sau ${formatCountdown(secondsLeft)}` : "Gửi lại email"}
+            </button>
           </div>
         )}
 
@@ -221,56 +185,30 @@ export default function RegistrationVerification({
             />
             <div className="otp-timer" role="timer">
               <Clock3 size={16} />
-              {secondsLeft > 0 ? `Mã còn hiệu lực ${formatCountdown(secondsLeft)}` : "Mã đã hết hạn"}
+              {secondsLeft > 0 ? `Có thể gửi lại sau ${formatCountdown(secondsLeft)}` : "Có thể gửi lại mã"}
             </div>
-            <button className="register-btn" type="submit" disabled={loading || secondsLeft <= 0 || otp.length !== 6}>
+            <button className="register-btn" type="submit" disabled={loading || otp.length !== 6}>
               Xác minh
             </button>
-            <button type="button" className="verification-link" disabled={loading || secondsLeft > 0} onClick={() => void resendPhoneOtp()}>
-              Gửi lại mã
+            <button
+              type="button"
+              className="verification-link"
+              disabled={loading || secondsLeft > 0}
+              onClick={() => void startPhoneVerification()}
+            >
+              Gửi lại mã OTP
             </button>
           </form>
         )}
 
-        {step === "EMAIL_CALLBACK" && !error && (
-          <div className="verification-status" role="status" aria-live="polite">
-            <CheckCircle2 size={36} />
-            <h2>Đang xác minh email…</h2>
-            <p>Vui lòng giữ nguyên trang này trong giây lát.</p>
-          </div>
-        )}
-
         {error && <p className="verification-error" role="alert">{error}</p>}
-        {(error || step === "EMAIL_SENT") && (
-          <button type="button" className="verification-link" onClick={onBackToLogin}>
-            Quay về đăng nhập
-          </button>
-        )}
+        <button type="button" className="verification-link" onClick={onBackToLogin}>
+          Quay về đăng nhập
+        </button>
         <div id="registration-recaptcha" />
       </section>
     </div>
   );
-}
-
-function readEmailCallbackParams() {
-  const url = new URL(window.location.href);
-  const challengeId = url.searchParams.get("challengeId");
-  const state = url.searchParams.get("state");
-  if (url.searchParams.get("verifyEmail") === "1" && challengeId && state) {
-    return { challengeId, state };
-  }
-  const continueUrl = url.searchParams.get("continueUrl");
-  if (!continueUrl) return null;
-  try {
-    const nested = new URL(continueUrl);
-    const nestedChallengeId = nested.searchParams.get("challengeId");
-    const nestedState = nested.searchParams.get("state");
-    return nestedChallengeId && nestedState
-      ? { challengeId: nestedChallengeId, state: nestedState }
-      : null;
-  } catch {
-    return null;
-  }
 }
 
 function formatCountdown(seconds: number) {

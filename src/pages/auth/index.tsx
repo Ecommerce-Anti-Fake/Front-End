@@ -10,11 +10,10 @@ type AuthMode = "login" | "register" | "verify";
 
 export default function AuthPage() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<AuthMode>(() => hasEmailVerificationCallback() ? "verify" : "login");
+  const [mode, setMode] = useState<AuthMode>("login");
   const [registration, setRegistration] = useState<RegistrationDetails | null>(null);
   const [initialChannel, setInitialChannel] = useState<"EMAIL" | "PHONE" | undefined>();
   const [completionTarget, setCompletionTarget] = useState<"LOGIN" | "ACCOUNT">("LOGIN");
-  const [pendingGoogleLink, setPendingGoogleLink] = useState(false);
 
   const showVerification = (
     nextRegistration: RegistrationDetails,
@@ -30,12 +29,10 @@ export default function AuthPage() {
     <div className="auth-page">
       {mode === "login" && (
         <LoginPage
-          pendingGoogleLink={pendingGoogleLink}
           onSwitch={() => setMode("register")}
-          onGoogleLinkHandled={() => setPendingGoogleLink(false)}
+          verifiedNotice={new URLSearchParams(window.location.search).get("verified") === "true"}
           onVerificationRequired={(nextRegistration) =>
             showVerification(nextRegistration, {
-              channel: nextRegistration.provider === "GOOGLE" ? "EMAIL" : undefined,
               target: "LOGIN",
             })
           }
@@ -44,11 +41,8 @@ export default function AuthPage() {
       {mode === "register" && (
         <RegisterPage
           onSwitch={() => setMode("login")}
-          onRegistration={(nextRegistration, options) => showVerification(nextRegistration, options)}
-          onGoogleLinkRequired={() => {
-            setPendingGoogleLink(true);
-            setMode("login");
-          }}
+          onRegistration={(nextRegistration) => showVerification(nextRegistration)}
+          onGoogleRegistered={() => navigate("/")}
         />
       )}
       {mode === "verify" && (
@@ -70,10 +64,4 @@ export default function AuthPage() {
       )}
     </div>
   );
-}
-
-function hasEmailVerificationCallback() {
-  const params = new URLSearchParams(window.location.search);
-  if (params.get("verifyEmail") === "1") return true;
-  return params.get("mode") === "signIn" && Boolean(params.get("oobCode"));
 }
