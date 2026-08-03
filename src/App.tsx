@@ -233,10 +233,31 @@ function App() {
                   </ProtectedRoute>
                 }
               />
-              <Route path="/payment-success" element={<PaymentSuccess />} />
+              <Route
+                path="/payment-success"
+                element={
+                  <ProtectedRoute>
+                    <PaymentSuccess />
+                  </ProtectedRoute>
+                }
+              />
               <Route path="/register" element={<SellerRegistration />} />
-              <Route path="/payment" element={<PaymentModel />} />
-              <Route path="/payment-failed" element={<PaymentFailedPage />} />
+              <Route
+                path="/payment"
+                element={
+                  <ProtectedRoute>
+                    <PaymentModel />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/payment-failed"
+                element={
+                  <ProtectedRoute>
+                    <PaymentFailedPage />
+                  </ProtectedRoute>
+                }
+              />
             </Route>
 
             {/* seller */}

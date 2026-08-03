@@ -34,6 +34,38 @@ export default function PaymentSuccess() {
     state.checkout?.orderCode ?? state.checkout?.orderId ?? "Đang cập nhật";
   const status = state.paymentStatus ?? (isCod ? "COD_PENDING" : "PAID");
 
+  if (!state.checkout?.orderId && !state.checkout?.orderCode) {
+    return (
+      <main className="payment-success-page">
+        <section className="payment-success-card">
+          <div className="payment-success-icon">
+            <ReceiptText size={42} />
+          </div>
+          <h1>Không tìm thấy kết quả thanh toán</h1>
+          <p className="payment-success-subtitle">
+            Vui lòng mở lại kết quả từ một phiên thanh toán hợp lệ.
+          </p>
+          <div className="payment-success-actions">
+            <button
+              type="button"
+              className="payment-success-primary"
+              onClick={() => navigate("/profile/orders")}
+            >
+              Xem đơn hàng
+            </button>
+            <button
+              type="button"
+              className="payment-success-secondary"
+              onClick={() => navigate("/")}
+            >
+              Tiếp tục mua sắm
+            </button>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
   return (
     <main className="payment-success-page">
       <section className="payment-success-card">

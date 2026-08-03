@@ -11,9 +11,6 @@ const publicRoutes = [
   "/search",
   "/categories",
   "/affiliate",
-  "/payment",
-  "/payment-success",
-  "/payment-failed",
 ];
 
 test.describe("guest public routes", () => {

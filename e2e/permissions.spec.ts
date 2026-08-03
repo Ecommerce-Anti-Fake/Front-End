@@ -20,6 +20,13 @@ test("guest access to a direct message room redirects to authentication", async 
   await expect(page).toHaveURL(/\/auth(?:\?|$)/);
 });
 
+for (const route of ["/payment", "/payment-success", "/payment-failed"]) {
+  test(`guest access to ${route} redirects to authentication`, async ({ page }) => {
+    await page.goto(route, { waitUntil: "domcontentloaded" });
+    await expect(page).toHaveURL(/\/auth(?:\?|$)/);
+  });
+}
+
 test("authenticated non-admin is redirected away from admin", async ({ page }) => {
   const username = process.env.UAT_USER_EMAIL;
   const password = process.env.UAT_TEST_PASSWORD;
