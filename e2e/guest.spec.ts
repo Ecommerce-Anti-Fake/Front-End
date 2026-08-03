@@ -1,6 +1,22 @@
 import { expect, test } from "@playwright/test";
 
-const publicRoutes = ["/", "/auth", "/register", "/community", "/live", "/qr"];
+const publicRoutes = [
+  "/",
+  "/auth",
+  "/auth/email-action",
+  "/register",
+  "/community",
+  "/live",
+  "/qr",
+  "/search",
+  "/categories",
+  "/wishlist",
+  "/affiliate",
+  "/checkout",
+  "/payment",
+  "/payment-success",
+  "/payment-failed",
+];
 
 test.describe("guest public routes", () => {
   for (const route of publicRoutes) {
