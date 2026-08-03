@@ -42,6 +42,7 @@ test("shop detail renders a branded fallback when no banner is available", async
   }
   await shop.click();
   await expect(page).toHaveURL(/\/shop\/[^/]+$/);
+  await expect(page.locator(".shop-header-card-view")).toBeVisible({ timeout: 15000 });
   const banner = page.locator(".shop-banner");
   await expect(banner).toBeVisible({ timeout: 15000 });
   const bannerImage = banner.locator("img");
