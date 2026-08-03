@@ -379,10 +379,11 @@ const parseApiPayload = async (response: Response, fallback: string) => {
   return data?.data ?? data;
 };
 
-export const replaceOfferImages = async (
+const uploadOfferImages = async (
   offerId: string,
   files: File[],
-): Promise<OfferMedia[]> => {
+  firstAsThumbnail = false,
+) => {
   if (files.length === 0) return [];
 
   const signatureResponse = await authFetch(
@@ -425,13 +426,68 @@ export const replaceOfferImages = async (
         mimeType: file.type,
         fileUrl: uploadData.secure_url as string,
         publicId: uploadData.public_id as string,
-        mediaType: index === 0 ? "thumbnail" : "gallery",
+        mediaType: firstAsThumbnail && index === 0 ? "thumbnail" : "gallery",
         bytes: file.size,
       };
     }),
   );
 
-  const replaceResponse = await authFetch(
+  return uploadedItems;
+};
+
+export const fetchOfferMedia = async (offerId: string): Promise<OfferMedia[]> => {
+  const response = await authFetch(`${BASE_URL}/api/offers/${offerId}/media`, {
+    method: "GET",
+    headers: { Accept: "application/json" },
+  });
+  const payload = await parseApiPayload(response, "Khong the lay danh sach anh");
+  return Array.isArray(payload) ? payload : [];
+};
+
+export const addOfferImages = async (
+  offerId: string,
+  files: File[],
+  firstAsThumbnail = false,
+): Promise<OfferMedia[]> => {
+  const uploadedItems = await uploadOfferImages(offerId, files, firstAsThumbnail);
+  if (uploadedItems.length === 0) return [];
+
+  const response = await authFetch(
+    `${BASE_URL}/api/offers/${offerId}/media`,
+    {
+      method: "POST",
+      headers: { Accept: "application/json", "Content-Type": "application/json" },
+      body: JSON.stringify({ items: uploadedItems }),
+    },
+  );
+  const payload = await parseApiPayload(response, "Khong the luu anh san pham");
+  return Array.isArray(payload) ? payload : [];
+};
+
+export const deleteOfferImage = async (offerId: string, mediaId: string) => {
+  const response = await authFetch(
+    `${BASE_URL}/api/offers/${offerId}/media/${mediaId}`,
+    { method: "DELETE", headers: { Accept: "application/json" } },
+  );
+  return parseApiPayload(response, "Khong the xoa anh san pham");
+};
+
+export const setOfferPrimaryImage = async (offerId: string, mediaId: string) => {
+  const response = await authFetch(
+    `${BASE_URL}/api/offers/${offerId}/media/${mediaId}/primary`,
+    { method: "PATCH", headers: { Accept: "application/json" } },
+  );
+  return parseApiPayload(response, "Khong the dat anh dai dien");
+};
+
+export const replaceOfferImages = async (
+  offerId: string,
+  files: File[],
+): Promise<OfferMedia[]> => {
+  const uploadedItems = await uploadOfferImages(offerId, files);
+  if (uploadedItems.length === 0) return [];
+
+  const response = await authFetch(
     `${BASE_URL}/api/offers/${offerId}/media/replace`,
     {
       method: "PUT",
@@ -439,10 +495,7 @@ export const replaceOfferImages = async (
       body: JSON.stringify({ items: uploadedItems }),
     },
   );
-  const payload = await parseApiPayload(
-    replaceResponse,
-    "Khong the luu anh san pham",
-  );
+  const payload = await parseApiPayload(response, "Khong the luu anh san pham");
   return Array.isArray(payload) ? payload : [];
 };
 

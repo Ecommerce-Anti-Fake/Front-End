@@ -11,6 +11,7 @@ import {
   Plus,
   Ruler,
   Save,
+  Star,
   Tags,
   Trash2,
   X,
@@ -20,12 +21,16 @@ import { Link, useParams, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import {
   fetchOfferVariants,
+  fetchOfferMedia,
   fetchOfferDetail,
   deleteOfferVariant,
   updateOfferVariant,
   updateOffer,
-  replaceOfferImages,
+  addOfferImages,
+  deleteOfferImage,
+  setOfferPrimaryImage,
   type OfferDetail,
+  type OfferMedia,
   type OfferVariant,
   type UpdateOfferPayload,
 } from "../../../../services/product.api";
@@ -41,6 +46,8 @@ const statusLabels: Record<string, string> = {
   rejected: "Không thành công",
   banned: "Bị cấm",
 };
+
+const MAX_PRODUCT_IMAGES = 4;
 
 const getStatusClass = (status?: string) => {
   const value = String(status ?? "").toLowerCase();
@@ -669,6 +676,10 @@ export default function SellerProductDetail() {
   const [saving, setSaving] = useState(false);
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [uploadingImages, setUploadingImages] = useState(false);
+  const [media, setMedia] = useState<OfferMedia[]>([]);
+  const [mediaLoaded, setMediaLoaded] = useState(false);
+  const [mediaEditorOpen, setMediaEditorOpen] = useState(false);
+  const [deletingMediaId, setDeletingMediaId] = useState<string | null>(null);
   const [error, setError] = useState("");
 
   const fillFormFromOffer = (data: OfferDetail) => {
@@ -698,10 +709,17 @@ export default function SellerProductDetail() {
 
       setLoading(true);
       setError("");
+      setMediaLoaded(false);
+      setMedia([]);
 
       try {
-        const data = await fetchOfferDetail(offerId);
+        const [data, mediaItems] = await Promise.all([
+          fetchOfferDetail(offerId),
+          fetchOfferMedia(offerId),
+        ]);
         setOffer(data);
+        setMedia(mediaItems);
+        setMediaLoaded(true);
         fillFormFromOffer(data);
       } catch (err: unknown) {
         setError(
@@ -808,8 +826,9 @@ export default function SellerProductDetail() {
   const handleImageSelection = (files: FileList | null) => {
     const selected = Array.from(files ?? []);
     if (selected.length === 0) return;
-    if (selected.length > 4) {
-      toast.error("Chi duoc chon toi da 4 anh");
+    const availableSlots = MAX_PRODUCT_IMAGES - media.length;
+    if (selected.length > availableSlots) {
+      toast.error(`Offer chỉ còn ${availableSlots} vị trí ảnh`);
       return;
     }
 
@@ -826,17 +845,64 @@ export default function SellerProductDetail() {
     setSelectedImages(selected);
   };
 
-  const handleReplaceImages = async () => {
+  const handleAddImages = async () => {
     if (!offerId || selectedImages.length === 0 || uploadingImages) return;
     setUploadingImages(true);
     try {
-      await replaceOfferImages(offerId, selectedImages);
-      const updatedOffer = await fetchOfferDetail(offerId);
+      await addOfferImages(offerId, selectedImages, media.length === 0);
+      const [updatedOffer, mediaItems] = await Promise.all([
+        fetchOfferDetail(offerId),
+        fetchOfferMedia(offerId),
+      ]);
       setOffer(updatedOffer);
+      setMedia(mediaItems);
+      setMediaLoaded(true);
       setSelectedImages([]);
-      toast.success("Da thay anh san pham tren Cloudinary");
+      toast.success("Đã cập nhật ảnh sản phẩm");
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Khong the thay anh san pham");
+      toast.error(err instanceof Error ? err.message : "Không thể cập nhật ảnh sản phẩm");
+    } finally {
+      setUploadingImages(false);
+    }
+  };
+
+  const handleDeleteImage = async (mediaItem: OfferMedia) => {
+    if (!offerId || deletingMediaId || media.length <= 1) return;
+    if (!window.confirm("Bạn có chắc muốn xóa ảnh này không?")) return;
+
+    setDeletingMediaId(mediaItem.id);
+    try {
+      await deleteOfferImage(offerId, mediaItem.id);
+      const [updatedOffer, mediaItems] = await Promise.all([
+        fetchOfferDetail(offerId),
+        fetchOfferMedia(offerId),
+      ]);
+      setOffer(updatedOffer);
+      setMedia(mediaItems);
+      setMediaLoaded(true);
+      toast.success("Đã xóa ảnh sản phẩm");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Không thể xóa ảnh sản phẩm");
+    } finally {
+      setDeletingMediaId(null);
+    }
+  };
+
+  const handleSetPrimaryImage = async (mediaItem: OfferMedia) => {
+    if (!offerId || mediaItem.mediaType === "thumbnail" || uploadingImages) return;
+    setUploadingImages(true);
+    try {
+      await setOfferPrimaryImage(offerId, mediaItem.id);
+      const [updatedOffer, mediaItems] = await Promise.all([
+        fetchOfferDetail(offerId),
+        fetchOfferMedia(offerId),
+      ]);
+      setOffer(updatedOffer);
+      setMedia(mediaItems);
+      setMediaLoaded(true);
+      toast.success("Đã đặt ảnh đại diện");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Không thể đặt ảnh đại diện");
     } finally {
       setUploadingImages(false);
     }
@@ -1087,45 +1153,116 @@ export default function SellerProductDetail() {
           <OfferOptionsAndVariants offer={offer} />
 
           <section className="seller-product-detail-section">
-            <div className="seller-product-detail-section-head">
-              <ImageIcon size={18} />
-              <h2>Hình ảnh sản phẩm</h2>
+            <div className="seller-product-detail-section-head seller-product-detail-media-head">
+              <div className="seller-product-detail-section-title">
+                <ImageIcon size={18} />
+                <h2>Hình ảnh sản phẩm</h2>
+              </div>
+              <button
+                type="button"
+                className="seller-product-detail-media-toggle"
+                onClick={() => {
+                  setMediaEditorOpen((current) => !current);
+                  setSelectedImages([]);
+                }}
+              >
+                {mediaEditorOpen ? "Đóng" : "Cập nhật ảnh"}
+              </button>
             </div>
 
-            {editing && (
+            {mediaEditorOpen && (
               <div className="seller-product-detail-media-editor">
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  multiple
-                  disabled={uploadingImages}
-                  onChange={(event) => {
-                    handleImageSelection(event.target.files);
-                    event.currentTarget.value = "";
-                  }}
-                />
-                <span>
-                  {selectedImages.length > 0
-                    ? `${selectedImages.length} anh da chon`
-                    : "Chon toi da 4 anh, anh dau tien la anh dai dien"}
-                </span>
-                <button
-                  type="button"
-                  disabled={selectedImages.length === 0 || uploadingImages}
-                  onClick={() => void handleReplaceImages()}
-                >
-                  {uploadingImages ? "Dang upload..." : "Thay anh tren Cloudinary"}
-                </button>
+                <div className="seller-product-detail-media-editor-heading">
+                  <strong>Danh sách ảnh ({media.length}/{MAX_PRODUCT_IMAGES})</strong>
+                  <span>Ảnh có nhãn đại diện sẽ dùng cho sản phẩm và flash sale.</span>
+                </div>
+
+                <div className="seller-product-detail-media-grid">
+                  {media.map((mediaItem) => (
+                    <div className="seller-product-detail-media-card" key={mediaItem.id}>
+                      <img src={mediaItem.fileUrl} alt={offer.title} />
+                      <button
+                        type="button"
+                        className="seller-product-detail-media-remove"
+                        aria-label={`Xóa ảnh ${offer.title}`}
+                        title="Xóa ảnh"
+                        disabled={deletingMediaId === mediaItem.id || media.length <= 1}
+                        onClick={() => void handleDeleteImage(mediaItem)}
+                      >
+                        <X size={15} />
+                      </button>
+                      {mediaItem.mediaType === "thumbnail" ? (
+                        <span className="seller-product-detail-media-primary">
+                          <Star size={13} /> Ảnh đại diện
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          className="seller-product-detail-media-primary-action"
+                          disabled={uploadingImages}
+                          onClick={() => void handleSetPrimaryImage(mediaItem)}
+                        >
+                          Đặt làm đại diện
+                        </button>
+                      )}
+                    </div>
+                  ))}
+
+                  {media.length < MAX_PRODUCT_IMAGES && (
+                    <label className="seller-product-detail-media-add">
+                      <Plus size={22} />
+                      <span>Thêm ảnh</span>
+                      <small>Còn {MAX_PRODUCT_IMAGES - media.length} vị trí</small>
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        multiple
+                        disabled={uploadingImages}
+                        onChange={(event) => {
+                          handleImageSelection(event.target.files);
+                          event.currentTarget.value = "";
+                        }}
+                      />
+                    </label>
+                  )}
+                </div>
+
+                {selectedImages.length > 0 && (
+                  <div className="seller-product-detail-media-selection">
+                    Đã chọn {selectedImages.length} ảnh mới. Bấm cập nhật để tải lên Cloudinary.
+                  </div>
+                )}
+
+                <div className="seller-product-detail-media-actions">
+                  <button
+                    type="button"
+                    disabled={selectedImages.length === 0 || uploadingImages}
+                    onClick={() => void handleAddImages()}
+                  >
+                    {uploadingImages ? "Đang cập nhật..." : "Cập nhật"}
+                  </button>
+                </div>
               </div>
             )}
 
-            {imageUrls.length > 0 ? (
+            {(mediaLoaded ? media.length : imageUrls.length) > 0 ? (
               <div className="seller-product-detail-gallery">
-                {imageUrls.map((imageUrl) => (
-                  <a key={imageUrl} href={imageUrl} target="_blank" rel="noreferrer">
-                    <img src={imageUrl} alt={offer.title} />
-                  </a>
-                ))}
+                {mediaLoaded
+                  ? media.map((mediaItem) => (
+                      <a
+                        key={mediaItem.id}
+                        href={mediaItem.fileUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        <img src={mediaItem.fileUrl} alt={offer.title} />
+                      </a>
+                    ))
+                  : imageUrls.map((imageUrl) => (
+                      <a key={imageUrl} href={imageUrl} target="_blank" rel="noreferrer">
+                        <img src={imageUrl} alt={offer.title} />
+                      </a>
+                    ))}
               </div>
             ) : (
               <div className="seller-product-detail-empty">
