@@ -1,13 +1,13 @@
 import type { ShippingMethod } from "./shipping";
 
 export type Product = {
-  id: number;
+  id: string;
   name: string;
   image: string;
   price: number;
-  oldPrice: number;
-  soldPercent: number;
-  discount: number;
+  oldPrice?: number;
+  soldQuantity: number;
+  availableQuantity: number;
 };
 
 export type ProductView = {
@@ -17,6 +17,7 @@ export type ProductView = {
   currency: string;
   thumbnailUrl: string;
   soldQuantity: number;
+  availableQuantity?: number;
   categoryName: string;
   salesMode: "WHOLESALE" | "RETAIL";
   verificationLevel: string;

@@ -77,7 +77,7 @@ export default function HomePage() {
         <BannerSlider />
       </div>
       <div className="home-flash-sale">
-        <FlashSale />
+        <FlashSale products={products} />
       </div>
 
       <div className="home-content">
