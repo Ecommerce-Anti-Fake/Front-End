@@ -12,7 +12,7 @@ test("authenticated non-admin is redirected away from admin", async ({ page }) =
 
   await page.goto("/auth", { waitUntil: "domcontentloaded" });
   await page.getByLabel("Email hoặc số điện thoại").fill(username!);
-  await page.getByLabel("Mật khẩu").fill(password!);
+  await page.getByRole("textbox", { name: "Mật khẩu" }).fill(password!);
   await page.getByRole("button", { name: "Đăng nhập" }).click();
   await expect(page).toHaveURL(/\/$/, { timeout: 15000 });
 
