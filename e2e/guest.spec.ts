@@ -10,7 +10,6 @@ const publicRoutes = [
   "/qr",
   "/search",
   "/categories",
-  "/wishlist",
   "/affiliate",
   "/payment",
   "/payment-success",

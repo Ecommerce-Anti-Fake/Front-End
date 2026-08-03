@@ -10,6 +10,16 @@ test("guest access to checkout redirects to authentication", async ({ page }) =>
   await expect(page).toHaveURL(/\/auth(?:\?|$)/);
 });
 
+test("guest access to wishlist redirects to authentication", async ({ page }) => {
+  await page.goto("/wishlist", { waitUntil: "domcontentloaded" });
+  await expect(page).toHaveURL(/\/auth(?:\?|$)/);
+});
+
+test("guest access to a direct message room redirects to authentication", async ({ page }) => {
+  await page.goto("/messages/00000000-0000-0000-0000-000000000000", { waitUntil: "domcontentloaded" });
+  await expect(page).toHaveURL(/\/auth(?:\?|$)/);
+});
+
 test("authenticated non-admin is redirected away from admin", async ({ page }) => {
   const username = process.env.UAT_USER_EMAIL;
   const password = process.env.UAT_TEST_PASSWORD;

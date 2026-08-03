@@ -198,11 +198,25 @@ function App() {
                   </ProtectedRoute>
                 }
               />
-              <Route path="/messages/:roomId" element={<UserChatPage />} />
+              <Route
+                path="/messages/:roomId"
+                element={
+                  <ProtectedRoute>
+                    <UserChatPage />
+                  </ProtectedRoute>
+                }
+              />
               <Route path="/qr" element={<QRPage />} />
               <Route path="/search" element={<SearchPage />} />
               <Route path="/categories" element={<CategoriesPage />} />
-              <Route path="/wishlist" element={<WishlistPage />} />
+              <Route
+                path="/wishlist"
+                element={
+                  <ProtectedRoute>
+                    <WishlistPage />
+                  </ProtectedRoute>
+                }
+              />
               <Route path="/product/:id" element={<ProductDetail />} />
               <Route path="/shop/:shopId" element={<ShopPage />}>
                 <Route index element={<ShopReviews />} />
