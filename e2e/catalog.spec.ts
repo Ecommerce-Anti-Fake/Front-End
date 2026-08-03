@@ -34,6 +34,22 @@ test("guest can open a public shop from the home catalog", async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
+test("shop detail renders a branded fallback when no banner is available", async ({ page }) => {
+  await page.goto("/", { waitUntil: "networkidle" });
+  const shop = page.locator(".shop-info").first();
+  if (!(await shop.count())) {
+    test.skip(process.env.UAT_REQUIRE_CATALOG_DATA !== "true", "shop fixture unavailable in this environment");
+  }
+  await shop.click();
+  await expect(page).toHaveURL(/\/shop\/[^/]+$/);
+  const banner = page.locator(".shop-banner");
+  await expect(banner).toBeVisible({ timeout: 15000 });
+  const bannerImage = banner.locator("img");
+  if (!(await bannerImage.count())) {
+    await expect(banner).toHaveClass(/shop-banner-fallback/);
+  }
+});
+
 test("guest category selection navigates to filtered search", async ({ page }) => {
   const errors = await captureServerErrors(page);
   await page.goto("/categories", { waitUntil: "networkidle" });

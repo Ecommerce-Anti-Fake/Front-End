@@ -15,6 +15,23 @@
   object-fit: cover;
 }
 
+.shop-banner-fallback {
+  height: 180px;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at 18% 20%, rgba(255, 255, 255, 0.28), transparent 28%),
+    linear-gradient(120deg, #b9001b 0%, #e62c3f 52%, #ffb1b9 100%);
+}
+
+.shop-banner-fallback-content {
+  color: #fff;
+  font-size: clamp(28px, 4vw, 52px);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-shadow: 0 3px 16px rgba(74, 0, 12, 0.28);
+}
+
 /* ================= HEADER ================= */
 
 .shop-header-card-view {
@@ -203,6 +220,10 @@
   .shop-banner {
     height: 200px;
     overflow: hidden;
+  }
+
+  .shop-banner-fallback {
+    height: 120px;
   }
 
   .shop-tabs {

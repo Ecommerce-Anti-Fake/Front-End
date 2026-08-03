@@ -28,8 +28,14 @@ export default function ShopPage() {
 
   return (
     <div className="shop-page">
-      <div className="shop-banner">
-        <img src={shop?.shopBanner} alt="" />
+      <div className={`shop-banner ${shop?.shopBanner ? "" : "shop-banner-fallback"}`}>
+        {shop?.shopBanner ? (
+          <img src={shop.shopBanner} alt="" />
+        ) : (
+          <div className="shop-banner-fallback-content" aria-label="Banner shop chưa được thiết lập">
+            AntiFake Marketplace
+          </div>
+        )}
       </div>
 
       {shop && <ShopHeader shop={shop} />}
