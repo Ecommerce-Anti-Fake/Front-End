@@ -36,6 +36,47 @@ export type PayOSCheckoutState =
 
 export type PayOSCheckoutEvent = "SUCCESS" | "CANCEL" | "EXIT";
 
+export type PayOSReturnState = {
+  code: string | null;
+  paymentLinkId: string | null;
+  cancelled: boolean;
+  status: string | null;
+  orderCode: string | null;
+};
+
+const payOSReturnFailureStatuses = new Set([
+  "CANCELLED",
+  "CANCELED",
+  "FAILED",
+  "EXPIRED",
+]);
+
+export const parsePayOSReturnQuery = (
+  search: string,
+): PayOSReturnState | null => {
+  const params = new URLSearchParams(search);
+  const code = params.get("code")?.trim() || null;
+  const paymentLinkId = params.get("id")?.trim() || null;
+  const status = params.get("status")?.trim() || null;
+  const orderCode = params.get("orderCode")?.trim() || null;
+  const cancelled =
+    params.get("cancel")?.trim().toLowerCase() === "true" ||
+    payOSReturnFailureStatuses.has(status?.toUpperCase() ?? "") ||
+    (code !== null && code !== "00");
+
+  if (!code && !paymentLinkId && !status && !orderCode && !cancelled) {
+    return null;
+  }
+
+  return {
+    code,
+    paymentLinkId,
+    cancelled,
+    status,
+    orderCode,
+  };
+};
+
 const PAYOS_CHECKOUT_HOSTS = new Set([
   "pay.payos.vn",
   "next.pay.payos.vn",

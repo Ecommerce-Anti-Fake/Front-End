@@ -1,6 +1,7 @@
 import { CheckCircle, Clock, CreditCard, ReceiptText } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "../../css/components/payment/paymentSuccess.css";
+import { parsePayOSReturnQuery } from "./payosCheckoutState";
 
 type CheckoutSuccessState = {
   checkout?: {
@@ -28,13 +29,24 @@ export default function PaymentSuccess() {
   const navigate = useNavigate();
   const location = useLocation();
   const state = (location.state ?? {}) as CheckoutSuccessState;
+  const payOSReturn = parsePayOSReturnQuery(location.search);
+  const hasPayOSReturn = Boolean(
+    payOSReturn?.orderCode || payOSReturn?.paymentLinkId,
+  );
+  const isAwaitingWebhook =
+    !state.checkout?.orderId && !state.checkout?.orderCode && hasPayOSReturn;
   const paymentMethod = normalizeMethod(state.paymentMethod);
   const isCod = paymentMethod === "COD";
   const transactionCode =
-    state.checkout?.orderCode ?? state.checkout?.orderId ?? "Đang cập nhật";
-  const status = state.paymentStatus ?? (isCod ? "COD_PENDING" : "PAID");
+    state.checkout?.orderCode ??
+    state.checkout?.orderId ??
+    payOSReturn?.orderCode ??
+    payOSReturn?.paymentLinkId ??
+    "Đang cập nhật";
+  const status =
+    state.paymentStatus ?? (isAwaitingWebhook ? "PENDING" : isCod ? "COD_PENDING" : "PAID");
 
-  if (!state.checkout?.orderId && !state.checkout?.orderCode) {
+  if (!state.checkout?.orderId && !state.checkout?.orderCode && !hasPayOSReturn) {
     return (
       <main className="payment-success-page">
         <section className="payment-success-card">
@@ -73,11 +85,18 @@ export default function PaymentSuccess() {
           <CheckCircle size={42} />
         </div>
 
-        <h1>{isCod ? "Đặt hàng thành công!" : "Thanh toán thành công!"}</h1>
+        <h1>
+          {isAwaitingWebhook
+            ? "Đã tiếp nhận yêu cầu thanh toán"
+            : isCod
+              ? "Đặt hàng thành công!"
+              : "Thanh toán thành công!"}
+        </h1>
 
         <p className="payment-success-subtitle">
-          Đơn hàng của bạn đã được ghi nhận. Thông tin đơn hàng sẽ được cập nhật
-          trong tài khoản của bạn.
+          {isAwaitingWebhook
+            ? "PayOS đã trả về kết quả. Hệ thống đang chờ webhook xác nhận trước khi cập nhật đơn hàng."
+            : "Đơn hàng của bạn đã được ghi nhận. Thông tin đơn hàng sẽ được cập nhật trong tài khoản của bạn."}
         </p>
 
         <div className="payment-success-info">
@@ -125,8 +144,9 @@ export default function PaymentSuccess() {
         </div>
 
         <p className="payment-success-note">
-          Biên nhận thanh toán và thông tin đơn hàng sẽ được cập nhật trong tài
-          khoản của bạn.
+          {isAwaitingWebhook
+            ? "Nếu trạng thái chưa đổi, vui lòng kiểm tra lại đơn hàng sau ít phút."
+            : "Biên nhận thanh toán và thông tin đơn hàng sẽ được cập nhật trong tài khoản của bạn."}
         </p>
       </section>
     </main>

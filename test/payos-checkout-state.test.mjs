@@ -5,8 +5,30 @@ import {
   getPayOSCheckoutRoutes,
   isAllowedPayOSCheckoutUrl,
   parsePayOSCheckoutMessage,
+  parsePayOSReturnQuery,
   parsePayOSCheckoutState,
 } from "../src/components/payment/payosCheckoutState.ts";
+
+test("parses PayOS return query fields without trusting unrelated params", () => {
+  assert.deepEqual(
+    parsePayOSReturnQuery(
+      "?code=00&id=link-1&cancel=false&status=PAID&orderCode=123&ignored=secret",
+    ),
+    {
+      code: "00",
+      paymentLinkId: "link-1",
+      cancelled: false,
+      status: "PAID",
+      orderCode: "123",
+    },
+  );
+  assert.equal(parsePayOSReturnQuery(""), null);
+  assert.equal(
+    parsePayOSReturnQuery("?code=00&id=link-1&cancel=true&status=CANCELLED")
+      ?.cancelled,
+    true,
+  );
+});
 
 test("accepts only supported HTTPS payOS checkout URLs", () => {
   assert.equal(

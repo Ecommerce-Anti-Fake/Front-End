@@ -29,6 +29,7 @@ import { formatVnd } from "../../ultil/currency";
 import {
   getPayOSCheckoutRoutes,
   parsePayOSCheckoutMessage,
+  parsePayOSReturnQuery,
   parsePayOSCheckoutState,
   type OrderPayOSCheckoutState,
   type PayOSCheckoutState,
@@ -86,6 +87,10 @@ export default function PaymentModel({
     () => parsePayOSCheckoutState(location.state?.checkout),
     [location.state?.checkout],
   );
+  const payOSReturn = useMemo(
+    () => parsePayOSReturnQuery(location.search),
+    [location.search],
+  );
   const routes = useMemo(
     () =>
       checkout
@@ -105,6 +110,17 @@ export default function PaymentModel({
   const [checkingPayment, setCheckingPayment] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
   const [openingPayos, setOpeningPayos] = useState(false);
+
+  useEffect(() => {
+    if (checkout || !payOSReturn) return;
+
+    navigate(
+      payOSReturn.cancelled
+        ? `/payment-failed${location.search}`
+        : `/payment-success${location.search}`,
+      { replace: true },
+    );
+  }, [checkout, location.search, navigate, payOSReturn]);
 
   const isOrderCheckout = checkout?.flow === "ORDER";
   const displayAmount = Number(checkout?.amount ?? amount ?? 0);
