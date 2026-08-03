@@ -15,6 +15,11 @@ import {
 } from "../../services/auth.api";
 import { clearTemporaryFirebaseSession } from "../../services/registration-verification.firebase";
 import { getFirebaseAuth } from "../../services/firebase";
+import {
+  getFirebaseAuthErrorMessage,
+  isFirebaseAuthError,
+  isSilentGooglePopupCancellation,
+} from "../../services/firebase-auth-error";
 import { saveToken, saveUser } from "../../ultil/auth";
 import { useGlobalLoadingStore } from "../../store/globalLoadingStore";
 
@@ -75,11 +80,11 @@ export default function LoginPage({
 
   const handleGoogleLogin = async () => {
     setLoading(true);
-    showLoading("Đang đăng nhập với Google…");
     try {
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: "select_account" });
       const credential = await signInWithPopup(getFirebaseAuth(), provider);
+      showLoading("Đang đăng nhập với Google…");
       const idToken = await credential.user.getIdToken(true);
       const data = await firebaseLogin({ idToken });
       saveToken(data.accessToken);
@@ -88,9 +93,13 @@ export default function LoginPage({
       toast.success("Đăng nhập Google thành công");
       navigateByRole(data.user.role);
     } catch (caught) {
+      if (isSilentGooglePopupCancellation(caught)) return;
       if (caught instanceof AuthApiError && caught.code === "GOOGLE_ACCOUNT_NOT_LINKED") {
-        toast.info("Google này chưa được đăng ký. Hãy chọn Đăng ký với Google.");
-        onSwitch();
+        toast.info("Tài khoản Google của bạn chưa đăng ký. Vui lòng đăng ký trước.");
+        return;
+      }
+      if (isFirebaseAuthError(caught)) {
+        toast.error(getFirebaseAuthErrorMessage(caught, "login"));
       } else {
         toast.error(toMessage(caught));
       }

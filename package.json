@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
+    "test:auth": "node --test --experimental-strip-types test/google-auth-error.test.mjs",
     "test:live": "node --test --experimental-strip-types test/live-rtc.test.mjs",
     "test:payos": "node --test --experimental-strip-types test/payos-checkout-state.test.mjs"
   },

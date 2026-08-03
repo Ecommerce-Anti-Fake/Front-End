@@ -16,6 +16,11 @@ import {
   type RegistrationDetails,
 } from "../../services/auth.api";
 import { getFirebaseAuth } from "../../services/firebase";
+import {
+  getFirebaseAuthErrorMessage,
+  isFirebaseAuthError,
+  isSilentGooglePopupCancellation,
+} from "../../services/firebase-auth-error";
 import { saveToken, saveUser } from "../../ultil/auth";
 import { useGlobalLoadingStore } from "../../store/globalLoadingStore";
 
@@ -101,9 +106,9 @@ export default function RegisterPage({
 
   const handleGoogleRegister = async () => {
     setLoading(true);
-    showLoading("Đang đăng ký với Google…");
     try {
       const credential = await openGooglePopup();
+      showLoading("Đang đăng ký với Google…");
       const idToken = await credential.user.getIdToken(true);
       const result = await googleRegister(idToken);
       saveToken(result.accessToken);
@@ -112,7 +117,12 @@ export default function RegisterPage({
       toast.success("Đăng ký Google thành công.");
       onGoogleRegistered();
     } catch (caught) {
-      toast.error(toMessage(caught));
+      if (isSilentGooglePopupCancellation(caught)) return;
+      if (isFirebaseAuthError(caught)) {
+        toast.error(getFirebaseAuthErrorMessage(caught, "register"));
+      } else {
+        toast.error(toMessage(caught));
+      }
     } finally {
       setLoading(false);
       hideLoading();
