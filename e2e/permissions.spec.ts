@@ -5,6 +5,11 @@ test("guest access to admin redirects to authentication", async ({ page }) => {
   await expect(page).toHaveURL(/\/auth(?:\?|$)/);
 });
 
+test("guest access to checkout redirects to authentication", async ({ page }) => {
+  await page.goto("/checkout", { waitUntil: "domcontentloaded" });
+  await expect(page).toHaveURL(/\/auth(?:\?|$)/);
+});
+
 test("authenticated non-admin is redirected away from admin", async ({ page }) => {
   const username = process.env.UAT_USER_EMAIL;
   const password = process.env.UAT_TEST_PASSWORD;

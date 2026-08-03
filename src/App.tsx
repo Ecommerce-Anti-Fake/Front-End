@@ -211,7 +211,14 @@ function App() {
               </Route>
               <Route path="/live" element={<LiveDiscoveryPage />} />
               <Route path="/live/:id" element={<LiveRoomPage />} />
-              <Route path="/checkout" element={<CheckoutPage />} />
+              <Route
+                path="/checkout"
+                element={
+                  <ProtectedRoute>
+                    <CheckoutPage />
+                  </ProtectedRoute>
+                }
+              />
               <Route path="/payment-success" element={<PaymentSuccess />} />
               <Route path="/register" element={<SellerRegistration />} />
               <Route path="/payment" element={<PaymentModel />} />

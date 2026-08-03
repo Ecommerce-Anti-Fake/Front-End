@@ -12,7 +12,6 @@ const publicRoutes = [
   "/categories",
   "/wishlist",
   "/affiliate",
-  "/checkout",
   "/payment",
   "/payment-success",
   "/payment-failed",
