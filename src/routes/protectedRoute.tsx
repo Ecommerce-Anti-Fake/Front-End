@@ -1,13 +1,19 @@
 import { Navigate, useLocation } from "react-router-dom";
-import { getToken } from "../ultil/auth";
+import { getToken, getUser } from "../ultil/auth";
 type Props = {
   children: React.ReactNode;
+  roles?: string[];
 };
 
-export default function ProtectedRoute({ children }: Props) {
+type AuthUser = {
+  role?: string;
+};
+
+export default function ProtectedRoute({ children, roles = [] }: Props) {
   const location = useLocation();
 
   const token = getToken();
+  const user = getUser() as AuthUser | null;
 
   if (!token) {
     return (
@@ -19,6 +25,17 @@ export default function ProtectedRoute({ children }: Props) {
         replace
       />
     );
+  }
+
+  if (roles.length > 0) {
+    const userRole = user?.role?.toLowerCase();
+    const hasRequiredRole = Boolean(
+      userRole && roles.some((role) => role.toLowerCase() === userRole),
+    );
+
+    if (!hasRequiredRole) {
+      return <Navigate to="/" replace />;
+    }
   }
 
   return <>{children}</>;
