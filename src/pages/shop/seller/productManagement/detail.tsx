@@ -24,6 +24,7 @@ import {
   deleteOfferVariant,
   updateOfferVariant,
   updateOffer,
+  replaceOfferImages,
   type OfferDetail,
   type OfferVariant,
   type UpdateOfferPayload,
@@ -666,6 +667,8 @@ export default function SellerProductDetail() {
   const [editing, setEditing] = useState(searchParams.get("edit") === "1");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [selectedImages, setSelectedImages] = useState<File[]>([]);
+  const [uploadingImages, setUploadingImages] = useState(false);
   const [error, setError] = useState("");
 
   const fillFormFromOffer = (data: OfferDetail) => {
@@ -799,6 +802,43 @@ export default function SellerProductDetail() {
       );
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleImageSelection = (files: FileList | null) => {
+    const selected = Array.from(files ?? []);
+    if (selected.length === 0) return;
+    if (selected.length > 4) {
+      toast.error("Chi duoc chon toi da 4 anh");
+      return;
+    }
+
+    const invalidFile = selected.find(
+      (file) =>
+        !["image/jpeg", "image/png", "image/webp"].includes(file.type) ||
+        file.size > 5 * 1024 * 1024,
+    );
+    if (invalidFile) {
+      toast.error("Anh phai la JPG, PNG hoac WEBP va toi da 5MB");
+      return;
+    }
+
+    setSelectedImages(selected);
+  };
+
+  const handleReplaceImages = async () => {
+    if (!offerId || selectedImages.length === 0 || uploadingImages) return;
+    setUploadingImages(true);
+    try {
+      await replaceOfferImages(offerId, selectedImages);
+      const updatedOffer = await fetchOfferDetail(offerId);
+      setOffer(updatedOffer);
+      setSelectedImages([]);
+      toast.success("Da thay anh san pham tren Cloudinary");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Khong the thay anh san pham");
+    } finally {
+      setUploadingImages(false);
     }
   };
 
@@ -1051,6 +1091,33 @@ export default function SellerProductDetail() {
               <ImageIcon size={18} />
               <h2>Hình ảnh sản phẩm</h2>
             </div>
+
+            {editing && (
+              <div className="seller-product-detail-media-editor">
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  multiple
+                  disabled={uploadingImages}
+                  onChange={(event) => {
+                    handleImageSelection(event.target.files);
+                    event.currentTarget.value = "";
+                  }}
+                />
+                <span>
+                  {selectedImages.length > 0
+                    ? `${selectedImages.length} anh da chon`
+                    : "Chon toi da 4 anh, anh dau tien la anh dai dien"}
+                </span>
+                <button
+                  type="button"
+                  disabled={selectedImages.length === 0 || uploadingImages}
+                  onClick={() => void handleReplaceImages()}
+                >
+                  {uploadingImages ? "Dang upload..." : "Thay anh tren Cloudinary"}
+                </button>
+              </div>
+            )}
 
             {imageUrls.length > 0 ? (
               <div className="seller-product-detail-gallery">

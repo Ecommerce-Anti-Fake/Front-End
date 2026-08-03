@@ -122,6 +122,24 @@ export type OfferDetail = {
 
 export type OfferVariant = NonNullable<OfferDetail["variants"]>[number];
 
+export type OfferMediaUploadSignature = {
+  cloudName: string;
+  apiKey: string;
+  timestamp: number;
+  folder: string;
+  publicId: string;
+  uploadResourceType: "image" | "video";
+  signature: string;
+};
+
+export type OfferMedia = {
+  id: string;
+  offerId: string;
+  mediaType: string;
+  fileUrl: string;
+  publicId?: string | null;
+};
+
 export type UpdateOfferVariantPayload = {
   priceOverride?: number | null;
   availableQuantity?: number;
@@ -353,6 +371,79 @@ export const updateOffer = async (
   }
 
   return data?.data ?? data;
+};
+
+const parseApiPayload = async (response: Response, fallback: string) => {
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.message || fallback);
+  return data?.data ?? data;
+};
+
+export const replaceOfferImages = async (
+  offerId: string,
+  files: File[],
+): Promise<OfferMedia[]> => {
+  if (files.length === 0) return [];
+
+  const signatureResponse = await authFetch(
+    `${BASE_URL}/api/offers/${offerId}/media/upload-signatures`,
+    {
+      method: "POST",
+      headers: { Accept: "application/json", "Content-Type": "application/json" },
+      body: JSON.stringify({ items: files.map(() => ({ assetType: "IMAGE" })) }),
+    },
+  );
+  const signatures = (await parseApiPayload(
+    signatureResponse,
+    "Khong the tao chu ky upload anh",
+  )) as OfferMediaUploadSignature[];
+
+  const uploadedItems = await Promise.all(
+    files.map(async (file, index) => {
+      const signature = signatures[index];
+      if (!signature) throw new Error("Cloudinary upload signature khong hop le");
+
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("api_key", signature.apiKey);
+      formData.append("timestamp", String(signature.timestamp));
+      formData.append("folder", signature.folder);
+      formData.append("public_id", signature.publicId);
+      formData.append("signature", signature.signature);
+
+      const uploadResponse = await fetch(
+        `https://api.cloudinary.com/v1_1/${signature.cloudName}/${signature.uploadResourceType}/upload`,
+        { method: "POST", body: formData },
+      );
+      const uploadData = await uploadResponse.json().catch(() => ({}));
+      if (!uploadResponse.ok || !uploadData.secure_url || !uploadData.public_id) {
+        throw new Error("Upload anh len Cloudinary that bai");
+      }
+
+      return {
+        assetType: "IMAGE" as const,
+        mimeType: file.type,
+        fileUrl: uploadData.secure_url as string,
+        publicId: uploadData.public_id as string,
+        mediaType: index === 0 ? "thumbnail" : "gallery",
+        bytes: file.size,
+      };
+    }),
+  );
+
+  const replaceResponse = await authFetch(
+    `${BASE_URL}/api/offers/${offerId}/media/replace`,
+    {
+      method: "PUT",
+      headers: { Accept: "application/json", "Content-Type": "application/json" },
+      body: JSON.stringify({ items: uploadedItems }),
+    },
+  );
+  const payload = await parseApiPayload(
+    replaceResponse,
+    "Khong the luu anh san pham",
+  );
+  return Array.isArray(payload) ? payload : [];
 };
 
 export const fetchOfferVariants = async (

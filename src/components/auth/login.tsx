@@ -22,6 +22,7 @@ import {
 } from "../../services/firebase-auth-error";
 import { saveToken, saveUser } from "../../ultil/auth";
 import { useGlobalLoadingStore } from "../../store/globalLoadingStore";
+import { shouldFallbackToFirebase } from "./login-flow";
 
 type Props = {
   onSwitch: () => void;
@@ -56,6 +57,21 @@ export default function LoginPage({
     setLoading(true);
     showLoading("Đang đăng nhập…");
     try {
+      let localLoginError: unknown;
+      try {
+        const localData = await login({ username: username.trim(), password });
+        saveToken(localData.accessToken);
+        saveUser(localData.user);
+        toast.success("Login thanh cong");
+        navigateByRole(localData.user.role);
+        return;
+      } catch (error) {
+        localLoginError = error;
+        if (!username.includes("@") || !shouldFallbackToFirebase(error)) {
+          throw error;
+        }
+      }
+
       if (username.includes("@")) {
         const handledByFirebase = await tryFirebaseEmailLogin(
           username.trim(),
@@ -63,6 +79,7 @@ export default function LoginPage({
           onVerificationRequired,
         );
         if (handledByFirebase) return;
+        throw localLoginError;
       }
 
       const data = await login({ username: username.trim(), password });
