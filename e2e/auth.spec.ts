@@ -12,3 +12,18 @@ test("seed admin can sign in and reach the admin console", async ({ page }) => {
   await page.getByRole("button", { name: "Đăng nhập" }).click();
   await expect(page).toHaveURL(/\/admin(?:\/|$)/, { timeout: 15000 });
 });
+
+test("unknown credentials stay on auth with a recoverable error", async ({ page }) => {
+  const serverErrors: string[] = [];
+  page.on("response", (response) => {
+    if (response.status() >= 500) serverErrors.push(`${response.status()} ${response.url()}`);
+  });
+
+  await page.goto("/auth", { waitUntil: "domcontentloaded" });
+  await page.getByLabel("Email hoặc số điện thoại").fill("uat-nonexistent@example.invalid");
+  await page.getByRole("textbox", { name: "Mật khẩu" }).fill("invalid-only-for-uat");
+  await page.getByRole("button", { name: "Đăng nhập" }).click();
+  await expect(page).toHaveURL(/\/auth(?:\?|$)/);
+  await expect(page.locator("body")).not.toBeEmpty();
+  expect(serverErrors).toEqual([]);
+});
