@@ -109,6 +109,7 @@ export default function CartPage() {
           ),
         })),
       );
+      await refreshCart();
     } catch (error) {
       console.error(error);
       toast.error("Cập nhật giỏ hàng thất bại");
