@@ -245,3 +245,6 @@ export const getPayOSCheckoutRoutes = (flow: PayOSCheckoutFlow) => {
     cancelPath: "/payment-failed",
   };
 };
+
+export const getPayOSEmbeddedReturnUrl = (origin: string) =>
+  `${origin.replace(/\/$/, "")}/payment`;

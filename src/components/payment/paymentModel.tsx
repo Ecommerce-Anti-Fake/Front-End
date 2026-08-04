@@ -26,6 +26,7 @@ import {
   parsePayOSCheckoutMessage,
   parsePayOSReturnQuery,
   parsePayOSCheckoutState,
+  getPayOSEmbeddedReturnUrl,
   type OrderPayOSCheckoutState,
   type PayOSCheckoutState,
 } from "./payosCheckoutState";
@@ -64,23 +65,6 @@ declare global {
     PayOSCheckout?: PayOSCheckoutSdk;
   }
 }
-
-const getPayOSReturnUrl = (flow: PayOSCheckoutState["flow"]) => {
-  const apiBaseUrl = String(import.meta.env.VITE_API_BASE_URL ?? "").replace(
-    /\/$/,
-    "",
-  );
-
-  if (flow === "ORDER") {
-    return `${apiBaseUrl}/api/orders/payos/return`;
-  }
-
-  if (flow === "USER_WALLET_TOP_UP") {
-    return `${apiBaseUrl}/api/wallet/top-ups/payos/return`;
-  }
-
-  return `${window.location.origin}/seller/wallet?topUp=returned`;
-};
 
 const getCheckoutCopy = (checkout: PayOSCheckoutState | null) => {
   if (checkout?.flow === "USER_WALLET_TOP_UP") {
@@ -290,7 +274,7 @@ export default function PaymentModel({
     };
 
     const config: PayOSConfig = {
-      RETURN_URL: getPayOSReturnUrl(checkout.flow),
+      RETURN_URL: getPayOSEmbeddedReturnUrl(window.location.origin),
       ELEMENT_ID: elementId,
       CHECKOUT_URL: checkout.checkoutUrl,
       embedded: true,

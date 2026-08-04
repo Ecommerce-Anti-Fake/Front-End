@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   getPayOSCheckoutRoutes,
+  getPayOSEmbeddedReturnUrl,
   isAllowedPayOSCheckoutUrl,
   parsePayOSCheckoutMessage,
   parsePayOSReturnQuery,
@@ -170,6 +171,13 @@ test("uses fixed internal routes for every checkout flow", () => {
     successPath: "/seller/wallet?topUp=returned",
     cancelPath: "/seller/wallet?topUp=cancelled",
   });
+});
+
+test("uses the containing payment page as the embedded return URL", () => {
+  assert.equal(
+    getPayOSEmbeddedReturnUrl("https://antifake.io.vn/"),
+    "https://antifake.io.vn/payment",
+  );
 });
 
 test("accepts only known PayOS embedded callback messages", () => {
