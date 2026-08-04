@@ -2,7 +2,6 @@ import {
   AlertTriangle,
   ArrowLeft,
   CircleHelp,
-  ExternalLink,
   Landmark,
   Loader2,
   QrCode,
@@ -10,10 +9,6 @@ import {
   ShieldCheck,
   Wallet,
 } from "lucide-react";
-import {
-  usePayOS as createPayOSCheckout,
-  type PayOSConfig,
-} from "@payos/payos-checkout";
 import {
   useCallback,
   useEffect,
@@ -44,6 +39,48 @@ type PaymentModelProps = {
 
 const successStatuses = new Set(["PAID"]);
 const failedStatuses = new Set(["FAILED", "CANCELLED", "CANCELED", "EXPIRED"]);
+
+type PayOSConfig = {
+  RETURN_URL: string;
+  ELEMENT_ID: string;
+  CHECKOUT_URL: string;
+  embedded: true;
+  onSuccess: () => void;
+  onCancel: () => void;
+  onExit: () => void;
+};
+
+type PayOSClient = {
+  open: () => void;
+  exit: () => void;
+};
+
+type PayOSCheckoutSdk = {
+  usePayOS: (config: PayOSConfig) => PayOSClient;
+};
+
+declare global {
+  interface Window {
+    PayOSCheckout?: PayOSCheckoutSdk;
+  }
+}
+
+const getPayOSReturnUrl = (flow: PayOSCheckoutState["flow"]) => {
+  const apiBaseUrl = String(import.meta.env.VITE_API_BASE_URL ?? "").replace(
+    /\/$/,
+    "",
+  );
+
+  if (flow === "ORDER") {
+    return `${apiBaseUrl}/api/orders/payos/return`;
+  }
+
+  if (flow === "USER_WALLET_TOP_UP") {
+    return `${apiBaseUrl}/api/wallet/top-ups/payos/return`;
+  }
+
+  return `${window.location.origin}/seller/wallet?topUp=returned`;
+};
 
 const getCheckoutCopy = (checkout: PayOSCheckoutState | null) => {
   if (checkout?.flow === "USER_WALLET_TOP_UP") {
@@ -109,7 +146,6 @@ export default function PaymentModel({
   const [embedReady, setEmbedReady] = useState(false);
   const [checkingPayment, setCheckingPayment] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
-  const [openingPayos, setOpeningPayos] = useState(false);
 
   useEffect(() => {
     if (checkout || !payOSReturn) return;
@@ -195,14 +231,6 @@ export default function PaymentModel({
   useEffect(() => {
     if (!checkout) return;
 
-    const hostedCheckoutUrl = checkout.checkoutUrl;
-    if (hostedCheckoutUrl) {
-      // payOS currently rejects the embedded iframe for production links with
-      // INVALID_PARAM, while the hosted checkout URL remains valid.
-      window.location.replace(hostedCheckoutUrl);
-      return;
-    }
-
     const elementId = "payos-checkout-frame";
     const container = document.getElementById(elementId);
     if (!container) {
@@ -262,7 +290,7 @@ export default function PaymentModel({
     };
 
     const config: PayOSConfig = {
-      RETURN_URL: `${window.location.origin}/payment`,
+      RETURN_URL: getPayOSReturnUrl(checkout.flow),
       ELEMENT_ID: elementId,
       CHECKOUT_URL: checkout.checkoutUrl,
       embedded: true,
@@ -270,7 +298,16 @@ export default function PaymentModel({
       onCancel: handleCancel,
       onExit: handleExit,
     };
-    const payOS = createPayOSCheckout(config);
+    const payOSSdk = window.PayOSCheckout;
+    if (!payOSSdk) {
+      const missingSdkTimeout = window.setTimeout(
+        () => setEmbedError("Không tải được SDK nhúng thanh toán PayOS."),
+        0,
+      );
+      return () => window.clearTimeout(missingSdkTimeout);
+    }
+
+    const payOS = payOSSdk.usePayOS(config);
 
     try {
       payOS.open();
@@ -305,7 +342,7 @@ export default function PaymentModel({
     const handleError = () => {
       if (!disposed) {
         setEmbedError(
-          "Biểu mẫu PayOS không tải được. Bạn có thể chủ động mở trang PayOS để tiếp tục.",
+          "Biểu mẫu PayOS không tải được. Vui lòng thử lại yêu cầu thanh toán.",
         );
       }
     };
@@ -331,7 +368,7 @@ export default function PaymentModel({
     const timeoutId = window.setTimeout(() => {
       if (!disposed && !frameLoaded) {
         setEmbedError(
-          "Biểu mẫu PayOS phản hồi quá lâu. Bạn có thể chủ động mở trang PayOS để tiếp tục.",
+          "Biểu mẫu PayOS phản hồi quá lâu. Vui lòng thử lại yêu cầu thanh toán.",
         );
       }
     }, 8000);
@@ -364,13 +401,6 @@ export default function PaymentModel({
 
     return () => window.clearInterval(intervalId);
   }, [checkout, checkPaymentNow]);
-
-  const openPayosPage = () => {
-    if (!checkout || !embedError) return;
-    setOpeningPayos(true);
-    window.location.assign(checkout.checkoutUrl);
-    window.setTimeout(() => setOpeningPayos(false), 900);
-  };
 
   return (
     <section className="payment-model-page">
@@ -445,23 +475,8 @@ export default function PaymentModel({
               </>
             ) : null}
 
-            {checkout && (embedError || isOrderCheckout) ? (
+            {checkout && isOrderCheckout ? (
               <div className="payment-link-actions">
-                {embedError ? (
-                  <button
-                    type="button"
-                    className="payment-open-link"
-                    onClick={openPayosPage}
-                    disabled={openingPayos}
-                  >
-                    {openingPayos ? (
-                      <Loader2 size={16} className="payment-spin" />
-                    ) : (
-                      <ExternalLink size={16} />
-                    )}
-                    Mở trang PayOS
-                  </button>
-                ) : null}
                 {isOrderCheckout ? (
                   <button
                     type="button"
