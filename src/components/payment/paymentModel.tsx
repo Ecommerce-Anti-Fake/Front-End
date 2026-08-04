@@ -1,12 +1,14 @@
 import {
   AlertTriangle,
   ArrowLeft,
+  CheckCircle2,
   CircleHelp,
   Landmark,
   Loader2,
   QrCode,
   RefreshCw,
   ShieldCheck,
+  XCircle,
   Wallet,
 } from "lucide-react";
 import {
@@ -27,6 +29,7 @@ import {
   parsePayOSReturnQuery,
   parsePayOSCheckoutState,
   getPayOSEmbeddedReturnUrl,
+  type PayOSInlineResult,
   type OrderPayOSCheckoutState,
   type PayOSCheckoutState,
 } from "./payosCheckoutState";
@@ -130,6 +133,9 @@ export default function PaymentModel({
   const [embedReady, setEmbedReady] = useState(false);
   const [checkingPayment, setCheckingPayment] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
+  const [inlineResult, setInlineResult] = useState<PayOSInlineResult | null>(
+    null,
+  );
 
   useEffect(() => {
     if (checkout || !payOSReturn) return;
@@ -147,6 +153,16 @@ export default function PaymentModel({
   const displayReference = String(
     orderCode ?? (isOrderCheckout ? checkout.orderCode : copy.reference),
   );
+
+  const isWalletTopUp =
+    checkout?.flow === "USER_WALLET_TOP_UP" ||
+    checkout?.flow === "SHOP_WALLET_TOP_UP";
+
+  const showInlineResult = useCallback((result: PayOSInlineResult) => {
+    navigatedRef.current = true;
+    setStatusMessage("");
+    setInlineResult(result);
+  }, []);
 
   const finishOrderPayment = useCallback(
     (
@@ -240,14 +256,7 @@ export default function PaymentModel({
         return;
       }
 
-      navigatedRef.current = true;
-      navigate(routes.successPath, {
-        replace: true,
-        state: {
-          topUpId: checkout.topUpId,
-          paymentLinkId: checkout.paymentLinkId,
-        },
-      });
+      showInlineResult("SUCCESS");
     };
 
     const handleCancel = () => {
@@ -263,8 +272,7 @@ export default function PaymentModel({
         return;
       }
 
-      navigatedRef.current = true;
-      navigate(routes.cancelPath, { replace: true });
+      showInlineResult("CANCELLED");
     };
 
     const handleExit = () => {
@@ -345,6 +353,18 @@ export default function PaymentModel({
       const checkoutEvent = parsePayOSCheckoutMessage(event.data);
       if (checkoutEvent === "SUCCESS") handleSuccess();
       if (checkoutEvent === "CANCEL") handleCancel();
+      if (checkoutEvent === "FAILED") {
+        if (checkout.flow === "ORDER") {
+          finishOrderPayment(
+            checkout,
+            "failed",
+            "FAILED",
+            "PayOS báo giao dịch thất bại",
+          );
+        } else {
+          showInlineResult("FAILED");
+        }
+      }
       if (checkoutEvent === "EXIT") handleExit();
     };
     window.addEventListener("message", handleNextPayOSMessage);
@@ -374,7 +394,14 @@ export default function PaymentModel({
         container.replaceChildren();
       }
     };
-  }, [checkout, checkPaymentNow, finishOrderPayment, navigate, routes]);
+  }, [
+    checkout,
+    checkPaymentNow,
+    finishOrderPayment,
+    navigate,
+    routes,
+    showInlineResult,
+  ]);
 
   useEffect(() => {
     if (checkout?.flow !== "ORDER") return;
@@ -412,7 +439,7 @@ export default function PaymentModel({
               <>
                 <div
                   id="payos-checkout-frame"
-                  className="payment-embed-frame"
+                  className={`payment-embed-frame${inlineResult ? " payment-embed-frame--result" : ""}`}
                   aria-busy={!embedReady}
                 />
                 {!embedReady && !embedError ? (
@@ -436,6 +463,47 @@ export default function PaymentModel({
                       <strong>Không thể hiển thị QR ổn định</strong>
                       <p>{embedError}</p>
                     </div>
+                  </div>
+                ) : null}
+                {inlineResult && isWalletTopUp ? (
+                  <div
+                    className={`payment-result-card payment-result-card--${inlineResult.toLowerCase()}`}
+                    role="status"
+                    aria-live="polite"
+                  >
+                    {inlineResult === "SUCCESS" ? (
+                      <CheckCircle2 size={34} />
+                    ) : (
+                      <XCircle size={34} />
+                    )}
+                    <strong>
+                      {inlineResult === "SUCCESS"
+                        ? "Thanh toán thành công"
+                        : inlineResult === "CANCELLED"
+                          ? "Bạn đã hủy thanh toán"
+                          : "Thanh toán chưa thành công"}
+                    </strong>
+                    <p>
+                      {inlineResult === "SUCCESS"
+                        ? "PayOS đã báo giao dịch thành công. Số dư sẽ được cộng sau khi hệ thống nhận webhook xác nhận."
+                        : inlineResult === "CANCELLED"
+                          ? "Giao dịch chưa được ghi nhận. Bạn có thể quay lại ví và thử lại khi sẵn sàng."
+                          : "PayOS chưa xác nhận giao dịch. Vui lòng kiểm tra lại hoặc thử lại sau."}
+                    </p>
+                    <button
+                      type="button"
+                      className="payment-result-btn"
+                      onClick={() =>
+                        navigate(
+                          inlineResult === "SUCCESS"
+                            ? routes.successPath
+                            : routes.cancelPath,
+                          { replace: true },
+                        )
+                      }
+                    >
+                      {inlineResult === "SUCCESS" ? "Mở ví" : "Quay lại ví"}
+                    </button>
                   </div>
                 ) : null}
               </>

@@ -34,7 +34,9 @@ export type PayOSCheckoutState =
   | UserWalletPayOSCheckoutState
   | ShopWalletPayOSCheckoutState;
 
-export type PayOSCheckoutEvent = "SUCCESS" | "CANCEL" | "EXIT";
+export type PayOSCheckoutEvent = "SUCCESS" | "CANCEL" | "FAILED" | "EXIT";
+
+export type PayOSInlineResult = "SUCCESS" | "CANCELLED" | "FAILED";
 
 export type PayOSReturnState = {
   code: string | null;
@@ -123,6 +125,9 @@ export const parsePayOSCheckoutMessage = (
 
   if (message.data.status === "PAID") return "SUCCESS";
   if (message.data.status === "CANCELLED") return "CANCEL";
+  if (payOSReturnFailureStatuses.has(String(message.data.status ?? "").toUpperCase())) {
+    return "FAILED";
+  }
 
   return null;
 };

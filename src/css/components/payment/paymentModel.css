@@ -115,6 +115,62 @@
   border: 0;
 }
 
+.payment-embed-frame--result {
+  display: none;
+}
+
+.payment-result-card {
+  display: flex;
+  min-height: 260px;
+  margin: 0 0 20px;
+  padding: 28px 22px;
+  border: 1px solid #ccebd8;
+  border-radius: 10px;
+  background: #f4fff7;
+  color: #176b3a;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  text-align: center;
+}
+
+.payment-result-card--cancelled,
+.payment-result-card--failed {
+  border-color: #ffd2a8;
+  background: #fff8ed;
+  color: #8a4b00;
+}
+
+.payment-result-card strong {
+  font-size: 18px;
+}
+
+.payment-result-card p {
+  max-width: 300px;
+  margin: 0;
+  color: #6b5b5b;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.payment-result-btn {
+  min-width: 140px;
+  min-height: 42px;
+  margin-top: 6px;
+  border: 0;
+  border-radius: 8px;
+  background: #a50017;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.payment-result-btn:hover {
+  background: #850014;
+}
+
 .payment-qr-placeholder {
   display: flex;
   flex-direction: column;

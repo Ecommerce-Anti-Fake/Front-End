@@ -208,5 +208,12 @@ test("accepts only known PayOS embedded callback messages", () => {
     }),
     null,
   );
+  assert.equal(
+    parsePayOSCheckoutMessage({
+      type: "payment_response",
+      data: { status: "FAILED" },
+    }),
+    "FAILED",
+  );
   assert.equal(parsePayOSCheckoutMessage("not-json"), null);
 });
