@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import type { LiveOffer } from "../../services/live.api";
+import MediaThumbnail from "../media/mediaThumbnail";
 
 export default function LiveProductCard({
   product,
@@ -11,7 +12,12 @@ export default function LiveProductCard({
   return (
     <div className="live-product-card">
       {product.thumbnailUrl ? (
-        <img src={product.thumbnailUrl} alt={product.title} />
+        <MediaThumbnail
+          src={product.thumbnailUrl}
+          alt={product.title}
+          width={320}
+          height={320}
+        />
       ) : (
         <div className="live-product-placeholder">Không có ảnh</div>
       )}

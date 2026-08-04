@@ -10,15 +10,23 @@ import ProductCard from "../../components/product/productCard";
 import { fetchCategories } from "../../services/category.api";
 import type { SearchCategory } from "../../components/layout/searchSidebar";
 import EmptyState from "../../components/common/emptyState";
+import type { ProductView } from "../../type/product";
 
-const normalizeList = (data: any) => {
-  const payload = data?.data ?? data?.items ?? data;
-  return Array.isArray(payload) ? payload : [];
-};
+type SearchProduct = ProductView & { createdAt?: string };
+
+function normalizeList<T>(data: unknown): T[] {
+  const payload =
+    typeof data === "object" && data !== null
+      ? ((data as { data?: unknown; items?: unknown }).data ??
+        (data as { items?: unknown }).items ??
+        data)
+      : data;
+  return Array.isArray(payload) ? (payload as T[]) : [];
+}
 
 export default function SearchPage() {
   const [searchParams] = useSearchParams();
-  const [products, setProducts] = useState<any[]>([]);
+  const [products, setProducts] = useState<SearchProduct[]>([]);
   const [categories, setCategories] = useState<SearchCategory[]>([]);
   const [loading, setLoading] = useState(false);
   const keyword = searchParams.get("q") || "";
@@ -31,7 +39,7 @@ export default function SearchPage() {
     const loadCategories = async () => {
       try {
         const data = await fetchCategories();
-        setCategories(normalizeList(data));
+        setCategories(normalizeList<SearchCategory>(data));
       } catch (error) {
         console.error(error);
       }
@@ -54,7 +62,7 @@ export default function SearchPage() {
           pageSize: 20,
         });
 
-        setProducts(normalizeList(data));
+        setProducts(normalizeList<SearchProduct>(data));
       } catch (error) {
         console.error(error);
       } finally {
@@ -79,7 +87,8 @@ export default function SearchPage() {
     case "newest":
       sortedProducts.sort(
         (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+          new Date(b.createdAt ?? "").getTime() -
+          new Date(a.createdAt ?? "").getTime(),
       );
       break;
 
@@ -103,7 +112,7 @@ export default function SearchPage() {
           />
         </div>
         <div className="s-product-grid">
-          {loading && <div className="data-skeleton data-skeleton-cards search-product-skeleton" role="status" aria-label="Đang tải kết quả tìm kiếm">{Array.from({ length: 10 }, (_, i) => <div className="data-skeleton-row" key={i}><span className="data-skeleton-thumbnail" /><span className="data-skeleton-lines"><span /><span /><span /></span></div>)}</div>}
+          {loading && <div className="data-skeleton data-skeleton-cards product-card-skeleton search-product-skeleton" role="status" aria-label="Đang tải kết quả tìm kiếm">{Array.from({ length: 10 }, (_, i) => <div className="data-skeleton-row" key={i}><span className="data-skeleton-thumbnail" /><span className="data-skeleton-lines"><span /><span /><span /></span></div>)}</div>}
 
           {!loading && sortedProducts.length === 0 && (
             <EmptyState
@@ -116,9 +125,12 @@ export default function SearchPage() {
 
           {!loading &&
             sortedProducts.length > 0 &&
-            sortedProducts.map((product) => (
+            sortedProducts.map((product, index) => (
               <div key={product.id}>
-                <ProductCard product={product} />
+                <ProductCard
+                  product={product}
+                  loading={index === 0 ? "eager" : "lazy"}
+                />
               </div>
             ))}
         </div>

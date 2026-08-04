@@ -2,6 +2,7 @@ import { Pin, ShoppingCart } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { PinnedLiveOffer } from "../../services/live.api";
 import { isLiveOfferSoldOut } from "../../services/live-offer";
+import MediaThumbnail from "../media/mediaThumbnail";
 
 export default function LivePinnedOffer({
   offer,
@@ -15,7 +16,12 @@ export default function LivePinnedOffer({
     <section className={`live-pinned-offer${soldOut ? " sold-out" : ""}`}>
       <div className="live-pinned-offer-image">
         {offer.thumbnailUrl ? (
-          <img src={offer.thumbnailUrl} alt={offer.title} />
+          <MediaThumbnail
+            src={offer.thumbnailUrl}
+            alt={offer.title}
+            width={160}
+            height={160}
+          />
         ) : (
           <Pin size={24} />
         )}

@@ -4,20 +4,25 @@ import type { ProductView } from "../../type/product";
 import { formatVnd } from "../../ultil/currency";
 import { formatSale } from "../../ultil/format";
 import { Link } from "react-router-dom";
+import MediaThumbnail from "../media/mediaThumbnail";
 
 type Props = {
   product: ProductView;
+  loading?: "lazy" | "eager";
 };
 
-export default function ProductCard({ product }: Props) {
+export default function ProductCard({ product, loading = "lazy" }: Props) {
   return (
     <Link to={`/product/${product.id}`} className="product-card-link">
       <div className="product-card">
         <div className="product-image-wrapper">
-          <img
+          <MediaThumbnail
             src={product.thumbnailUrl || "https://picsum.photos/600/400?random=1"}
             alt={product.title}
             className="product-image"
+            width={320}
+            height={320}
+            loading={loading}
           />
 
           {/* <span className="product-status">

@@ -9,6 +9,7 @@ import {
 } from "../../services/live.api";
 import { getToken } from "../../ultil/auth";
 import "../../css/pages/liveDiscovery.css";
+import MediaThumbnail from "../../components/media/mediaThumbnail";
 
 type Filter = "live" | "upcoming";
 
@@ -122,7 +123,7 @@ export default function LiveDiscoveryPage() {
         <div className="live-discovery-state">Chưa có livestream phù hợp.</div>
       ) : (
         <section className="live-discovery-grid">
-          {sessions.map((session) => (
+          {sessions.map((session, index) => (
             <Link
               to={`/live/${session.id}`}
               className="live-discovery-card"
@@ -130,7 +131,13 @@ export default function LiveDiscoveryPage() {
             >
               <div className="live-discovery-cover">
                 {session.coverUrl ? (
-                  <img src={session.coverUrl} alt="" />
+                  <MediaThumbnail
+                    src={session.coverUrl}
+                    alt=""
+                    width={640}
+                    height={360}
+                    loading={index === 0 ? "eager" : "lazy"}
+                  />
                 ) : (
                   <Radio size={38} />
                 )}

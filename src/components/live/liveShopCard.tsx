@@ -2,16 +2,19 @@ import { CalendarClock, Radio } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { LiveSession } from "../../services/live.api";
 import "../../css/components/live/liveShopCard.css";
+import MediaThumbnail from "../media/mediaThumbnail";
 
 export default function LiveShopCard({ live }: { live: LiveSession }) {
   return (
     <Link className="live-card" to={`/live/${live.id}`}>
       <div className="live-image-wrapper">
         {live.coverUrl ? (
-          <img
+          <MediaThumbnail
             src={live.coverUrl}
             alt=""
             className="live-image"
+            width={640}
+            height={360}
           />
         ) : (
           <div className="live-image live-image-empty">

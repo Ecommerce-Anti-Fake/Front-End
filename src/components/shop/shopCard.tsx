@@ -3,6 +3,7 @@ import { BadgeCheck, Package, Star } from "lucide-react";
 import type { shopCard } from "../../type/shop";
 import { formatSale } from "../../ultil/format";
 import { useNavigate } from "react-router-dom";
+import MediaThumbnail from "../media/mediaThumbnail";
 
 type Props = {
   shop: shopCard;
@@ -13,7 +14,13 @@ export default function ShopCard({ shop }: Props) {
   return (
     <div className="shop-card" >
       <div className="shop-info" onClick={() => navigate(`/shop/${shop.shopId}`)}>
-        <img src={shop?.shopAvatar || "https://i.pravatar.cc/100?img=3"} alt="shop" className="shop-avatar" />
+        <MediaThumbnail
+          src={shop?.shopAvatar || "https://i.pravatar.cc/100?img=3"}
+          alt="shop"
+          className="shop-avatar"
+          width={160}
+          height={160}
+        />
 
         <div className="shop-content">
           <div className="shop-name-row">

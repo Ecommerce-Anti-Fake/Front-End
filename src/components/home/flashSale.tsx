@@ -36,7 +36,13 @@ export default function FlashSale({ products }: Props) {
 
       <div className="flash-products">
         {flashProducts.length ? (
-          flashProducts.map((product) => <ProductSell key={product.id} product={product} />)
+          flashProducts.map((product, index) => (
+            <ProductSell
+              key={product.id}
+              product={product}
+              loading={index === 0 ? "eager" : "lazy"}
+            />
+          ))
         ) : (
           <p>Chưa có sản phẩm đang bán.</p>
         )}

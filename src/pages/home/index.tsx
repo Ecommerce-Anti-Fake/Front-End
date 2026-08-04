@@ -114,7 +114,7 @@ export default function HomePage() {
         <div className="product-grid">
           {productsLoading && products.length === 0 ? (
             <div
-              className="data-skeleton data-skeleton-cards home-product-skeleton"
+              className="data-skeleton data-skeleton-cards product-card-skeleton home-product-skeleton"
               aria-busy="true"
               aria-label="Đang tải sản phẩm"
             >

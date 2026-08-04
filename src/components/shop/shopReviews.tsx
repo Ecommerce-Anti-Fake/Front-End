@@ -57,7 +57,7 @@ export default function ShopReviews() {
 
       {loading && (
         <div className="shop-best-selling-state">
-          <div className="data-skeleton data-skeleton-cards data-skeleton-compact" role="status" aria-label="Đang tải sản phẩm bán chạy">{Array.from({ length: 4 }, (_, i) => <div className="data-skeleton-row" key={i}><span className="data-skeleton-thumbnail" /><span className="data-skeleton-lines"><span /><span /><span /></span></div>)}</div>
+          <div className="data-skeleton data-skeleton-cards product-card-skeleton data-skeleton-compact" role="status" aria-label="Đang tải sản phẩm bán chạy">{Array.from({ length: 4 }, (_, i) => <div className="data-skeleton-row" key={i}><span className="data-skeleton-thumbnail" /><span className="data-skeleton-lines"><span /><span /><span /></span></div>)}</div>
         </div>
       )}
 

@@ -14,6 +14,7 @@ import {
   getOrCreateLiveRtcClientId,
   isCompatibleRtcAccess,
 } from "../../services/live-rtc";
+import MediaThumbnail from "../media/mediaThumbnail";
 
 const statusText = {
   SCHEDULED: "Sắp diễn ra",
@@ -254,7 +255,17 @@ export default function LivePlayer({ session }: { session: LiveSession }) {
               role="status"
               aria-live="polite"
             >
-              {session.coverUrl ? <img src={session.coverUrl} alt="" /> : <Radio size={44} />}
+              {session.coverUrl ? (
+                <MediaThumbnail
+                  src={session.coverUrl}
+                  alt=""
+                  width={960}
+                  height={540}
+                  loading="eager"
+                />
+              ) : (
+                <Radio size={44} />
+              )}
               <strong>{error || playerMessage[playerState]}</strong>
             </div>
           )}
@@ -266,7 +277,17 @@ export default function LivePlayer({ session }: { session: LiveSession }) {
         </>
       ) : (
         <div className="live-player-placeholder">
-          {session.coverUrl ? <img src={session.coverUrl} alt="" /> : <Radio size={44} />}
+          {session.coverUrl ? (
+            <MediaThumbnail
+              src={session.coverUrl}
+              alt=""
+              width={960}
+              height={540}
+              loading="eager"
+            />
+          ) : (
+            <Radio size={44} />
+          )}
           <strong>{inactiveMessage}</strong>
           {session.status === "SCHEDULED" && (
             <span>{new Date(session.startAt).toLocaleString("vi-VN")}</span>

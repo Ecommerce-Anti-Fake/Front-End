@@ -12,10 +12,26 @@ import { useNavigate } from "react-router-dom";
 
 import { getShopChatThread } from "../../services/chat.api";
 import { useGlobalLoadingStore } from "../../store/globalLoadingStore";
+import MediaThumbnail from "../media/mediaThumbnail";
 
 type Props = {
   shop: shopCard;
 };
+
+function getChatErrorMessage(error: unknown): string {
+  if (typeof error === "object" && error !== null && "response" in error) {
+    const response = (error as {
+      response?: { data?: { message?: unknown } };
+    }).response;
+    if (typeof response?.data?.message === "string") {
+      return response.data.message;
+    }
+  }
+
+  return error instanceof Error
+    ? error.message
+    : "Đã xảy ra lỗi khi tạo cuộc trò chuyện";
+}
 
 export default function ShopHeader({ shop }: Props) {
   const navigate = useNavigate();
@@ -34,14 +50,10 @@ export default function ShopHeader({ shop }: Props) {
       navigate(`/chat/${response.threadId}`);
 
       return;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Lỗi tạo chat thread:", error);
 
-      throw new Error(
-        error?.response?.data?.message ||
-          error?.message ||
-          "Đã xảy ra lỗi khi tạo cuộc trò chuyện",
-      );
+      throw new Error(getChatErrorMessage(error), { cause: error });
     } finally {
       hideLoading();
     }
@@ -50,10 +62,13 @@ export default function ShopHeader({ shop }: Props) {
   return (
     <div className="shop-header-card-view">
       <div className="shop-header-left-view">
-        <img
+        <MediaThumbnail
           src={shop.shopAvatar || "https://i.pravatar.cc/150?img=3"}
           alt=""
           className="shop-avatar-view"
+          width={160}
+          height={160}
+          loading="eager"
         />
 
         <div className="shop-header-info-view">

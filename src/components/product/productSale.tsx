@@ -1,12 +1,14 @@
 import type { Product } from "../../type/product";
 import "../../css/components/product/productSale.css";
 import { formatVnd } from "../../ultil/currency";
+import MediaThumbnail from "../media/mediaThumbnail";
 
 type Props = {
   product: Product;
+  loading?: "lazy" | "eager";
 };
 
-export default function ProductSell({ product }: Props) {
+export default function ProductSell({ product, loading = "lazy" }: Props) {
   const totalQuantity = product.soldQuantity + product.availableQuantity;
   const soldPercent = totalQuantity > 0
     ? Math.min(100, Math.round((product.soldQuantity / totalQuantity) * 100))
@@ -20,7 +22,13 @@ export default function ProductSell({ product }: Props) {
         </div>
       ) : null}
 
-      <img src={product.image} alt={product.name} />
+      <MediaThumbnail
+        src={product.image}
+        alt={product.name}
+        width={320}
+        height={320}
+        loading={loading}
+      />
       <h4>{product.name}</h4>
       <div className="price">{formatVnd(product.price)}</div>
       {product.oldPrice && product.oldPrice > product.price ? (

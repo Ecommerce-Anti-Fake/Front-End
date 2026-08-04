@@ -9,16 +9,24 @@ import EmptyState from "../common/emptyState";
 import { searchOffers } from "../../services/product.api";
 import { fetchShopCategories } from "../../services/shop.api";
 import "../../css/components/shop/shopProduct.css";
+import type { ProductView } from "../../type/product";
 
-const normalizeList = (data: any) => {
-  const payload = data?.data ?? data?.items ?? data;
-  return Array.isArray(payload) ? payload : [];
+type ShopProduct = ProductView & { createdAt?: string };
+
+const normalizeList = (data: unknown): ShopProduct[] => {
+  const payload =
+    typeof data === "object" && data !== null
+      ? ((data as { data?: unknown; items?: unknown }).data ??
+        (data as { items?: unknown }).items ??
+        data)
+      : data;
+  return Array.isArray(payload) ? (payload as ShopProduct[]) : [];
 };
 
 export default function ShopProducts() {
   const { shopId } = useParams<{ shopId: string }>();
   const [searchParams] = useSearchParams();
-  const [products, setProducts] = useState<any[]>([]);
+  const [products, setProducts] = useState<ShopProduct[]>([]);
   const [categories, setCategories] = useState<SearchCategory[]>([]);
   const [loading, setLoading] = useState(false);
   const [sortType, setSortType] = useState("all");
@@ -84,7 +92,8 @@ export default function ShopProducts() {
     case "newest":
       sortedProducts.sort(
         (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+          new Date(b.createdAt ?? "").getTime() -
+          new Date(a.createdAt ?? "").getTime(),
       );
       break;
     case "bestSelling":
@@ -108,7 +117,7 @@ export default function ShopProducts() {
           />
         </div>
         <div className="shop-products-grid">
-          {loading && <div className="data-skeleton data-skeleton-cards shop-product-skeleton" role="status" aria-label="Đang tải sản phẩm của shop">{Array.from({ length: 10 }, (_, i) => <div className="data-skeleton-row" key={i}><span className="data-skeleton-thumbnail" /><span className="data-skeleton-lines"><span /><span /><span /></span></div>)}</div>}
+          {loading && <div className="data-skeleton data-skeleton-cards product-card-skeleton shop-product-skeleton" role="status" aria-label="Đang tải sản phẩm của shop">{Array.from({ length: 10 }, (_, i) => <div className="data-skeleton-row" key={i}><span className="data-skeleton-thumbnail" /><span className="data-skeleton-lines"><span /><span /><span /></span></div>)}</div>}
 
           {!loading && sortedProducts.length === 0 && (
             <EmptyState
@@ -121,9 +130,12 @@ export default function ShopProducts() {
 
           {!loading &&
             sortedProducts.length > 0 &&
-            sortedProducts.map((product) => (
+            sortedProducts.map((product, index) => (
               <div key={product.id}>
-                <ProductCard product={product} />
+                <ProductCard
+                  product={product}
+                  loading={index === 0 ? "eager" : "lazy"}
+                />
               </div>
             ))}
         </div>
