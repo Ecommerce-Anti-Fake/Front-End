@@ -122,15 +122,6 @@ export default function PaymentModel({
     );
   }, [checkout, location.search, navigate, payOSReturn]);
 
-  useEffect(() => {
-    if (!checkout) return;
-
-    // payOS currently rejects the embedded iframe for production links with
-    // INVALID_PARAM, while the hosted checkout URL remains valid. Redirecting
-    // preserves the provider return/cancel flow and avoids a broken QR frame.
-    window.location.replace(checkout.checkoutUrl);
-  }, [checkout]);
-
   const isOrderCheckout = checkout?.flow === "ORDER";
   const displayAmount = Number(checkout?.amount ?? amount ?? 0);
   const displayReference = String(
@@ -203,6 +194,14 @@ export default function PaymentModel({
 
   useEffect(() => {
     if (!checkout) return;
+
+    const hostedCheckoutUrl = checkout.checkoutUrl;
+    if (hostedCheckoutUrl) {
+      // payOS currently rejects the embedded iframe for production links with
+      // INVALID_PARAM, while the hosted checkout URL remains valid.
+      window.location.replace(hostedCheckoutUrl);
+      return;
+    }
 
     const elementId = "payos-checkout-frame";
     const container = document.getElementById(elementId);
