@@ -25,6 +25,9 @@ test.describe("seller authenticated read-only routes", () => {
       await loginAs(page, sellerEmail!, password!);
       await assertNoServerErrors(page, route);
       expect(new URL(page.url()).pathname).not.toBe("/auth");
+      if (route === "/seller") {
+        expect(new URL(page.url()).pathname).toBe("/seller/dashboard");
+      }
     });
   }
 });
