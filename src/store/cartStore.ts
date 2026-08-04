@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { fetchCart } from "../services/cart.api";
+import type { CartResponse } from "../type/checkout";
 
 type CartStore = {
   cartCount: number;
@@ -19,9 +20,11 @@ export const useCartStore = create<CartStore>((set) => ({
     try {
       const data = await fetchCart();
 
-      const count = (data.shops || []).reduce(
-        (sum: number, shop: any) => sum + shop.items.length,
-        0
+      const cart = data as CartResponse;
+      const count = cart.shops.reduce(
+        (sum, shop) =>
+          sum + shop.items.reduce((itemSum, item) => itemSum + item.quantity, 0),
+        0,
       );
 
       set({

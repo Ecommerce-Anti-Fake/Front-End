@@ -19,6 +19,8 @@ export type NotificationPage = {
   pageSize: number;
   totalItems: number;
   totalPages: number;
+  unreadCount: number;
+  unreadChatCount: number;
 };
 
 type FetchNotificationParams = {
@@ -37,7 +39,12 @@ const toNotification = (value: unknown): UserNotification | null => {
     id: String(id),
     title: String(record.title ?? record.subject ?? "Thông báo"),
     message: String(record.message ?? record.content ?? record.body ?? ""),
-    type: typeof record.type === "string" ? record.type : undefined,
+    type:
+      typeof record.type === "string"
+        ? record.type
+        : typeof record.notificationType === "string"
+          ? record.notificationType
+          : undefined,
     readAt: typeof record.readAt === "string" ? record.readAt : null,
     createdAt:
       typeof record.createdAt === "string"
@@ -95,6 +102,27 @@ export const fetchNotifications = async ({
     1,
     Number(payload?.pageSize ?? pagination.pageSize ?? pageSize),
   );
+  const unreadCount = Math.max(
+    0,
+    Number(
+      payload?.unreadCount ??
+        data?.unreadCount ??
+        (filter === "unread"
+          ? totalItems
+          : items.filter((item: UserNotification) => !item.readAt).length),
+    ),
+  );
+  const unreadChatCount = Math.max(
+    0,
+    Number(
+      payload?.unreadChatCount ??
+        data?.unreadChatCount ??
+        items.filter(
+          (item: UserNotification) =>
+            !item.readAt && item.type === "CHAT_MESSAGE",
+        ).length,
+    ),
+  );
 
   return {
     items,
@@ -107,6 +135,8 @@ export const fetchNotifications = async ({
         pagination.totalPages ??
         Math.max(1, Math.ceil(totalItems / normalizedPageSize)),
     ),
+    unreadCount,
+    unreadChatCount,
   };
 };
 

@@ -279,6 +279,7 @@ function App() {
               <Route path="affiliate" element={<SellerAffiliatePage />} />
               <Route path="vouchers" element={<SellerVoucherManagement />} />
               <Route path="live" element={<SellerLivePage />} />
+              <Route path="statistics" element={<SellerDashboard />} />
               <Route path="shop-info" element={<SellerShopInfo />} />
               <Route path="business-info" element={<SellerBusinessInfo />} />
               <Route path="chat" element={<SellerChatPage />} />

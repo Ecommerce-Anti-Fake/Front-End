@@ -18,18 +18,23 @@ import {
 import { useEffect, useRef, useState } from "react";
 
 import "../../css/components/layout/sellerHeader.css";
-import { Link, NavLink, useNavigate } from "react-router-dom";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useSellerShop } from "../../contexts/sellerShopContext";
 import type { MyShop } from "../../services/shop.api";
+import { useHeaderUnreadCounts } from "../../hooks/useHeaderUnreadCounts";
 
 const getShopAvatar = (shop: MyShop) =>
   shop?.shopAvatar || shop?.avatarUrl || shop?.logoUrl || "";
 
 export default function SellerHeader() {
   const navigate = useNavigate();
+  const location = useLocation();
   const menuRef = useRef<HTMLDivElement>(null);
   const { shop } = useSellerShop();
   const [menuOpen, setMenuOpen] = useState(false);
+  const { unreadCount, unreadChatCount } = useHeaderUnreadCounts(
+    location.pathname,
+  );
 
   useEffect(() => {
     const closeMenu = (event: MouseEvent) => {
@@ -195,13 +200,26 @@ export default function SellerHeader() {
           aria-label="Chat"
         >
           <MessageSquareText size={22} />
-          <span className="seller-header-badge">3</span>
+          {unreadChatCount > 0 && (
+            <span className="seller-header-badge">
+              {unreadChatCount > 99 ? "99+" : unreadChatCount}
+            </span>
+          )}
         </button>
 
-        <div className="seller-header-icon">
+        <button
+          type="button"
+          className="seller-header-icon"
+          onClick={() => navigate("/notification")}
+          aria-label="Thông báo"
+        >
           <Bell size={22} />
-          <span className="seller-header-badge">1</span>
-        </div>
+          {unreadCount > 0 && (
+            <span className="seller-header-badge">
+              {unreadCount > 99 ? "99+" : unreadCount}
+            </span>
+          )}
+        </button>
 
         <div className="seller-header-shop" ref={menuRef}>
           <button

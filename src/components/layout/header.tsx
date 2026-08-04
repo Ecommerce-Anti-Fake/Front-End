@@ -16,6 +16,7 @@ import {
 import { useEffect, useState } from "react";
 import { useCartStore } from "../../store/cartStore";
 import { getToken } from "../../ultil/auth";
+import { useHeaderUnreadCounts } from "../../hooks/useHeaderUnreadCounts";
 
 export default function Header() {
   const location = useLocation();
@@ -34,8 +35,9 @@ export default function Header() {
     }
   };
 
-  // const cartCount = useCartStore((state) => state.cartCount);
+  const cartCount = useCartStore((state) => state.cartCount);
   const refreshCart = useCartStore((state) => state.refreshCart);
+  const { unreadCount, unreadChatCount } = useHeaderUnreadCounts(location.pathname);
 
   useEffect(() => {
     if (location.pathname === "/auth" || !getToken()) {
@@ -152,17 +154,17 @@ export default function Header() {
         </Link> */}
         <Link to="/chat" className="icon-btn">
           <MessageSquareText size={22} />
-          {/* <span className="badge">3</span> */}
+          {unreadChatCount > 0 && <span className="badge">{unreadChatCount > 99 ? "99+" : unreadChatCount}</span>}
         </Link>
 
         <Link to="/cart" className="icon-btn cart-btn">
           <ShoppingCart size={22} />
-          {/* <span className="badge">{cartCount}</span> */}
+          {cartCount > 0 && <span className="badge">{cartCount > 99 ? "99+" : cartCount}</span>}
         </Link>
 
         <Link to="/notification" className="icon-btn">
           <Bell size={22} />
-          {/* <span className="badge">1</span> */}
+          {unreadCount > 0 && <span className="badge">{unreadCount > 99 ? "99+" : unreadCount}</span>}
         </Link>
 
         <div className="divider" />

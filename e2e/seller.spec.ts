@@ -13,6 +13,7 @@ const sellerRoutes = [
   "/seller/affiliate",
   "/seller/vouchers",
   "/seller/live",
+  "/seller/statistics",
   "/seller/shop-info",
   "/seller/business-info",
   "/seller/chat",

@@ -14,6 +14,7 @@ import {
   type NotificationFilter,
   type NotificationPage as NotificationPageData,
 } from "../../services/notification.api";
+import { useNotificationStore } from "../../store/notificationStore";
 import "../../css/pages/notification.css";
 
 const PAGE_SIZE = 20;
@@ -30,6 +31,8 @@ const initialPage: NotificationPageData = {
   pageSize: PAGE_SIZE,
   totalItems: 0,
   totalPages: 1,
+  unreadCount: 0,
+  unreadChatCount: 0,
 };
 
 const formatTime = (value?: string) => {
@@ -52,6 +55,9 @@ export default function NotificationPage() {
   const [actionError, setActionError] = useState("");
   const [markingId, setMarkingId] = useState<string | null>(null);
   const [markingAll, setMarkingAll] = useState(false);
+  const refreshUnreadNotifications = useNotificationStore(
+    (state) => state.refreshNotifications,
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -122,6 +128,7 @@ export default function NotificationPage() {
     try {
       await markNotificationAsRead(notificationId);
       applyReadState(new Set([notificationId]));
+      void refreshUnreadNotifications();
     } catch (requestError) {
       setActionError(requestError instanceof Error ? requestError.message : "Không thể cập nhật thông báo");
     } finally {
@@ -135,6 +142,7 @@ export default function NotificationPage() {
     try {
       await markAllNotificationsAsRead();
       applyReadState();
+      void refreshUnreadNotifications();
     } catch (requestError) {
       setActionError(requestError instanceof Error ? requestError.message : "Không thể cập nhật thông báo");
     } finally {
