@@ -188,6 +188,21 @@ export const createWalletTopUp = async (amount: string, idempotencyKey: string):
     method: "POST", headers: jsonHeaders, body: JSON.stringify({ amount, idempotencyKey }),
   }), "Không thể tạo yêu cầu nạp tiền");
 
+export type WalletTopUpReconciliation = {
+  success: boolean;
+  reconciled: boolean;
+  status: string;
+  message: string;
+};
+
+export const reconcileMyWalletTopUp = async (
+  paymentLinkId: string,
+): Promise<WalletTopUpReconciliation> =>
+  unwrap(await authFetch(
+    `${BASE_URL}/api/wallet/me/top-ups/${encodeURIComponent(paymentLinkId)}/reconcile`,
+    { method: "POST", headers: { Accept: "application/json" } },
+  ), "Không thể đối soát giao dịch nạp ví");
+
 export const fetchSupportedBanks = async (): Promise<SupportedBank[]> =>
   unwrap(await authFetch(`${BASE_URL}/api/wallet/banks`, {
     method: "GET", headers: { Accept: "application/json" },

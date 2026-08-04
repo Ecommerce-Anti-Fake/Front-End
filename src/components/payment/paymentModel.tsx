@@ -498,7 +498,16 @@ export default function PaymentModel({
                           inlineResult === "SUCCESS"
                             ? routes.successPath
                             : routes.cancelPath,
-                          { replace: true },
+                          {
+                            replace: true,
+                            state:
+                              inlineResult === "SUCCESS" && isWalletTopUp
+                                ? {
+                                    topUpId: checkout?.topUpId,
+                                    paymentLinkId: checkout?.paymentLinkId,
+                                  }
+                                : undefined,
+                          },
                         )
                       }
                     >

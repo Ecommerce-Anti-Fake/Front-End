@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import {
   ArrowDownToLine,
@@ -16,6 +16,7 @@ import {
   fetchMyWallet,
   fetchMyWalletTransactions,
   fetchMyWithdrawals,
+  reconcileMyWalletTopUp,
   type PayoutAccount,
   type Wallet,
   type WalletTransaction,
@@ -44,6 +45,7 @@ const withdrawalLabels: Record<string, string> = {
 };
 
 export default function WalletPage() {
+  const location = useLocation();
   const navigate = useNavigate();
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
@@ -54,6 +56,12 @@ export default function WalletPage() {
   const [submitting, setSubmitting] = useState(false);
   const [modalMode, setModalMode] = useState<"add-account" | "withdraw" | null>(null);
   const [searchParams] = useSearchParams();
+  const topUpReturn = searchParams.get("topUp");
+  const statePaymentLinkId = (location.state as { paymentLinkId?: unknown } | null)?.paymentLinkId;
+  const returnedPaymentLinkId =
+    typeof statePaymentLinkId === "string" && statePaymentLinkId.trim()
+      ? statePaymentLinkId.trim()
+      : searchParams.get("id")?.trim() || null;
 
   const load = async () => {
     setLoading(true);
@@ -89,12 +97,29 @@ export default function WalletPage() {
   }, []);
 
   useEffect(() => {
-    if (searchParams.get("topUp") === "returned") {
-      toast.info("Đã quay lại từ PayOS. Số dư sẽ cập nhật sau khi webhook xác nhận.");
-    } else if (searchParams.get("topUp") === "cancelled") {
+    if (topUpReturn === "returned") {
+      if (!returnedPaymentLinkId) {
+        toast.info("Đã quay lại từ PayOS. Số dư sẽ cập nhật sau khi webhook xác nhận.");
+        return;
+      }
+
+      toast.info("Đang đối soát giao dịch PayOS...");
+      void reconcileMyWalletTopUp(returnedPaymentLinkId)
+        .then((result) => {
+          if (result.reconciled && result.status === "PAID") {
+            toast.success("Đã đồng bộ thanh toán vào ví.");
+          } else {
+            toast.info("PayOS chưa ghi nhận thanh toán. Hệ thống sẽ tiếp tục chờ webhook.");
+          }
+          void load();
+        })
+        .catch((error) => {
+          toast.error(error instanceof Error ? error.message : "Không thể đối soát giao dịch PayOS");
+        });
+    } else if (topUpReturn === "cancelled") {
       toast.info("Bạn đã hủy yêu cầu nạp tiền.");
     }
-  }, [searchParams]);
+  }, [returnedPaymentLinkId, topUpReturn]);
 
   const submitTopUp = async (event: React.FormEvent) => {
     event.preventDefault();
