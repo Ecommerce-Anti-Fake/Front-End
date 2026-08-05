@@ -146,6 +146,20 @@ export type PlatformWalletSnapshot = {
   ledger: WalletTransactionsResponse;
 };
 
+export type WalletReconciliationReport = {
+  summary?: Record<string, string | number | null>;
+  items?: Array<{
+    transactionType: string;
+    status: string;
+    amount: string;
+    currency: string;
+    referenceType: string | null;
+    referenceId: string | null;
+    createdAt: string;
+  }>;
+  pagination?: WalletListPagination;
+};
+
 export type WalletListPagination = { page: number; limit: number; total: number; totalPages: number };
 
 const unwrap = async <T>(response: Response, fallback: string): Promise<T> => {
@@ -394,9 +408,9 @@ export const fetchPlatformWallets = async (): Promise<PlatformWalletSnapshot[]> 
   return Array.isArray(payload) ? payload : payload?.items ?? [];
 };
 
-export const fetchWalletReconciliation = async (params: Record<string, string> = {}) => {
+export const fetchWalletReconciliation = async (params: Record<string, string> = {}): Promise<WalletReconciliationReport> => {
   const query = new URLSearchParams(params).toString();
-  return unwrap(await authFetch(`${BASE_URL}/api/admin/wallets/reconciliation${query ? `?${query}` : ""}`, {
+  return unwrap<WalletReconciliationReport>(await authFetch(`${BASE_URL}/api/admin/wallets/reconciliation${query ? `?${query}` : ""}`, {
     method: "GET", headers: { Accept: "application/json" },
   }), "Không thể tải báo cáo đối soát ví");
 };

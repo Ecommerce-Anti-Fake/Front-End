@@ -1,15 +1,354 @@
-.admin-wallet-page{padding:30px;max-width:1200px;margin:0 auto}.admin-wallet-heading{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px}.admin-wallet-heading h1{margin:4px 0;font-size:30px}.admin-wallet-heading p{margin:0;color:#667085}.admin-wallet-heading button{border:0;border-radius:9px;padding:10px 14px;background:#f2e8e8;color:#8c3030;font-weight:700}.admin-wallet-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}.admin-platform-card,.admin-reconcile-card{background:#fff;border:1px solid #eadede;border-radius:16px;padding:22px;box-shadow:0 8px 24px #5215150d}.admin-platform-card>span{font-size:12px;color:#667085}.admin-platform-card>strong{display:block;font-size:28px;color:#8c3030;margin:14px 0}.admin-platform-card dl{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:0}.admin-platform-card dt,.admin-platform-card dd{font-size:13px;margin:0}.admin-platform-card dt{color:#667085}.admin-platform-card dd{font-weight:700;margin-top:4px}.admin-reconcile-card{margin-top:18px}.admin-reconcile-card h2{margin-top:0}.admin-reconcile-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.admin-reconcile-grid div{background:#faf7f7;border-radius:10px;padding:12px}.admin-reconcile-grid span{display:block;color:#667085;font-size:12px}.admin-reconcile-grid strong{display:block;margin-top:6px}.admin-wallet-note{color:#667085;font-size:13px;margin-bottom:0}@media(max-width:700px){.admin-wallet-page{padding:18px 12px}.admin-wallet-heading{flex-direction:column;gap:12px}.admin-wallet-grid{grid-template-columns:1fr}.admin-reconcile-grid{grid-template-columns:1fr 1fr}}
-.admin-payout-review { margin-top: 20px; }
-.admin-payout-review .admin-wallet-heading { margin-bottom: 16px; }
-.admin-payout-review select { align-self: center; border: 1px solid #ddd2d2; border-radius: 10px; padding: 9px 11px; background: #fff; }
-.admin-payout-list { display: grid; gap: 10px; }
-.admin-payout-row { display: grid; grid-template-columns: minmax(220px, 1fr) minmax(130px, .5fr) auto; align-items: center; gap: 14px; padding: 14px; border: 1px solid #eee7e7; border-radius: 12px; }
-.admin-payout-row > div { display: grid; gap: 4px; }
-.admin-payout-row span { color: #584b4b; }
-.admin-payout-row small { color: #817474; }
-.admin-payout-row .admin-table-actions { display: flex; }
+.admin-wallet-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 30px;
+  color: #281f1f;
+}
 
-@media (max-width: 800px) {
-  .admin-payout-row { grid-template-columns: 1fr; }
-  .admin-payout-row .admin-table-actions { flex-wrap: wrap; }
+.admin-wallet-heading,
+.admin-wallet-section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.admin-wallet-heading {
+  margin-bottom: 24px;
+}
+
+.admin-wallet-heading h1,
+.admin-wallet-section-heading h2 {
+  margin: 4px 0;
+}
+
+.admin-wallet-heading h1 {
+  font-size: 30px;
+}
+
+.admin-wallet-heading p,
+.admin-wallet-section-heading p {
+  margin: 0;
+  color: #667085;
+}
+
+.admin-wallet-heading button,
+.admin-wallet-section-heading button,
+.admin-payout-filter select {
+  border: 1px solid #e6d8d8;
+  border-radius: 10px;
+  padding: 10px 14px;
+  background: #f8eeee;
+  color: #8c3030;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.admin-wallet-heading button:disabled,
+.admin-wallet-section-heading button:disabled,
+.admin-payout-filter select:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.admin-wallet-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.admin-platform-card,
+.admin-reconcile-card {
+  border: 1px solid #eadede;
+  border-radius: 16px;
+  padding: 22px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(82, 21, 21, 0.05);
+}
+
+.admin-platform-card > span {
+  color: #667085;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.admin-platform-card > strong {
+  display: block;
+  margin: 14px 0;
+  color: #8c3030;
+  font-size: 28px;
+}
+
+.admin-platform-card dl {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 0;
+}
+
+.admin-platform-card dt,
+.admin-platform-card dd {
+  margin: 0;
+  font-size: 13px;
+}
+
+.admin-platform-card dt {
+  color: #667085;
+}
+
+.admin-platform-card dd {
+  margin-top: 4px;
+  font-weight: 700;
+}
+
+.admin-wallet-empty {
+  grid-column: 1 / -1;
+  border: 1px dashed #dfcaca;
+  border-radius: 16px;
+  padding: 28px;
+  color: #667085;
+  text-align: center;
+}
+
+.admin-wallet-error,
+.admin-wallet-inline-error {
+  display: grid;
+  gap: 4px;
+  border: 1px solid #f0b6b6;
+  border-radius: 12px;
+  padding: 14px 16px;
+  background: #fff1f1;
+  color: #a22626;
+}
+
+.admin-wallet-error {
+  margin-bottom: 18px;
+}
+
+.admin-wallet-error span,
+.admin-wallet-inline-error span {
+  font-size: 13px;
+}
+
+.admin-reconcile-card {
+  margin-top: 18px;
+}
+
+.admin-reconcile-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.admin-reconcile-grid div {
+  min-width: 0;
+  border-radius: 10px;
+  padding: 12px;
+  background: #faf7f7;
+}
+
+.admin-reconcile-grid span {
+  display: block;
+  color: #667085;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.admin-reconcile-grid strong {
+  display: block;
+  margin-top: 6px;
+  overflow-wrap: anywhere;
+}
+
+.admin-wallet-muted,
+.admin-wallet-note {
+  color: #667085;
+  font-size: 13px;
+}
+
+.admin-wallet-note {
+  margin-bottom: 0;
+}
+
+.admin-wallet-inline-error {
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  margin-top: 18px;
+}
+
+.admin-wallet-inline-error strong,
+.admin-wallet-inline-error span {
+  grid-column: 1;
+}
+
+.admin-wallet-inline-error button {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  border: 1px solid #d88989;
+  border-radius: 8px;
+  padding: 8px 11px;
+  background: #fff;
+  color: #a22626;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.admin-payout-review .admin-wallet-section-heading {
+  margin-bottom: 16px;
+}
+
+.admin-payout-filter {
+  display: grid;
+  align-self: center;
+  gap: 6px;
+}
+
+.admin-payout-filter span {
+  color: #806464;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.admin-payout-filter select {
+  min-width: 150px;
+  padding: 9px 11px;
+  background: #fff;
+}
+
+.admin-payout-list {
+  display: grid;
+  gap: 10px;
+}
+
+.admin-payout-row {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(130px, 0.5fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid #eee7e7;
+  border-radius: 12px;
+}
+
+.admin-payout-row > div {
+  display: grid;
+  gap: 4px;
+}
+
+.admin-payout-row span {
+  color: #584b4b;
+}
+
+.admin-payout-row small {
+  color: #817474;
+}
+
+.admin-payout-status {
+  width: fit-content;
+  border-radius: 999px;
+  padding: 5px 9px;
+  background: #f2eeee;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.admin-payout-status.pending {
+  background: #fff0d8;
+  color: #9b5c00;
+}
+
+.admin-payout-status.verified {
+  background: #dcfae6;
+  color: #027a48;
+}
+
+.admin-payout-status.rejected {
+  background: #ffe0e0;
+  color: #b00020;
+}
+
+.admin-payout-row .admin-table-actions {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.admin-payout-row .admin-table-actions button {
+  width: auto;
+  min-height: 32px;
+  height: auto;
+  border: 1px solid #efd0d0;
+  border-radius: 8px;
+  padding: 6px 9px;
+  background: #fff8f8;
+  color: #674c4c;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.admin-payout-row .admin-table-actions button:hover {
+  background: #fff0f1;
+  color: #b00020;
+}
+
+@media (max-width: 900px) {
+  .admin-wallet-page {
+    padding: 22px 18px;
+  }
+
+  .admin-reconcile-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-payout-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .admin-payout-row .admin-table-actions {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-wallet-page {
+    padding: 18px 12px;
+  }
+
+  .admin-wallet-heading,
+  .admin-wallet-section-heading {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .admin-wallet-heading button,
+  .admin-wallet-section-heading button,
+  .admin-payout-filter,
+  .admin-payout-filter select {
+    width: 100%;
+  }
+
+  .admin-wallet-grid,
+  .admin-reconcile-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-payout-row {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-payout-row .admin-table-actions {
+    grid-column: auto;
+  }
+
+  .admin-wallet-inline-error {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-wallet-inline-error button {
+    grid-column: auto;
+    grid-row: auto;
+    width: fit-content;
+  }
 }
