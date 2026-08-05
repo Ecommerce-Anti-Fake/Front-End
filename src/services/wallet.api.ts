@@ -37,7 +37,7 @@ export type WalletTransactionsResponse = {
 };
 
 export type WithdrawalStatus =
-  | "PENDING" | "APPROVED" | "PROCESSING" | "COMPLETED" | "REJECTED" | "FAILED" | "CANCELLED" | string;
+  | "PENDING" | "PROCESSING" | "COMPLETED" | "REJECTED" | "CANCELLED";
 
 export type WalletWithdrawal = {
   id: string;

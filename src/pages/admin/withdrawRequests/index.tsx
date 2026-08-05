@@ -17,13 +17,12 @@ import "../../../css/pages/adminWithdrawals.css";
 
 const statusLabels: Record<string, string> = {
   PENDING: "Có yêu cầu",
-  APPROVED: "Đang chờ chuyển khoản",
   PROCESSING: "Đang xử lý",
   COMPLETED: "Đã hoàn tất",
   REJECTED: "Đã từ chối",
-  FAILED: "Thất bại",
   CANCELLED: "Đã hủy",
 };
+const transferActionLabel = "Chuyển tiền";
 
 const formatDate = (value?: string | null) => {
   if (!value) return "--";
@@ -93,20 +92,31 @@ export default function AdminWithdrawRequestsPage() {
 
   const summary = useMemo(() => {
     const pending = items.filter((item) => item.status === "PENDING");
-    const approved = items.filter((item) => item.status === "APPROVED");
-    const pendingAmount = [...pending, ...approved].reduce((total, item) => total + Number(item.amount || 0), 0);
-    return { pending: pending.length, approved: approved.length, pendingAmount, total: pagination.total };
+    const processing = items.filter((item) => item.status === "PROCESSING");
+    const pendingAmount = [...pending, ...processing].reduce((total, item) => total + Number(item.amount || 0), 0);
+    return { pending: pending.length, processing: processing.length, pendingAmount, total: pagination.total };
   }, [items, pagination.total]);
+
+  const approveRequest = async (id: string) => {
+    try {
+      setProcessingId(id);
+      await approveWalletWithdrawal(id);
+      toast.success("Đã duyệt yêu cầu. Yêu cầu chuyển sang bước chuyển tiền.");
+      await loadWithdrawals();
+    } catch (requestError) {
+      toast.error(requestError instanceof Error ? requestError.message : "Không thể duyệt yêu cầu rút tiền");
+    } finally {
+      setProcessingId("");
+    }
+  };
 
   const openTransfer = async (item: WalletWithdrawal) => {
     try {
       setProcessingId(item.id);
       const detail = await revealWalletWithdrawal(item.id, "ADMIN_TRANSFER_QR");
       const qrPayload = buildVietQrPayload(detail);
-      if (item.status === "PENDING") await approveWalletWithdrawal(item.id);
       setTransfer({ ...detail, qrPayload });
       toast.success("Đã tạo QR chuyển khoản cho yêu cầu này");
-      await loadWithdrawals();
     } catch (requestError) {
       toast.error(requestError instanceof Error ? requestError.message : "Không thể tạo QR chuyển khoản");
     } finally {
@@ -145,14 +155,13 @@ export default function AdminWithdrawRequestsPage() {
     const isProcessing = processingId === item.id;
     if (item.status === "PENDING") {
       return <div className="admin-withdrawal-actions">
-        <button type="button" className="primary" disabled={isProcessing} onClick={() => openTransfer(item)}>Chuyển tiền</button>
+        <button type="button" className="primary" disabled={isProcessing} onClick={() => void approveRequest(item.id)}>Duyệt</button>
         <button type="button" disabled={isProcessing} onClick={() => openAction(item.id, "reject")}>Từ chối</button>
       </div>;
     }
-    if (item.status === "APPROVED") {
+    if (item.status === "PROCESSING") {
       return <div className="admin-withdrawal-actions">
-        <button type="button" className="primary" disabled={isProcessing} onClick={() => openTransfer(item)}>Mở QR chuyển tiền</button>
-        <button type="button" disabled={isProcessing} onClick={() => openAction(item.id, "reject")}>Từ chối</button>
+        <button type="button" className="primary" disabled={isProcessing} onClick={() => openTransfer(item)}>{transferActionLabel}</button>
       </div>;
     }
     return <span className="admin-withdrawal-terminal">{item.transferReference || formatDate(item.processedAt)}</span>;
@@ -163,14 +172,14 @@ export default function AdminWithdrawRequestsPage() {
       <div className="admin-page-heading admin-withdrawals-heading">
         <div>
           <h1>Quản lý yêu cầu rút tiền</h1>
-          <p>Chọn chuyển tiền để mở QR đúng số tài khoản, nội dung và số tiền cần chuyển.</p>
+          <p>Duyệt yêu cầu, sau đó chọn Chuyển tiền để mở QR đúng số tài khoản, nội dung và số tiền.</p>
         </div>
         <label className="admin-withdrawals-filter">
           <span>Lọc trạng thái</span>
           <select value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value); setPage(1); }}>
             <option value="">Tất cả trạng thái</option>
             <option value="PENDING">Có yêu cầu</option>
-            <option value="APPROVED">Đang chờ chuyển</option>
+            <option value="PROCESSING">Đang xử lý</option>
             <option value="COMPLETED">Hoàn tất</option>
             <option value="REJECTED">Từ chối</option>
           </select>
@@ -179,7 +188,7 @@ export default function AdminWithdrawRequestsPage() {
 
       <div className="admin-withdrawal-summary" aria-label="Tổng quan yêu cầu rút tiền">
         <article className="admin-withdrawal-summary-card pending"><span>Có yêu cầu</span><strong>{summary.pending}</strong><small>chưa chuyển tiền</small></article>
-        <article className="admin-withdrawal-summary-card"><span>Đang chờ chuyển</span><strong>{summary.approved}</strong><small>đã mở QR</small></article>
+        <article className="admin-withdrawal-summary-card"><span>Đang xử lý</span><strong>{summary.processing}</strong><small>chờ chuyển tiền</small></article>
         <article className="admin-withdrawal-summary-card amount"><span>Tiền cần xử lý</span><strong>{formatVnd(summary.pendingAmount)}</strong><small>chờ chuyển hoặc từ chối</small></article>
         <article className="admin-withdrawal-summary-card"><span>Tổng yêu cầu</span><strong>{summary.total}</strong><small>theo bộ lọc hiện tại</small></article>
       </div>

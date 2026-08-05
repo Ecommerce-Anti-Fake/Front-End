@@ -32,12 +32,10 @@ const payoutStatus: Record<string, string> = {
 };
 
 const withdrawalStatus: Record<string, string> = {
-  PENDING: "Chờ duyệt",
-  APPROVED: "Đã duyệt, chờ chuyển khoản",
+  PENDING: "Có yêu cầu",
   PROCESSING: "Đang xử lý",
-  COMPLETED: "Đã chuyển khoản",
+  COMPLETED: "Đã hoàn tất",
   REJECTED: "Đã từ chối",
-  FAILED: "Thất bại",
   CANCELLED: "Đã hủy",
 };
 

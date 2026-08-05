@@ -35,12 +35,10 @@ const transactionLabels: Record<string, string> = {
 };
 
 const withdrawalLabels: Record<string, string> = {
-  PENDING: "Đang chờ",
-  APPROVED: "Đã duyệt",
-  PROCESSING: "Đang chuyển",
-  COMPLETED: "Hoàn tất",
-  REJECTED: "Từ chối",
-  FAILED: "Thất bại",
+  PENDING: "Có yêu cầu",
+  PROCESSING: "Đang xử lý",
+  COMPLETED: "Đã hoàn tất",
+  REJECTED: "Đã từ chối",
   CANCELLED: "Đã hủy",
 };
 
@@ -250,7 +248,7 @@ export default function WalletPage() {
             <ArrowDownToLine size={20} />
             <div>
               <h2>Yêu cầu rút tiền</h2>
-              <p>Yêu cầu đã duyệt vẫn cần admin chuyển khoản và xác nhận hoàn tất.</p>
+              <p>Yêu cầu sẽ được admin duyệt, chuyển khoản và xác nhận hoàn tất.</p>
             </div>
           </div>
         </div>
