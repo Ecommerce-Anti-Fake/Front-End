@@ -1,4 +1,5 @@
 import { authFetch } from "../ultil/auth";
+import type { VoucherCreatePayload, VoucherDiscountType, VoucherScopeType } from "../type/voucher";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -7,27 +8,63 @@ export type Voucher = {
   code: string;
   name: string;
   ownerType: 'SYSTEM' | 'SHOP';
-  discountType: 'PERCENTAGE' | 'FIXED_AMOUNT' | 'FREE_SHIPPING';
+  discountType: VoucherDiscountType;
   percentage?: number | null;
   fixedAmount?: number | null;
   maxDiscountAmount?: number | null;
   minOrderAmount: number;
-  status: string;
+  scopeType?: VoucherScopeType | string;
+  scopeIds?: string[];
+  totalUsageLimit?: number | null;
+  userUsageLimit?: number | null;
+  status: VoucherStatus;
   startsAt: string;
   endsAt: string;
+  createdAt?: string;
 };
+
+export type VoucherStatus = 'DRAFT' | 'ACTIVE' | 'PAUSED' | 'EXPIRED';
+
+function optionalNumber(value: unknown) {
+  return value === null || value === undefined ? null : Number(value);
+}
+
+function normaliseAdminVoucher(item: Voucher): Voucher {
+  return {
+    ...item,
+    percentage: optionalNumber(item.percentage),
+    fixedAmount: optionalNumber(item.fixedAmount),
+    maxDiscountAmount: optionalNumber(item.maxDiscountAmount),
+    minOrderAmount: Number(item.minOrderAmount ?? 0),
+    scopeType: item.scopeType ?? 'ALL',
+    scopeIds: item.scopeIds ?? [],
+    totalUsageLimit: optionalNumber(item.totalUsageLimit),
+    userUsageLimit: optionalNumber(item.userUsageLimit),
+  };
+}
 
 export const fetchAdminVouchers = async (): Promise<Voucher[]> => {
   const response = await authFetch(`${BASE_URL}/api/admin/vouchers?page=1&pageSize=100`, { headers: { Accept: 'application/json' } });
   const data = await response.json();
   if (!response.ok) throw new Error(data.message || 'Khong the tai voucher');
-  return (data?.items ?? data?.data?.items ?? []).map((item: Voucher) => ({ ...item, minOrderAmount: Number(item.minOrderAmount ?? 0) }));
+  return (data?.items ?? data?.data?.items ?? []).map(normaliseAdminVoucher);
 };
 
-export const createAdminVoucher = async (payload: Record<string, unknown>) => {
+export const createAdminVoucher = async (payload: VoucherCreatePayload) => {
   const response = await authFetch(`${BASE_URL}/api/admin/vouchers`, { method: 'POST', headers: { Accept: 'application/json', 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
   const data = await response.json();
   if (!response.ok) throw new Error(data.message || 'Khong the tao voucher');
+  return data?.data ?? data;
+};
+
+export const updateAdminVoucherStatus = async (voucherId: string, status: VoucherStatus) => {
+  const response = await authFetch(`${BASE_URL}/api/admin/vouchers/${voucherId}/status`, {
+    method: 'PATCH',
+    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status }),
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || 'Khong the cap nhat trang thai voucher');
   return data?.data ?? data;
 };
 
