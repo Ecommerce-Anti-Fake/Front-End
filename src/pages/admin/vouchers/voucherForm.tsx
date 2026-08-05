@@ -28,6 +28,7 @@ import {
 
 type VoucherFormProps = {
   onSubmit: (payload: VoucherCreatePayload) => Promise<boolean>;
+  owner?: "SYSTEM" | "SHOP";
 };
 
 const discountOptions: Array<{
@@ -78,7 +79,7 @@ function FieldError({ name, errors }: { name: keyof VoucherFormState; errors: Vo
   return message ? <small className="voucher-field-error" id={`${fieldId(name)}-error`}>{message}</small> : null;
 }
 
-export default function VoucherForm({ onSubmit }: VoucherFormProps) {
+export default function VoucherForm({ onSubmit, owner = "SYSTEM" }: VoucherFormProps) {
   const [form, setForm] = useState<VoucherFormState>(createInitialVoucherForm);
   const [errors, setErrors] = useState<VoucherFormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -107,7 +108,23 @@ export default function VoucherForm({ onSubmit }: VoucherFormProps) {
   };
 
   const selectedDiscount = discountOptions.find((option) => option.value === form.discountType);
-  const scopeLabel = scopeOptions.find((option) => option.value === form.scopeType)?.label;
+  const availableScopeOptions = owner === "SHOP"
+    ? scopeOptions.filter((option) => option.value !== "SHOP")
+    : scopeOptions;
+  const scopeLabel = availableScopeOptions.find((option) => option.value === form.scopeType)?.label;
+  const copy = owner === "SHOP"
+    ? {
+        eyebrow: "ƯU ĐÃI CỦA SHOP",
+        title: "Tạo voucher cho shop",
+        description: "Thiết lập ưu đãi riêng cho sản phẩm và khách hàng của shop.",
+        previewNote: "Backend sẽ kiểm tra lại shop, scope và điều kiện tại quote và checkout.",
+      }
+    : {
+        eyebrow: "ƯU ĐÃI PLATFORM",
+        title: "Tạo voucher hệ thống",
+        description: "Thiết lập đầy đủ điều kiện áp dụng trước khi kích hoạt cho người mua.",
+        previewNote: "Backend sẽ revalidate mọi điều kiện tại quote và checkout.",
+      };
   const discountPreview =
     form.discountType === "PERCENTAGE"
       ? `${form.percentage || "0"}% giá trị đơn`
@@ -119,9 +136,9 @@ export default function VoucherForm({ onSubmit }: VoucherFormProps) {
     <form className="voucher-create-card" onSubmit={submit} noValidate>
       <div className="voucher-card-heading">
         <div>
-          <span className="voucher-eyebrow"><Ticket size={15} /> ƯU ĐÃI PLATFORM</span>
-          <h2>Tạo voucher hệ thống</h2>
-          <p>Thiết lập đầy đủ điều kiện áp dụng trước khi kích hoạt cho người mua.</p>
+          <span className="voucher-eyebrow"><Ticket size={15} /> {copy.eyebrow}</span>
+          <h2>{copy.title}</h2>
+          <p>{copy.description}</p>
         </div>
         <div className="voucher-heading-icon" aria-hidden="true"><ShieldCheck size={24} /></div>
       </div>
@@ -225,7 +242,7 @@ export default function VoucherForm({ onSubmit }: VoucherFormProps) {
             <div className="voucher-form-grid voucher-form-grid--two">
               <label className="voucher-field">
                 <span>Phạm vi áp dụng <b>*</b></span>
-                <span className="voucher-input-with-icon"><Layers3 size={16} /><select id={fieldId("scopeType")} value={form.scopeType} onChange={(event) => update("scopeType", event.target.value as VoucherScopeType)}>{scopeOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></span>
+                <span className="voucher-input-with-icon"><Layers3 size={16} /><select id={fieldId("scopeType")} value={form.scopeType} onChange={(event) => update("scopeType", event.target.value as VoucherScopeType)}>{availableScopeOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></span>
                 <small>{form.scopeType === "ALL" ? "Voucher dùng được cho mọi shop và sản phẩm." : "Chọn mã ở ô bên cạnh, phân tách bằng dấu phẩy hoặc xuống dòng."}</small>
               </label>
               <label className={`voucher-field ${form.scopeType === "ALL" ? "is-disabled" : ""}`}>
@@ -285,7 +302,7 @@ export default function VoucherForm({ onSubmit }: VoucherFormProps) {
             <div><dt>Hiệu lực từ</dt><dd>{formatDateTime(form.startsAt)}</dd></div>
             <div><dt>Đến</dt><dd>{formatDateTime(form.endsAt)}</dd></div>
           </dl>
-          <div className="voucher-preview-note"><Info size={15} /> Backend sẽ revalidate mọi điều kiện tại quote và checkout.</div>
+          <div className="voucher-preview-note"><Info size={15} /> {copy.previewNote}</div>
         </aside>
       </div>
     </form>

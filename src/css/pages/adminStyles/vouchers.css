@@ -627,6 +627,30 @@
   font-size: 12px;
 }
 
+.voucher-simple-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.voucher-simple-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid #f3dada;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.voucher-simple-item span {
+  border-radius: 999px;
+  padding: 6px 10px;
+  color: #9b0019;
+  background: #fff0f1;
+  font-size: 12px;
+}
+
 .voucher-list-loading {
   gap: 10px;
 }
