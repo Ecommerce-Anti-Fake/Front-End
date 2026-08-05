@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ConfirmationResult } from "firebase/auth";
+import { Check, ChevronDown, Search } from "lucide-react";
 import { toast } from "sonner";
 import { getUser } from "../../ultil/auth";
+import { filterSupportedBanks } from "./bankPicker";
 import {
   createMyPayoutAccount,
   createMyWithdrawal,
@@ -45,6 +47,9 @@ export default function PayoutAccountModal({
 }: Props) {
   const [banks, setBanks] = useState<SupportedBank[]>([]);
   const [bankBin, setBankBin] = useState("");
+  const [bankSearch, setBankSearch] = useState("");
+  const [bankPickerOpen, setBankPickerOpen] = useState(false);
+  const [highlightedBankIndex, setHighlightedBankIndex] = useState(0);
   const [accountNumber, setAccountNumber] = useState("");
   const [bankVerification, setBankVerification] = useState<BankAccountVerification | null>(null);
   const [amount, setAmount] = useState("");
@@ -56,6 +61,9 @@ export default function PayoutAccountModal({
   const [loadingBanks, setLoadingBanks] = useState(false);
   const [confirmation, setConfirmation] = useState<ConfirmationResult | null>(null);
   const cleanupEmailListener = useRef<null | (() => void)>(null);
+  const bankPickerRef = useRef<HTMLDivElement>(null);
+  const bankSearchRef = useRef<HTMLInputElement>(null);
+  const bankOptionRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const challengeIdRef = useRef("");
   const currentUser = getUser() as { email?: string; phone?: string } | null;
 
@@ -67,10 +75,21 @@ export default function PayoutAccountModal({
     ),
     [payoutAccounts],
   );
+  const selectedBank = useMemo(
+    () => banks.find((item) => item.bin === bankBin) ?? null,
+    [bankBin, banks],
+  );
+  const filteredBanks = useMemo(
+    () => filterSupportedBanks(banks, bankSearch),
+    [bankSearch, banks],
+  );
 
   useEffect(() => {
     if (!open) return;
     setBankBin("");
+    setBankSearch("");
+    setBankPickerOpen(false);
+    setHighlightedBankIndex(0);
     setAccountNumber("");
     setBankVerification(null);
     setAmount("");
@@ -95,6 +114,35 @@ export default function PayoutAccountModal({
     };
   }, [open, mode, shopId]);
 
+  useEffect(() => {
+    if (!bankPickerOpen) return;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!bankPickerRef.current?.contains(event.target as Node)) {
+        setBankPickerOpen(false);
+      }
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setBankPickerOpen(false);
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [bankPickerOpen]);
+
+  useEffect(() => {
+    if (!bankPickerOpen) return;
+    window.requestAnimationFrame(() => bankSearchRef.current?.focus());
+  }, [bankPickerOpen]);
+
+  useEffect(() => {
+    bankOptionRefs.current[highlightedBankIndex]?.scrollIntoView({ block: "nearest" });
+  }, [bankPickerOpen, highlightedBankIndex]);
+
   if (!open) return null;
 
   const close = () => {
@@ -106,6 +154,27 @@ export default function PayoutAccountModal({
   };
 
   const clearVerification = () => setBankVerification(null);
+
+  const selectBank = (bank: SupportedBank) => {
+    setBankBin(bank.bin);
+    setBankSearch("");
+    setHighlightedBankIndex(0);
+    setBankPickerOpen(false);
+    clearVerification();
+  };
+
+  const handleBankSearchKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setHighlightedBankIndex((index) => Math.min(index + 1, Math.max(filteredBanks.length - 1, 0)));
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setHighlightedBankIndex((index) => Math.max(index - 1, 0));
+    } else if (event.key === "Enter" && filteredBanks[highlightedBankIndex]) {
+      event.preventDefault();
+      selectBank(filteredBanks[highlightedBankIndex]);
+    }
+  };
 
   const verifyBankAccount = async () => {
     if (!bankBin) {
@@ -277,24 +346,71 @@ export default function PayoutAccountModal({
           <div className="wallet-modal-body">
             {mode === "add-account" ? (
               <div className="wallet-form-grid">
-                <label className="wide">
-                  Ngân hàng
-                  <select
-                    value={bankBin}
-                    disabled={loadingBanks || busy}
-                    onChange={(event) => {
-                      setBankBin(event.target.value);
-                      clearVerification();
-                    }}
-                  >
-                    <option value="">{loadingBanks ? "Đang tải ngân hàng..." : "Chọn ngân hàng"}</option>
-                    {banks.map((bank) => (
-                      <option key={bank.bin} value={bank.bin}>
-                        {bank.shortName} · {bank.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                <div className="wide wallet-bank-field">
+                  <span className="wallet-field-label">Ng&#x00E2;n h&#x00E0;ng</span>
+                  <div className="wallet-bank-picker" ref={bankPickerRef}>
+                    <button
+                      type="button"
+                      className="wallet-bank-trigger"
+                      disabled={loadingBanks || busy}
+                      aria-haspopup="listbox"
+                      aria-expanded={bankPickerOpen}
+                      aria-controls="wallet-bank-options"
+                      onClick={() => {
+                        setBankSearch("");
+                        setHighlightedBankIndex(0);
+                        setBankPickerOpen((current) => !current);
+                      }}
+                    >
+                      {selectedBank ? (
+                        <BankIdentity bank={selectedBank} />
+                      ) : (
+                        <span className="wallet-bank-placeholder">
+                          {loadingBanks ? "\u0110ang t\u1ea3i ng\u00e2n h\u00e0ng..." : "Ch\u1ecdn ng\u00e2n h\u00e0ng"}
+                        </span>
+                      )}
+                      <ChevronDown size={18} aria-hidden="true" />
+                    </button>
+                    {bankPickerOpen ? (
+                      <div className="wallet-bank-menu">
+                        <div className="wallet-bank-search">
+                          <Search size={17} aria-hidden="true" />
+                          <input
+                            ref={bankSearchRef}
+                            value={bankSearch}
+                            onChange={(event) => {
+                              setBankSearch(event.target.value);
+                              setHighlightedBankIndex(0);
+                            }}
+                            onKeyDown={handleBankSearchKeyDown}
+                            placeholder={"T\u00ecm ng\u00e2n h\u00e0ng"}
+                            aria-label={"T\u00ecm ng\u00e2n h\u00e0ng"}
+                            autoComplete="off"
+                          />
+                        </div>
+                        <div id="wallet-bank-options" className="wallet-bank-options" role="listbox" aria-label={"Danh s\u00e1ch ng\u00e2n h\u00e0ng"}>
+                          {filteredBanks.length ? filteredBanks.map((bank, index) => (
+                            <button
+                              key={bank.bin}
+                              ref={(element) => { bankOptionRefs.current[index] = element; }}
+                              type="button"
+                              role="option"
+                              aria-selected={bank.bin === bankBin}
+                              className={`wallet-bank-option ${bank.bin === bankBin ? "selected" : ""} ${index === highlightedBankIndex ? "highlighted" : ""}`}
+                              onMouseEnter={() => setHighlightedBankIndex(index)}
+                              onClick={() => selectBank(bank)}
+                            >
+                              <BankIdentity bank={bank} />
+                              {bank.bin === bankBin ? <Check size={17} aria-hidden="true" /> : null}
+                            </button>
+                          )) : (
+                            <p className="wallet-bank-empty">Kh&ocirc;ng t&igrave;m th&#x1ea5;y ng&#x00e2;n h&agrave;ng ph&ugrave; h&#x1ee3;p.</p>
+                          )}
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
                 <label className="wide">
                   Số tài khoản
                   <input
@@ -426,6 +542,34 @@ export default function PayoutAccountModal({
         </footer>
       </section>
     </div>
+  );
+}
+
+function BankIdentity({ bank }: { bank: SupportedBank }) {
+  const initials = bank.shortName
+    .split(/[\s-]+/)
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
+  return (
+    <span className="wallet-bank-identity">
+      <span className="wallet-bank-logo" data-image-error={!bank.logo} aria-hidden="true">
+        {bank.logo ? (
+          <img
+            src={bank.logo}
+            alt=""
+            loading="lazy"
+            onError={(event) => event.currentTarget.parentElement?.setAttribute("data-image-error", "true")}
+          />
+        ) : null}
+        <span>{initials || "NH"}</span>
+      </span>
+      <span className="wallet-bank-copy">
+        <strong>{bank.shortName}</strong>
+      </span>
+    </span>
   );
 }
 
