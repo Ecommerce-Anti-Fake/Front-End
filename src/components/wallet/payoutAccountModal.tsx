@@ -52,6 +52,8 @@ export default function PayoutAccountModal({
   const [highlightedBankIndex, setHighlightedBankIndex] = useState(0);
   const [accountNumber, setAccountNumber] = useState("");
   const [bankVerification, setBankVerification] = useState<BankAccountVerification | null>(null);
+  const [bankLookupBusy, setBankLookupBusy] = useState(false);
+  const [bankLookupError, setBankLookupError] = useState("");
   const [amount, setAmount] = useState("");
   const [payoutAccountId, setPayoutAccountId] = useState("");
   const [channel, setChannel] = useState<WithdrawalAuthorizationChannel>("PHONE");
@@ -64,6 +66,7 @@ export default function PayoutAccountModal({
   const bankPickerRef = useRef<HTMLDivElement>(null);
   const bankSearchRef = useRef<HTMLInputElement>(null);
   const bankOptionRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const bankLookupRunRef = useRef(0);
   const challengeIdRef = useRef("");
   const currentUser = getUser() as { email?: string; phone?: string } | null;
 
@@ -92,6 +95,9 @@ export default function PayoutAccountModal({
     setHighlightedBankIndex(0);
     setAccountNumber("");
     setBankVerification(null);
+    setBankLookupBusy(false);
+    setBankLookupError("");
+    bankLookupRunRef.current += 1;
     setAmount("");
     setPayoutAccountId(eligibleAccounts[0]?.id ?? "");
     setChannel(currentUser?.phone ? "PHONE" : "EMAIL");
@@ -143,17 +149,54 @@ export default function PayoutAccountModal({
     bankOptionRefs.current[highlightedBankIndex]?.scrollIntoView({ block: "nearest" });
   }, [bankPickerOpen, highlightedBankIndex]);
 
+  useEffect(() => {
+    if (!open || mode !== "add-account" || !bankBin || !/^\d{6,19}$/.test(accountNumber)) return;
+
+    const requestId = ++bankLookupRunRef.current;
+    const timer = window.setTimeout(async () => {
+      setBankLookupBusy(true);
+      try {
+        const verification = shopId
+          ? await verifyShopBankAccount(shopId, bankBin, accountNumber)
+          : await verifyMyBankAccount(bankBin, accountNumber);
+        if (requestId !== bankLookupRunRef.current) return;
+        setBankVerification(verification);
+        setBankLookupError("");
+      } catch (error) {
+        if (requestId !== bankLookupRunRef.current) return;
+        setBankVerification(null);
+        const message = error instanceof Error ? error.message : "";
+        const providerUnavailable = /chưa được bật|đang gián đoạn|chưa được cấu hình|not configured/i.test(message);
+        setBankLookupError(
+          providerUnavailable
+            ? message
+            : "Tên chủ tài khoản hoặc ngân hàng không đúng. Vui lòng kiểm tra lại.",
+        );
+      } finally {
+        if (requestId === bankLookupRunRef.current) setBankLookupBusy(false);
+      }
+    }, 700);
+
+    return () => window.clearTimeout(timer);
+  }, [accountNumber, bankBin, mode, open, shopId]);
+
   if (!open) return null;
 
   const close = () => {
     if (busy) return;
+    bankLookupRunRef.current += 1;
     cleanupEmailListener.current?.();
     cleanupEmailListener.current = null;
     clearPhoneStepUp();
     onClose();
   };
 
-  const clearVerification = () => setBankVerification(null);
+  const clearVerification = () => {
+    bankLookupRunRef.current += 1;
+    setBankVerification(null);
+    setBankLookupBusy(false);
+    setBankLookupError("");
+  };
 
   const selectBank = (bank: SupportedBank) => {
     setBankBin(bank.bin);
@@ -161,6 +204,12 @@ export default function PayoutAccountModal({
     setHighlightedBankIndex(0);
     setBankPickerOpen(false);
     clearVerification();
+  };
+
+  const openBankPicker = () => {
+    setBankSearch("");
+    setHighlightedBankIndex(0);
+    setBankPickerOpen(true);
   };
 
   const handleBankSearchKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -173,30 +222,6 @@ export default function PayoutAccountModal({
     } else if (event.key === "Enter" && filteredBanks[highlightedBankIndex]) {
       event.preventDefault();
       selectBank(filteredBanks[highlightedBankIndex]);
-    }
-  };
-
-  const verifyBankAccount = async () => {
-    if (!bankBin) {
-      toast.error("Vui lòng chọn ngân hàng");
-      return;
-    }
-    if (!/^\d{6,19}$/.test(accountNumber)) {
-      toast.error("Số tài khoản phải có từ 6 đến 19 chữ số");
-      return;
-    }
-    try {
-      setBusy(true);
-      const verification = shopId
-        ? await verifyShopBankAccount(shopId, bankBin, accountNumber)
-        : await verifyMyBankAccount(bankBin, accountNumber);
-      setBankVerification(verification);
-      toast.success("Đã tìm thấy tài khoản ngân hàng");
-    } catch (error) {
-      setBankVerification(null);
-      toast.error(error instanceof Error ? error.message : "Không tìm thấy tài khoản ngân hàng");
-    } finally {
-      setBusy(false);
     }
   };
 
@@ -349,31 +374,9 @@ export default function PayoutAccountModal({
                 <div className="wide wallet-bank-field">
                   <span className="wallet-field-label">Ng&#x00E2;n h&#x00E0;ng</span>
                   <div className="wallet-bank-picker" ref={bankPickerRef}>
-                    <button
-                      type="button"
-                      className="wallet-bank-trigger"
-                      disabled={loadingBanks || busy}
-                      aria-haspopup="listbox"
-                      aria-expanded={bankPickerOpen}
-                      aria-controls="wallet-bank-options"
-                      onClick={() => {
-                        setBankSearch("");
-                        setHighlightedBankIndex(0);
-                        setBankPickerOpen((current) => !current);
-                      }}
-                    >
-                      {selectedBank ? (
-                        <BankIdentity bank={selectedBank} />
-                      ) : (
-                        <span className="wallet-bank-placeholder">
-                          {loadingBanks ? "\u0110ang t\u1ea3i ng\u00e2n h\u00e0ng..." : "Ch\u1ecdn ng\u00e2n h\u00e0ng"}
-                        </span>
-                      )}
-                      <ChevronDown size={18} aria-hidden="true" />
-                    </button>
                     {bankPickerOpen ? (
-                      <div className="wallet-bank-menu">
-                        <div className="wallet-bank-search">
+                      <>
+                        <div className="wallet-bank-control">
                           <Search size={17} aria-hidden="true" />
                           <input
                             ref={bankSearchRef}
@@ -387,28 +390,57 @@ export default function PayoutAccountModal({
                             aria-label={"T\u00ecm ng\u00e2n h\u00e0ng"}
                             autoComplete="off"
                           />
+                          <button
+                            type="button"
+                            className="wallet-bank-control-icon"
+                            aria-label={"\u0110\u00f3ng danh s\u00e1ch ng\u00e2n h\u00e0ng"}
+                            onClick={() => setBankPickerOpen(false)}
+                          >
+                            <ChevronDown size={18} aria-hidden="true" />
+                          </button>
                         </div>
-                        <div id="wallet-bank-options" className="wallet-bank-options" role="listbox" aria-label={"Danh s\u00e1ch ng\u00e2n h\u00e0ng"}>
-                          {filteredBanks.length ? filteredBanks.map((bank, index) => (
-                            <button
-                              key={bank.bin}
-                              ref={(element) => { bankOptionRefs.current[index] = element; }}
-                              type="button"
-                              role="option"
-                              aria-selected={bank.bin === bankBin}
-                              className={`wallet-bank-option ${bank.bin === bankBin ? "selected" : ""} ${index === highlightedBankIndex ? "highlighted" : ""}`}
-                              onMouseEnter={() => setHighlightedBankIndex(index)}
-                              onClick={() => selectBank(bank)}
-                            >
-                              <BankIdentity bank={bank} />
-                              {bank.bin === bankBin ? <Check size={17} aria-hidden="true" /> : null}
-                            </button>
-                          )) : (
-                            <p className="wallet-bank-empty">Kh&ocirc;ng t&igrave;m th&#x1ea5;y ng&#x00e2;n h&agrave;ng ph&ugrave; h&#x1ee3;p.</p>
-                          )}
+                        <div className="wallet-bank-menu">
+                          <div id="wallet-bank-options" className="wallet-bank-options" role="listbox" aria-label={"Danh s\u00e1ch ng\u00e2n h\u00e0ng"}>
+                            {filteredBanks.length ? filteredBanks.map((bank, index) => (
+                              <button
+                                key={bank.bin}
+                                ref={(element) => { bankOptionRefs.current[index] = element; }}
+                                type="button"
+                                role="option"
+                                aria-selected={bank.bin === bankBin}
+                                className={`wallet-bank-option ${bank.bin === bankBin ? "selected" : ""} ${index === highlightedBankIndex ? "highlighted" : ""}`}
+                                onMouseEnter={() => setHighlightedBankIndex(index)}
+                                onClick={() => selectBank(bank)}
+                              >
+                                <BankIdentity bank={bank} />
+                                {bank.bin === bankBin ? <Check size={17} aria-hidden="true" /> : null}
+                              </button>
+                            )) : (
+                              <p className="wallet-bank-empty">Kh&ocirc;ng t&igrave;m th&#x1ea5;y ng&#x00e2;n h&agrave;ng ph&ugrave; h&#x1ee3;p.</p>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ) : null}
+                      </>
+                    ) : (
+                      <button
+                        type="button"
+                        className="wallet-bank-selected-control"
+                        disabled={loadingBanks || busy}
+                        aria-haspopup="listbox"
+                        aria-expanded={false}
+                        aria-controls="wallet-bank-options"
+                        onClick={openBankPicker}
+                      >
+                        {selectedBank ? (
+                          <BankIdentity bank={selectedBank} />
+                        ) : (
+                          <span className="wallet-bank-placeholder">
+                            {loadingBanks ? "\u0110ang t\u1ea3i ng\u00e2n h\u00e0ng..." : "Ch\u1ecdn ng\u00e2n h\u00e0ng"}
+                          </span>
+                        )}
+                        <ChevronDown size={18} aria-hidden="true" />
+                      </button>
+                    )}
                   </div>
                 </div>
                 <label className="wide">
@@ -423,12 +455,14 @@ export default function PayoutAccountModal({
                     autoComplete="off"
                     placeholder="Nhập số tài khoản"
                   />
+                  <small className="wallet-field-hint">{"VietQR ch\u1ec9 h\u1ed7 tr\u1ee3 s\u1ed1 t\u00e0i kho\u1ea3n ng\u00e2n h\u00e0ng, kh\u00f4ng ph\u1ea3i s\u1ed1 \u0111i\u1ec7n tho\u1ea1i."}</small>
                 </label>
-                <div className="wide wallet-bank-lookup-action">
-                  <button type="button" onClick={verifyBankAccount} disabled={busy || loadingBanks}>
-                    {busy ? "Đang kiểm tra..." : "Kiểm tra tài khoản"}
-                  </button>
-                </div>
+                {bankLookupBusy ? (
+                  <p className="wide wallet-bank-lookup-status" role="status">Đang kiểm tra thông tin tài khoản...</p>
+                ) : null}
+                {bankLookupError ? (
+                  <p className="wide wallet-bank-lookup-error" role="alert">{bankLookupError}</p>
+                ) : null}
                 {bankVerification ? (
                   <div className="wide wallet-bank-verification" role="status">
                     <span>Chủ tài khoản</span>
