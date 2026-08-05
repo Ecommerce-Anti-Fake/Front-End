@@ -57,6 +57,18 @@ export type WalletWithdrawal = {
   processedAt: string | null;
 };
 
+export type WalletWithdrawalTransferDetails = {
+  id: string;
+  bankBin: string | null;
+  bankCode: string | null;
+  bankName: string;
+  accountHolder: string;
+  accountNumber: string;
+  amount: string;
+  currency: string;
+  transferContent: string;
+};
+
 export type PayoutAccountStatus = "PENDING" | "VERIFIED" | "REJECTED" | "DISABLED";
 export type PayoutAccount = {
   id: string;
@@ -373,9 +385,7 @@ export const rejectWalletWithdrawal = async (id: string, reason: string) => unwr
   },
 ), "Không thể từ chối yêu cầu rút tiền");
 
-export const revealWalletWithdrawal = async (id: string, reason: string): Promise<{
-  id: string; bankName: string; accountHolder: string; accountNumber: string;
-}> => unwrap(await authFetch(`${BASE_URL}/api/admin/wallet-withdrawals/${id}/reveal`, {
+export const revealWalletWithdrawal = async (id: string, reason: string): Promise<WalletWithdrawalTransferDetails> => unwrap(await authFetch(`${BASE_URL}/api/admin/wallet-withdrawals/${id}/reveal`, {
   method: "POST", headers: jsonHeaders, body: JSON.stringify({ reason }),
 }), "Không thể xem số tài khoản của yêu cầu rút tiền");
 

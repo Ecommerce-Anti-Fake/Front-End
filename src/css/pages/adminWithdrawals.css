@@ -259,6 +259,110 @@
   margin-top: 14px;
 }
 
+.admin-transfer-modal {
+  width: min(760px, 100%);
+}
+
+.admin-transfer-subtitle {
+  display: block;
+  margin-top: 6px;
+  color: #806464;
+  font-size: 13px;
+}
+
+.admin-transfer-layout {
+  display: grid;
+  grid-template-columns: 250px minmax(0, 1fr);
+  gap: 24px;
+  align-items: center;
+}
+
+.admin-transfer-qr {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  border: 1px solid #eadede;
+  border-radius: 14px;
+  padding: 14px;
+  background: #fff;
+}
+
+.admin-transfer-qr svg {
+  display: block;
+  width: 220px;
+  height: 220px;
+  max-width: 100%;
+}
+
+.admin-transfer-qr span {
+  color: #806464;
+  font-size: 12px;
+}
+
+.admin-transfer-details {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+}
+
+.admin-transfer-details div {
+  display: grid;
+  grid-template-columns: 125px minmax(0, 1fr);
+  gap: 12px;
+  align-items: baseline;
+  border-bottom: 1px solid #f2dede;
+  padding-bottom: 10px;
+}
+
+.admin-transfer-details dt {
+  color: #806464;
+  font-size: 12px;
+}
+
+.admin-transfer-details dd {
+  min-width: 0;
+  margin: 0;
+  color: #2a1111;
+  font-size: 14px;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.admin-transfer-details dd.amount {
+  color: #b00020;
+  font-size: 18px;
+}
+
+.admin-transfer-details dd.content {
+  color: #8c3030;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  letter-spacing: 0.04em;
+}
+
+.admin-confirm-transfer {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 16px;
+  border: 1px solid #eadede;
+  border-radius: 10px;
+  padding: 12px;
+  background: #fff8f8;
+}
+
+.admin-confirm-transfer span,
+.admin-confirm-transfer small {
+  color: #806464;
+  font-size: 12px;
+}
+
+.admin-confirm-transfer strong {
+  color: #2a1111;
+}
+
+.admin-confirm-transfer small {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
 @media (max-width: 900px) {
   .admin-withdrawal-summary {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -340,5 +444,18 @@
 
   .admin-withdrawal-id {
     max-width: none;
+  }
+
+  .admin-transfer-layout {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .admin-transfer-qr {
+    justify-self: center;
+  }
+
+  .admin-transfer-details div {
+    grid-template-columns: 105px minmax(0, 1fr);
   }
 }
