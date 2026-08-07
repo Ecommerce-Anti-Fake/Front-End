@@ -4,6 +4,7 @@ import {
   detectPwaEnvironment,
   getInstallUiState,
 } from "../src/services/pwa-install.ts";
+import { PWA_NAVIGATION_FALLBACK_DENYLIST } from "../src/services/pwa-navigation.ts";
 
 const desktopChrome = {
   userAgent:
@@ -86,4 +87,14 @@ test("supported browser only shows action after beforeinstallprompt", () => {
     }),
     { status: "ready", showInstallButton: true },
   );
+});
+
+test("service worker never serves the SPA fallback for Firebase auth handlers", () => {
+  const isDenied = (path) =>
+    PWA_NAVIGATION_FALLBACK_DENYLIST.some((pattern) => pattern.test(path));
+
+  assert.equal(isDenied("/__/auth/handler"), true);
+  assert.equal(isDenied("/__/auth/iframe"), true);
+  assert.equal(isDenied("/__/auth"), true);
+  assert.equal(isDenied("/auth"), false);
 });

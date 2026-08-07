@@ -1,6 +1,7 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
+import { PWA_NAVIGATION_FALLBACK_DENYLIST } from "./src/services/pwa-navigation";
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -51,7 +52,7 @@ export default defineConfig({
       workbox: {
         cleanupOutdatedCaches: true,
         globPatterns: ["**/*.{js,css,html}"],
-        navigateFallbackDenylist: [/^\/api\//],
+        navigateFallbackDenylist: PWA_NAVIGATION_FALLBACK_DENYLIST,
         runtimeCaching: [],
       },
     }),
