@@ -158,6 +158,8 @@ function App() {
               <Route path="/auth" element={<AuthPage />} />
               <Route path="/login" element={<AuthPage />} />
               <Route path="/auth/email-action" element={<EmailActionPage />} />
+              <Route path="/install" element={<SettingsPage />} />
+              <Route path="/profile/settings" element={<Navigate to="/install" replace />} />
               <Route path="/" element={<HomePage />} />
               <Route path="/community" element={<CommunityPage />} />
               <Route
@@ -171,7 +173,6 @@ function App() {
                 <Route index element={<UserProfile />} />
                 <Route path="address" element={<ProfileAddress />} />
                 <Route path="orders" element={<OrdersPage />} />
-                <Route path="settings" element={<SettingsPage />} />
                 <Route path="wallet" element={<WalletPage />} />
                 <Route
                   path="/profile/orders/:id"

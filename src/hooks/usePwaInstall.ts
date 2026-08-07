@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   getInstallUiState,
+  isPwaInstalled,
   readCurrentPwaEnvironment,
   type PwaEnvironment,
 } from "../services/pwa-install";
@@ -10,6 +11,30 @@ type BeforeInstallPromptEvent = Event & {
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 };
 
+const PWA_INSTALLED_KEY = "antifake.pwaInstalled";
+const PWA_INSTALL_STATUS_EVENT = "antifake:pwa-install-status";
+
+function readStoredInstalled() {
+  try {
+    return localStorage.getItem(PWA_INSTALLED_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+
+function persistInstalled(installed: boolean) {
+  try {
+    if (installed) {
+      localStorage.setItem(PWA_INSTALLED_KEY, "true");
+    } else {
+      localStorage.removeItem(PWA_INSTALLED_KEY);
+    }
+  } catch {
+    // Standalone detection still works when storage is unavailable.
+  }
+  window.dispatchEvent(new Event(PWA_INSTALL_STATUS_EVENT));
+}
+
 const getEnvironment = (): PwaEnvironment => readCurrentPwaEnvironment();
 
 export function usePwaInstall() {
@@ -17,7 +42,12 @@ export function usePwaInstall() {
   const [environment, setEnvironment] = useState(getEnvironment);
   const [promptAvailable, setPromptAvailable] = useState(false);
   const [installing, setInstalling] = useState(false);
-  const [installed, setInstalled] = useState(environment.isStandalone);
+  const [installed, setInstalled] = useState(() =>
+    isPwaInstalled({
+      isStandalone: environment.isStandalone,
+      storedInstalled: readStoredInstalled(),
+    }),
+  );
 
   useEffect(() => {
     const displayMode = window.matchMedia("(display-mode: standalone)");
@@ -26,11 +56,14 @@ export function usePwaInstall() {
       event.preventDefault();
       deferredPrompt.current = event as BeforeInstallPromptEvent;
       setPromptAvailable(true);
+      setInstalled(false);
+      persistInstalled(false);
     };
     const handleInstalled = () => {
       deferredPrompt.current = null;
       setPromptAvailable(false);
       setInstalled(true);
+      persistInstalled(true);
     };
 
     displayMode.addEventListener("change", syncEnvironment);
@@ -59,6 +92,7 @@ export function usePwaInstall() {
       setPromptAvailable(false);
       if (outcome === "accepted") {
         setInstalled(true);
+        persistInstalled(true);
       }
       return outcome;
     } finally {
@@ -77,4 +111,48 @@ export function usePwaInstall() {
   );
 
   return { environment, uiState, installing, install };
+}
+
+export function usePwaInstalledStatus() {
+  const readInstalled = () => {
+    const environment = getEnvironment();
+    return isPwaInstalled({
+      isStandalone: environment.isStandalone,
+      storedInstalled: readStoredInstalled(),
+    });
+  };
+  const [installed, setInstalled] = useState(readInstalled);
+
+  useEffect(() => {
+    const displayMode = window.matchMedia("(display-mode: standalone)");
+    const syncInstalled = () => setInstalled(readInstalled());
+    const handleInstalled = () => {
+      persistInstalled(true);
+      setInstalled(true);
+    };
+    const handleInstallAvailable = () => {
+      persistInstalled(false);
+      setInstalled(false);
+    };
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === PWA_INSTALLED_KEY) syncInstalled();
+    };
+
+    if (displayMode.matches) persistInstalled(true);
+    displayMode.addEventListener("change", syncInstalled);
+    window.addEventListener("appinstalled", handleInstalled);
+    window.addEventListener("beforeinstallprompt", handleInstallAvailable);
+    window.addEventListener(PWA_INSTALL_STATUS_EVENT, syncInstalled);
+    window.addEventListener("storage", handleStorage);
+
+    return () => {
+      displayMode.removeEventListener("change", syncInstalled);
+      window.removeEventListener("appinstalled", handleInstalled);
+      window.removeEventListener("beforeinstallprompt", handleInstallAvailable);
+      window.removeEventListener(PWA_INSTALL_STATUS_EVENT, syncInstalled);
+      window.removeEventListener("storage", handleStorage);
+    };
+  }, []);
+
+  return installed;
 }

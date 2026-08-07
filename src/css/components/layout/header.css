@@ -172,6 +172,10 @@
 .mobile-bottom-nav {
   display: none;
 }
+
+.mobile-install-entry {
+  display: none;
+}
 /* 
 mobile */
 
@@ -185,6 +189,44 @@ mobile */
     display: flex;
     gap: 3px;
     margin-right: 10px;
+  }
+
+  .mobile-install-entry {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    display: flex;
+    min-height: 36px;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    border-top: 1px solid #f7dede;
+    border-bottom: 1px solid #efd1d1;
+    color: #9f1717;
+    background: #fff7f6;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  .mobile-install-entry:focus-visible {
+    outline: 3px solid rgb(185 28 28 / 28%);
+    outline-offset: -3px;
+  }
+
+  .main-layout-content {
+    padding-top: 36px;
+  }
+}
+
+@media (max-width: 576px) and (display-mode: standalone) {
+  .mobile-install-entry {
+    display: none;
+  }
+
+  .main-layout-content {
+    padding-top: 0;
   }
 }
 

@@ -19,6 +19,16 @@ export type InstallUiState = {
   showInstallButton: boolean;
 };
 
+export function isPwaInstalled({
+  isStandalone,
+  storedInstalled,
+}: {
+  isStandalone: boolean;
+  storedInstalled: boolean;
+}) {
+  return isStandalone || storedInstalled;
+}
+
 export function detectPwaEnvironment(
   navigatorSnapshot: NavigatorSnapshot,
   displayModeStandalone: boolean,

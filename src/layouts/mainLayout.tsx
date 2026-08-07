@@ -9,7 +9,7 @@ export default function MainLayout() {
     <>
       <Header />
 
-      <div className="app-container">
+      <div className="app-container main-layout-content">
         <Outlet />
       </div>
     </>

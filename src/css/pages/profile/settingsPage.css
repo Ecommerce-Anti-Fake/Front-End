@@ -1,6 +1,7 @@
 .pwa-settings-page {
   width: min(100%, 1120px);
   margin: 0 auto 56px;
+  padding-top: 80px;
   color: #251616;
 }
 
@@ -335,6 +336,7 @@
 @media (max-width: 640px) {
   .pwa-settings-page {
     margin-bottom: 32px;
+    padding: 72px 12px 0;
   }
 
   .pwa-hero {

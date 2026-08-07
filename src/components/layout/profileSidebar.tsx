@@ -63,8 +63,8 @@ const menus = [
     icon: Store,
   },
   {
-    label: "Cài đặt tài khoản",
-    path: "/profile/settings",
+    label: "Cài đặt AntiFake",
+    path: "/install",
     icon: Settings,
   },
   {

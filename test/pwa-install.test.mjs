@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   detectPwaEnvironment,
   getInstallUiState,
+  isPwaInstalled,
 } from "../src/services/pwa-install.ts";
 import { PWA_NAVIGATION_FALLBACK_DENYLIST } from "../src/services/pwa-navigation.ts";
 
@@ -64,6 +65,17 @@ test("installed state hides the install action", () => {
   assert.deepEqual(
     getInstallUiState({ isStandalone: true, promptAvailable: true }),
     { status: "installed", showInstallButton: false },
+  );
+});
+
+test("installed state can be restored outside standalone mode", () => {
+  assert.equal(
+    isPwaInstalled({ isStandalone: false, storedInstalled: true }),
+    true,
+  );
+  assert.equal(
+    isPwaInstalled({ isStandalone: false, storedInstalled: false }),
+    false,
   );
 });
 

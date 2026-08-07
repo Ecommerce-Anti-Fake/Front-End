@@ -2,6 +2,8 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import "../../css/components/layout/header.css";
 import {
   Bell,
+  ChevronRight,
+  Download,
   Home,
   MessageSquareText,
   ScanLine,
@@ -17,6 +19,7 @@ import { useEffect, useState } from "react";
 import { useCartStore } from "../../store/cartStore";
 import { getToken } from "../../ultil/auth";
 import { useHeaderUnreadCounts } from "../../hooks/useHeaderUnreadCounts";
+import { usePwaInstalledStatus } from "../../hooks/usePwaInstall";
 
 export default function Header() {
   const location = useLocation();
@@ -38,6 +41,7 @@ export default function Header() {
   const cartCount = useCartStore((state) => state.cartCount);
   const refreshCart = useCartStore((state) => state.refreshCart);
   const { unreadCount, unreadChatCount } = useHeaderUnreadCounts(location.pathname);
+  const isPwaInstalled = usePwaInstalledStatus();
 
   useEffect(() => {
     if (location.pathname === "/auth" || !getToken()) {
@@ -173,6 +177,14 @@ export default function Header() {
           <UserCircle2 size={24} />
         </Link>
       </div>
+
+      {!isPwaInstalled && (
+        <Link to="/install" className="mobile-install-entry">
+          <Download size={16} aria-hidden="true" />
+          <span>Cài đặt AntiFake</span>
+          <ChevronRight size={16} aria-hidden="true" />
+        </Link>
+      )}
 
       {location.pathname !== "/auth" && (
         <div className="mobile-bottom-nav">

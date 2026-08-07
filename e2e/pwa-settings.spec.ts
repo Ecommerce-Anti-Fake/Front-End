@@ -1,23 +1,9 @@
 import { expect, test } from "@playwright/test";
 
-async function seedSession(page: import("@playwright/test").Page) {
-  await page.addInitScript(() => {
-    localStorage.setItem("accessToken", "pwa-e2e-access-token");
-    localStorage.setItem(
-      "user",
-      JSON.stringify({ id: "pwa-user", role: "user", displayName: "PWA User" }),
-    );
-  });
-  await page.route("**/api/**", (route) =>
-    route.fulfill({ status: 200, contentType: "application/json", body: "{}" }),
-  );
-}
-
 test("settings page shows complete device guides without horizontal overflow", async ({
   page,
 }) => {
-  await seedSession(page);
-  await page.goto("/profile/settings", { waitUntil: "domcontentloaded" });
+  await page.goto("/install", { waitUntil: "domcontentloaded" });
 
   await expect(page.getByRole("heading", { name: "Cài đặt AntiFake", level: 1 })).toBeVisible();
   await expect(page.getByRole("tab", { name: "Máy tính" })).toBeVisible();
@@ -39,11 +25,21 @@ test("settings page shows complete device guides without horizontal overflow", a
   expect(overflow).toBeLessThanOrEqual(1);
 });
 
+test("legacy profile settings URL redirects guests to the public install page", async ({
+  page,
+}) => {
+  await page.goto("/profile/settings", { waitUntil: "domcontentloaded" });
+
+  await expect(page).toHaveURL(/\/install$/);
+  await expect(
+    page.getByRole("heading", { name: "Cài đặt AntiFake", level: 1 }),
+  ).toBeVisible();
+});
+
 test("install action appears only after browser emits beforeinstallprompt", async ({
   page,
 }) => {
-  await seedSession(page);
-  await page.goto("/profile/settings", { waitUntil: "domcontentloaded" });
+  await page.goto("/install", { waitUntil: "domcontentloaded" });
   await expect(page.getByRole("button", { name: "Cài đặt AntiFake" })).toHaveCount(0);
 
   await page.evaluate(() => {
@@ -70,8 +66,7 @@ test("Chrome on iOS defaults to Safari fallback and never shows install action",
         "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 CriOS/140.0 Mobile/15E148 Safari/604.1",
     });
   });
-  await seedSession(page);
-  await page.goto("/profile/settings", { waitUntil: "domcontentloaded" });
+  await page.goto("/install", { waitUntil: "domcontentloaded" });
 
   await expect(page.getByRole("tab", { name: "iPhone/iPad" })).toHaveAttribute(
     "aria-selected",
@@ -81,4 +76,26 @@ test("Chrome on iOS defaults to Safari fallback and never shows install action",
     page.getByText("Để cài AntiFake trên iPhone/iPad, hãy mở trang này bằng Safari."),
   ).toBeVisible();
   await expect(page.getByRole("button", { name: "Cài đặt AntiFake" })).toHaveCount(0);
+});
+
+test("mobile header exposes the public AntiFake install entry", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/auth", { waitUntil: "domcontentloaded" });
+
+  const installLink = page.getByRole("link", { name: "Cài đặt AntiFake" });
+  await expect(installLink).toBeVisible();
+  await installLink.click();
+  await expect(page).toHaveURL(/\/install$/);
+});
+
+test("mobile header hides the install entry after installation", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.addInitScript(() => {
+    localStorage.setItem("antifake.pwaInstalled", "true");
+  });
+  await page.goto("/auth", { waitUntil: "domcontentloaded" });
+
+  await expect(
+    page.getByRole("link", { name: "Cài đặt AntiFake" }),
+  ).toHaveCount(0);
 });
