@@ -1,5 +1,6 @@
 import { removeToken, removeUser, saveToken, saveUser } from "../ultil/auth";
 import { connectSocket } from "./socket";
+import { terminateSession } from "./logout-session";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -164,11 +165,20 @@ export const setLocalCredentials = (
     body: JSON.stringify(payload),
   });
 
-export const logout = () => {
-  removeToken();
-  removeUser();
-  connectSocket().disconnect();
-  window.location.href = "/";
+export const logout = async () => {
+  try {
+    await terminateSession({
+      revoke: () => requestJson("/api/auth/logout", { method: "POST" }),
+      clearLocal: () => {
+        removeToken();
+        removeUser();
+      },
+      disconnect: () => connectSocket().disconnect(),
+      redirect: () => window.location.assign("/auth"),
+    });
+  } catch {
+    // Local state is still cleared and the user is redirected by terminateSession.
+  }
 };
 
 export const refreshToken = async () => {

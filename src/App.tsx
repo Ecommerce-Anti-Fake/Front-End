@@ -66,6 +66,8 @@ import {
   resolveAffiliateAttribution,
   saveAffiliateAttribution,
 } from "./services/affiliate.api";
+import { isRemoteLogoutEvent } from "./services/auth-sync";
+import { connectSocket } from "./services/socket";
 
 function ScrollToTop() {
   const { pathname, search } = useLocation();
@@ -120,6 +122,24 @@ function AffiliateAttributionCapture() {
   return null;
 }
 
+function RemoteLogoutSync() {
+  useEffect(() => {
+    const handleStorage = (event: StorageEvent) => {
+      if (!isRemoteLogoutEvent(event)) return;
+
+      connectSocket().disconnect();
+      if (window.location.pathname !== "/auth") {
+        window.location.assign("/auth");
+      }
+    };
+
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
+
+  return null;
+}
+
 function App() {
   return (
     <BrowserRouter>
@@ -128,6 +148,7 @@ function App() {
         <GlobalLoadingOverlay />
         <ScrollToTop />
         <AffiliateAttributionCapture />
+        <RemoteLogoutSync />
         <div className="app-container">
           <Routes>
             

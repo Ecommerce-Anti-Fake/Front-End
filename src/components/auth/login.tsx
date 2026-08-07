@@ -2,9 +2,8 @@ import { Eye, EyeOff, Lock, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  GoogleAuthProvider,
   signInWithEmailAndPassword,
-  signInWithPopup,
+  type UserCredential,
 } from "firebase/auth";
 import { toast } from "sonner";
 import {
@@ -15,6 +14,10 @@ import {
 } from "../../services/auth.api";
 import { clearTemporaryFirebaseSession } from "../../services/registration-verification.firebase";
 import { getFirebaseAuth } from "../../services/firebase";
+import {
+  beginGoogleLogin,
+  consumeGoogleLoginRedirect,
+} from "../../services/google-auth";
 import {
   getFirebaseAuthErrorMessage,
   isFirebaseAuthError,
@@ -46,6 +49,37 @@ export default function LoginPage({
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    const completeRedirectLogin = async () => {
+      try {
+        const credential = await consumeGoogleLoginRedirect();
+        if (!credential || !active) return;
+
+        setLoading(true);
+        showLoading("Đang đăng nhập với Google…");
+        const data = await authenticateGoogleCredential(credential);
+        if (!active) return;
+
+        toast.success("Đăng nhập Google thành công");
+        navigate(data.user.role.toLowerCase() === "admin" ? "/admin" : "/");
+      } catch (caught) {
+        if (active) showGoogleLoginError(caught);
+      } finally {
+        if (active) {
+          setLoading(false);
+          hideLoading();
+        }
+      }
+    };
+
+    void completeRedirectLogin();
+    return () => {
+      active = false;
+    };
+  }, [hideLoading, navigate, showLoading]);
 
   const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -98,28 +132,15 @@ export default function LoginPage({
   const handleGoogleLogin = async () => {
     setLoading(true);
     try {
-      const provider = new GoogleAuthProvider();
-      provider.setCustomParameters({ prompt: "select_account" });
-      const credential = await signInWithPopup(getFirebaseAuth(), provider);
+      const credential = await beginGoogleLogin();
+      if (!credential) return;
+
       showLoading("Đang đăng nhập với Google…");
-      const idToken = await credential.user.getIdToken(true);
-      const data = await firebaseLogin({ idToken });
-      saveToken(data.accessToken);
-      saveUser(data.user);
-      await clearTemporaryFirebaseSession();
+      const data = await authenticateGoogleCredential(credential);
       toast.success("Đăng nhập Google thành công");
       navigateByRole(data.user.role);
     } catch (caught) {
-      if (isSilentGooglePopupCancellation(caught)) return;
-      if (caught instanceof AuthApiError && caught.code === "GOOGLE_ACCOUNT_NOT_LINKED") {
-        toast.info("Tài khoản Google của bạn chưa đăng ký. Vui lòng đăng ký trước.");
-        return;
-      }
-      if (isFirebaseAuthError(caught)) {
-        toast.error(getFirebaseAuthErrorMessage(caught, "login"));
-      } else {
-        toast.error(toMessage(caught));
-      }
+      showGoogleLoginError(caught);
     } finally {
       setLoading(false);
       hideLoading();
@@ -197,6 +218,28 @@ export default function LoginPage({
       </div>
     </div>
   );
+}
+
+async function authenticateGoogleCredential(credential: UserCredential) {
+  const idToken = await credential.user.getIdToken(true);
+  const data = await firebaseLogin({ idToken });
+  saveToken(data.accessToken);
+  saveUser(data.user);
+  await clearTemporaryFirebaseSession();
+  return data;
+}
+
+function showGoogleLoginError(caught: unknown) {
+  if (isSilentGooglePopupCancellation(caught)) return;
+  if (caught instanceof AuthApiError && caught.code === "GOOGLE_ACCOUNT_NOT_LINKED") {
+    toast.info("Tài khoản Google của bạn chưa đăng ký. Vui lòng đăng ký trước.");
+    return;
+  }
+  if (isFirebaseAuthError(caught)) {
+    toast.error(getFirebaseAuthErrorMessage(caught, "login"));
+  } else {
+    toast.error(toMessage(caught));
+  }
 }
 
 async function tryFirebaseEmailLogin(
