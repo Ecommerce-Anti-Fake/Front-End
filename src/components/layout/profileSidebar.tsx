@@ -64,7 +64,7 @@ const menus = [
   },
   {
     label: "Cài đặt tài khoản",
-    path: "/admin",
+    path: "/profile/settings",
     icon: Settings,
   },
   {
@@ -185,13 +185,21 @@ export default function ProfileSidebar() {
               <h3>Cá nhân</h3>
               <p>Quản lý bảo mật & hồ sơ</p>
             </div>
-            <button className="profile-menu-btn" onClick={() => setOpen(!open)}>
+            <button
+              type="button"
+              className="profile-menu-btn"
+              aria-label={open ? "Đóng menu tài khoản" : "Mở menu tài khoản"}
+              aria-expanded={open}
+              aria-controls="profile-sidebar-menu"
+              onClick={() => setOpen(!open)}
+            >
               <Menu size={20} />
             </button>
           </div>
           <div className="profile-sidebar-divider" />
 
           <nav
+            id="profile-sidebar-menu"
             className={`profile-sidebar-menu ${
               open ? "profile-sidebar-menu-open" : ""
             }`}

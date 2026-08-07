@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="440" viewBox="0 0 760 440" role="img" aria-labelledby="title desc">
+  <title id="title">Minh họa cài AntiFake trên máy tính</title>
+  <desc id="desc">Cửa sổ trình duyệt Chrome hoặc Edge với nút cài AntiFake và hộp thoại xác nhận.</desc>
+  <rect width="760" height="440" rx="28" fill="#fff7f6"/>
+  <rect x="38" y="42" width="684" height="356" rx="18" fill="#fff" stroke="#eadede" stroke-width="3"/>
+  <path d="M38 94h684" stroke="#eadede" stroke-width="3"/>
+  <circle cx="70" cy="68" r="8" fill="#ef4444"/><circle cx="96" cy="68" r="8" fill="#f59e0b"/><circle cx="122" cy="68" r="8" fill="#22c55e"/>
+  <rect x="158" y="56" width="420" height="26" rx="13" fill="#f7eeee"/>
+  <text x="180" y="74" font-family="Arial, sans-serif" font-size="13" fill="#5f4f4f">antifake.io.vn/profile/settings</text>
+  <rect x="602" y="53" width="92" height="32" rx="9" fill="#b91c1c"/>
+  <text x="620" y="74" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#fff">Cài app</text>
+  <rect x="82" y="132" width="280" height="210" rx="16" fill="#fff7f6" stroke="#f4cccc"/>
+  <circle cx="222" cy="197" r="48" fill="#fee2e2"/>
+  <path d="M222 169v55m-22-20 22 22 22-22M195 238h54" fill="none" stroke="#b91c1c" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="128" y="286" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#251616">Cài đặt AntiFake</text>
+  <text x="119" y="316" font-family="Arial, sans-serif" font-size="14" fill="#766565">Nhấn nút để mở hộp thoại cài đặt</text>
+  <rect x="399" y="139" width="276" height="186" rx="16" fill="#fff" stroke="#dfcaca" stroke-width="2"/>
+  <text x="425" y="174" font-family="Arial, sans-serif" font-size="19" font-weight="700" fill="#251616">Cài đặt ứng dụng?</text>
+  <text x="425" y="206" font-family="Arial, sans-serif" font-size="15" fill="#5f4f4f">AntiFake sẽ mở trong cửa sổ riêng.</text>
+  <rect x="425" y="250" width="104" height="42" rx="9" fill="#f8eeee"/>
+  <text x="451" y="277" font-family="Arial, sans-serif" font-size="14" fill="#5f4f4f">Hủy</text>
+  <rect x="543" y="250" width="104" height="42" rx="9" fill="#b91c1c"/>
+  <text x="566" y="277" font-family="Arial, sans-serif" font-size="14" font-weight="700" fill="#fff">Cài đặt</text>
+  <path d="M363 236h30" stroke="#f97316" stroke-width="5" stroke-linecap="round"/>
+  <path d="m385 225 12 11-12 11" fill="none" stroke="#f97316" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

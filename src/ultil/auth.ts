@@ -34,7 +34,7 @@ export const removeUser = () => {
   localStorage.removeItem(USER_KEY);
 };
 
-const isTokenExpired = (token: string) => {
+export const isTokenExpired = (token: string) => {
   try {
     const encodedPayload = token.split(".")[1];
     if (!encodedPayload) return false;

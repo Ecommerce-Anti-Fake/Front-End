@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="440" viewBox="0 0 760 440" role="img" aria-labelledby="title desc">
+  <title id="title">Minh họa thêm AntiFake vào Màn hình chính trên iPhone và iPad</title>
+  <desc id="desc">Safari với nút Chia sẻ và lựa chọn Thêm vào Màn hình chính.</desc>
+  <rect width="760" height="440" rx="28" fill="#fff7f6"/>
+  <rect x="86" y="26" width="238" height="388" rx="38" fill="#251616"/>
+  <rect x="98" y="42" width="214" height="356" rx="28" fill="#fff"/>
+  <rect x="168" y="50" width="74" height="17" rx="9" fill="#251616"/>
+  <circle cx="205" cy="166" r="48" fill="#fee2e2"/>
+  <path d="M205 141v50m-19-18 19 19 19-19M181 204h48" fill="none" stroke="#b91c1c" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="137" y="246" font-family="Arial, sans-serif" font-size="17" font-weight="700" fill="#251616">AntiFake trên Safari</text>
+  <rect x="98" y="346" width="214" height="52" fill="#f7eeee"/>
+  <path d="M205 380v-25m-10 10 10-10 10 10M191 371v12h28v-12" fill="none" stroke="#1473e6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="376" y="62" width="292" height="316" rx="20" fill="#fff" stroke="#eadede" stroke-width="3"/>
+  <rect x="462" y="79" width="120" height="6" rx="3" fill="#d9caca"/>
+  <text x="406" y="130" font-family="Arial, sans-serif" font-size="18" font-weight="700" fill="#251616">Chia sẻ</text>
+  <circle cx="426" cy="173" r="22" fill="#e8f3ff"/>
+  <path d="M426 181v-22m-8 8 8-8 8 8M415 177v12h22v-12" fill="none" stroke="#1473e6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="460" y="179" font-family="Arial, sans-serif" font-size="15" fill="#5f4f4f">Chia sẻ trang</text>
+  <path d="M406 211h232" stroke="#f2e2e2" stroke-width="2"/>
+  <rect x="395" y="230" width="254" height="76" rx="12" fill="#e8f3ff"/>
+  <rect x="411" y="246" width="34" height="34" rx="8" fill="#1473e6"/>
+  <path d="M428 252v22m-11-11h22" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+  <text x="460" y="260" font-family="Arial, sans-serif" font-size="15" font-weight="700" fill="#125db8">Thêm vào Màn hình chính</text>
+  <text x="460" y="283" font-family="Arial, sans-serif" font-size="13" fill="#5f4f4f">Add to Home Screen</text>
+  <text x="406" y="342" font-family="Arial, sans-serif" font-size="14" fill="#766565">Sau đó nhấn “Thêm / Add”.</text>
+  <path d="M327 359h38" stroke="#f97316" stroke-width="5" stroke-linecap="round"/>
+  <path d="m357 348 12 11-12 11" fill="none" stroke="#f97316" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

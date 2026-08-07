@@ -108,7 +108,7 @@ export default function Header() {
     <div className="sidebar">
       <div className="logo">
         <Link to="/">
-          <img src="/brand/logo-antifake.png" alt="logo" className="logo-img" />
+          <img src="/brand/logo-antifake.png" alt="AntiFake" className="logo-img" />
         </Link>
       </div>
 
@@ -140,7 +140,7 @@ export default function Header() {
           onKeyDown={handleKeyDown}
         />
 
-        <button className="search-btn" onClick={handleSearch}>
+        <button className="search-btn" aria-label="Tìm kiếm" onClick={handleSearch}>
           <Search size={22} />
         </button>
       </div>
@@ -152,24 +152,24 @@ export default function Header() {
 
           <span className="badge">4</span>
         </Link> */}
-        <Link to="/chat" className="icon-btn">
+        <Link to="/chat" className="icon-btn" aria-label="Tin nhắn">
           <MessageSquareText size={22} />
           {unreadChatCount > 0 && <span className="badge">{unreadChatCount > 99 ? "99+" : unreadChatCount}</span>}
         </Link>
 
-        <Link to="/cart" className="icon-btn cart-btn">
+        <Link to="/cart" className="icon-btn cart-btn" aria-label="Giỏ hàng">
           <ShoppingCart size={22} />
           {cartCount > 0 && <span className="badge">{cartCount > 99 ? "99+" : cartCount}</span>}
         </Link>
 
-        <Link to="/notification" className="icon-btn">
+        <Link to="/notification" className="icon-btn" aria-label="Thông báo">
           <Bell size={22} />
           {unreadCount > 0 && <span className="badge">{unreadCount > 99 ? "99+" : unreadCount}</span>}
         </Link>
 
         <div className="divider" />
 
-        <Link to="/profile" className="icon-btn profile-btn">
+        <Link to="/profile" className="icon-btn profile-btn" aria-label="Tài khoản">
           <UserCircle2 size={24} />
         </Link>
       </div>

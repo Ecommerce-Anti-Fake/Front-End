@@ -11,7 +11,8 @@
     "test:e2e": "playwright test",
     "test:auth": "node --test --experimental-strip-types test/google-auth-error.test.mjs",
     "test:live": "node --test --experimental-strip-types test/live-rtc.test.mjs",
-    "test:payos": "node --test --experimental-strip-types test/payos-checkout-state.test.mjs"
+    "test:payos": "node --test --experimental-strip-types test/payos-checkout-state.test.mjs",
+    "test:pwa": "node --test --experimental-strip-types test/pwa-install.test.mjs test/session-restore.test.mjs"
   },
   "dependencies": {
     "@payos/payos-checkout": "^1.0.8",
@@ -43,6 +44,7 @@
     "globals": "^17.6.0",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.59.2",
-    "vite": "^8.0.12"
+    "vite": "^8.0.12",
+    "vite-plugin-pwa": "^1.3.0"
   }
 }
