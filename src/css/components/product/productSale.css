@@ -3,6 +3,9 @@
   border-radius: 18px;
   padding: 14px;
   position: relative;
+  display: block;
+  color: inherit;
+  text-decoration: none;
   transition: 0.3s;
 }
 

@@ -2,6 +2,7 @@ import type { Product } from "../../type/product";
 import "../../css/components/product/productSale.css";
 import { formatVnd } from "../../ultil/currency";
 import MediaThumbnail from "../media/mediaThumbnail";
+import { Link } from "react-router-dom";
 
 type Props = {
   product: Product;
@@ -15,7 +16,7 @@ export default function ProductSell({ product, loading = "lazy" }: Props) {
     : 0;
 
   return (
-    <div className="flash-card">
+    <Link to={`/product/${product.id}`} className="flash-card">
       {product.oldPrice && product.oldPrice > product.price ? (
         <div className="discount-tag">
           -{Math.round((1 - product.price / product.oldPrice) * 100)}%
@@ -39,6 +40,6 @@ export default function ProductSell({ product, loading = "lazy" }: Props) {
         <div className="sold-progress" style={{ width: `${soldPercent}%` }} />
       </div>
       <div className="sold-text">Đã bán {product.soldQuantity}</div>
-    </div>
+    </Link>
   );
 }
