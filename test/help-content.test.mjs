@@ -114,6 +114,32 @@ test("visual manifest concrete assets exist", () => {
   }
 });
 
+test("visual manifest lists every canonical journey", () => {
+  const manifest = fs.readFileSync(
+    new URL("../../docs/user-guide/VISUAL_MANIFEST.md", import.meta.url),
+    "utf8",
+  );
+  const rows = manifest.split("\n");
+
+  for (const prefix of ["B", "S", "A"]) {
+    const max = prefix === "A" ? 10 : 9;
+    for (let index = 1; index <= max; index += 1) {
+      const journeyId = `${prefix}${String(index).padStart(2, "0")}`;
+      const row = rows.find((candidate) => candidate.startsWith(`| ${journeyId} |`));
+
+      assert.ok(row, `missing visual manifest journey ${journeyId}`);
+      assert.match(row, /Desktop \+ Mobile/);
+      if (prefix === "A") {
+        assert.match(row, /Blocked by approved Admin identity/);
+      } else if (journeyId === "B03") {
+        assert.match(row, /Do not publish as final/);
+      } else {
+        assert.match(row, /Pending/);
+      }
+    }
+  }
+});
+
 test("feature matrix keeps incomplete journey statuses explicit", () => {
   const matrix = fs.readFileSync(
     new URL("../../docs/user-guide/FEATURE_GUIDE_MATRIX.md", import.meta.url),
