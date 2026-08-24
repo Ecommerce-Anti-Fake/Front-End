@@ -115,3 +115,22 @@ test("feature matrix keeps incomplete journey statuses explicit", () => {
   assert.match(matrix, /\| QR verification \|[^\n]+\| NOT_IMPLEMENTED \|/);
   assert.match(matrix, /\| Admin journeys A01-A10 \|[^\n]+\| UNVERIFIED \|/);
 });
+
+test("feature matrix bridges canonical journeys to UAT and platform visuals", () => {
+  const matrix = fs.readFileSync(
+    new URL("../../docs/user-guide/FEATURE_GUIDE_MATRIX.md", import.meta.url),
+    "utf8",
+  );
+
+  for (const column of ["Journey", "UAT test", "Runtime status", "Desktop visual", "Mobile visual"]) {
+    assert.match(matrix, new RegExp(`\\| ${column} \\|`), `missing matrix column ${column}`);
+  }
+
+  for (const prefix of ["B", "S", "A"]) {
+    const max = prefix === "A" ? 10 : 9;
+    for (let index = 1; index <= max; index += 1) {
+      const journeyId = `${prefix}${String(index).padStart(2, "0")}`;
+      assert.match(matrix, new RegExp(`\\| ${journeyId} \\|`), `missing matrix journey ${journeyId}`);
+    }
+  }
+});
