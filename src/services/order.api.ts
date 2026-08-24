@@ -16,51 +16,60 @@ type RawOrderShop = {
   items?: RawOrderItem[];
 };
 
-const normalizeItems = (data: any) => {
+type UnknownRecord = Record<string, unknown>;
+
+const asRecord = (value: unknown): UnknownRecord =>
+  value !== null && typeof value === "object" ? value as UnknownRecord : {};
+
+const asOptionalString = (value: unknown): string | undefined =>
+  typeof value === "string" ? value : undefined;
+
+const normalizeItems = (data: unknown): unknown[] => {
+  const record = asRecord(data);
+  const nestedData = record.data;
+  const nestedRecord = asRecord(nestedData);
+
   if (Array.isArray(data)) return data;
-  if (Array.isArray(data?.items)) return data.items;
-  if (Array.isArray(data?.data)) return data.data;
-  if (Array.isArray(data?.orders)) return data.orders;
-  if (Array.isArray(data?.data?.items)) return data.data.items;
-  if (Array.isArray(data?.data?.orders)) return data.data.orders;
+  if (Array.isArray(record.items)) return record.items;
+  if (Array.isArray(nestedData)) return nestedData;
+  if (Array.isArray(record.orders)) return record.orders;
+  if (Array.isArray(nestedRecord.items)) return nestedRecord.items;
+  if (Array.isArray(nestedRecord.orders)) return nestedRecord.orders;
   return [];
 };
 
-const firstOrderItem = (order: any) => {
-  if (order.firstProduct) return order.firstProduct;
+const firstOrderItem = (order: unknown): UnknownRecord => {
+  const record = asRecord(order);
+  if (record.firstProduct) return asRecord(record.firstProduct);
 
-  const rootItems = order.items ?? order.orderItems;
-  if (Array.isArray(rootItems) && rootItems.length > 0) return rootItems[0];
+  const rootItems = record.items ?? record.orderItems;
+  if (Array.isArray(rootItems) && rootItems.length > 0) return asRecord(rootItems[0]);
 
-  const shops = order.shops ?? order.orderShops;
+  const shops = record.shops ?? record.orderShops;
   if (Array.isArray(shops)) {
     for (const shop of shops) {
-      const items = shop.items ?? shop.orderItems;
-      if (Array.isArray(items) && items.length > 0) return items[0];
+      const shopRecord = asRecord(shop);
+      const items = shopRecord.items ?? shopRecord.orderItems;
+      if (Array.isArray(items) && items.length > 0) return asRecord(items[0]);
     }
   }
 
   return {};
 };
 
-const firstShop = (order: any) => {
-  const shops = order.shops ?? order.orderShops;
-  if (Array.isArray(shops) && shops.length > 0) return shops[0];
-  return order.shop ?? {};
+const firstShop = (order: unknown): UnknownRecord => {
+  const record = asRecord(order);
+  const shops = record.shops ?? record.orderShops;
+  if (Array.isArray(shops) && shops.length > 0) return asRecord(shops[0]);
+  return asRecord(record.shop);
 };
 
 const resolveFulfillmentStatus = (value: unknown): string => {
-  const order = value && typeof value === "object"
-    ? (value as Record<string, unknown>)
-    : {};
+  const order = asRecord(value);
   const shops = order.shops ?? order.orderShops;
   const shopStatus = Array.isArray(shops)
     ? shops.find(
-        (shop) =>
-          shop &&
-          typeof shop === "object" &&
-          "fulfillmentStatus" in shop &&
-          shop.fulfillmentStatus,
+        (shop) => Boolean(asRecord(shop).fulfillmentStatus),
       )?.fulfillmentStatus
     : undefined;
 
@@ -73,32 +82,35 @@ const resolveFulfillmentStatus = (value: unknown): string => {
   ).toUpperCase();
 };
 
-const countOrderItems = (order: any) => {
-  if (order.firstProduct) return Number(order.otherProducts ?? 0) + 1;
+const countOrderItems = (order: unknown) => {
+  const record = asRecord(order);
+  if (record.firstProduct) return Number(record.otherProducts ?? 0) + 1;
 
-  const rootItems = order.items ?? order.orderItems;
+  const rootItems = record.items ?? record.orderItems;
   if (Array.isArray(rootItems)) return rootItems.length;
 
-  const shops = order.shops ?? order.orderShops;
-  if (!Array.isArray(shops)) return firstOrderItem(order)?.id ? 1 : 0;
+  const shops = record.shops ?? record.orderShops;
+  if (!Array.isArray(shops)) return firstOrderItem(record).id ? 1 : 0;
 
-  return shops.reduce((sum: number, shop: any) => {
-    const items = shop.items ?? shop.orderItems;
+  return shops.reduce((sum: number, shop: unknown) => {
+    const shopRecord = asRecord(shop);
+    const items = shopRecord.items ?? shopRecord.orderItems;
     return sum + (Array.isArray(items) ? items.length : 0);
   }, 0);
 };
 
-const toUserOrder = (order: any): Order => {
+const toUserOrder = (order: unknown): Order => {
+  const record = asRecord(order);
   const item = firstOrderItem(order);
   const shop = firstShop(order);
   const itemCount = countOrderItems(order);
-  const firstProduct = order.firstProduct
+  const firstProduct = record.firstProduct
     ? {
-        name: String(order.firstProduct.name ?? "San pham"),
-        variant: String(order.firstProduct.variant ?? ""),
-        quantity: Number(order.firstProduct.quantity ?? 1),
-        price: Number(order.firstProduct.price ?? 0),
-        image: String(order.firstProduct.image ?? ""),
+        name: String(asRecord(record.firstProduct).name ?? "San pham"),
+        variant: String(asRecord(record.firstProduct).variant ?? ""),
+        quantity: Number(asRecord(record.firstProduct).quantity ?? 1),
+        price: Number(asRecord(record.firstProduct).price ?? 0),
+        image: String(asRecord(record.firstProduct).image ?? ""),
       }
     : {
         name: String(
@@ -115,16 +127,16 @@ const toUserOrder = (order: any): Order => {
       };
 
   return {
-    id: String(order.id ?? order.orderId ?? ""),
-    orderCode: String(order.orderCode ?? order.code ?? order.orderId ?? ""),
+    id: String(record.id ?? record.orderId ?? ""),
+    orderCode: String(record.orderCode ?? record.code ?? record.orderId ?? ""),
     status: resolveFulfillmentStatus(order),
-    shopName: String(shop.shopName ?? shop.name ?? order.shopName ?? "Shop"),
+    shopName: String(shop.shopName ?? shop.name ?? record.shopName ?? "Shop"),
     totalAmount: Number(
-      order.totalAmount ?? order.orderAmount ?? order.paymentAmount ?? 0,
+      record.totalAmount ?? record.orderAmount ?? record.paymentAmount ?? 0,
     ),
-    paymentMethod: String(order.paymentMethod ?? order.payment?.method ?? ""),
+    paymentMethod: String(record.paymentMethod ?? asRecord(record.payment).method ?? ""),
     firstProduct,
-    otherProducts: Number(order.otherProducts ?? Math.max(itemCount - 1, 0)),
+    otherProducts: Number(record.otherProducts ?? Math.max(itemCount - 1, 0)),
   };
 };
 
@@ -281,25 +293,38 @@ type FetchSellerOrdersParams = {
   pageSize?: number;
 };
 
-const toSellerOrder = (order: any): SellerOrder => ({
-  orderId: String(order.orderId ?? order.id ?? ""),
-  customer:
-    order.customer ??
-    ({
-      id: order.customerId,
-      name:
-        order.customerName ??
-        order.receiverName ??
-        order.buyerName ??
-        order.userName,
-      email: order.customerEmail ?? order.buyerEmail ?? order.userEmail,
-    } satisfies SellerOrderCustomer),
-  orderAmount: Number(order.orderAmount ?? order.totalAmount ?? 0),
-  orderStatus: resolveFulfillmentStatus(order),
-  createdAt: order.createdAt,
-  createdDate: order.createdDate,
-  orderDate: order.orderDate,
-});
+const toSellerOrder = (order: unknown): SellerOrder => {
+  const record = asRecord(order);
+  const customerRecord = asRecord(record.customer);
+  const customer = record.customer && typeof record.customer === "object"
+    ? {
+        id: asOptionalString(customerRecord.id),
+        name: asOptionalString(customerRecord.name),
+        email: asOptionalString(customerRecord.email),
+      }
+    : {
+        id: asOptionalString(record.customerId),
+        name:
+          asOptionalString(record.customerName) ??
+          asOptionalString(record.receiverName) ??
+          asOptionalString(record.buyerName) ??
+          asOptionalString(record.userName),
+        email:
+          asOptionalString(record.customerEmail) ??
+          asOptionalString(record.buyerEmail) ??
+          asOptionalString(record.userEmail),
+      };
+
+  return {
+    orderId: String(record.orderId ?? record.id ?? ""),
+    customer,
+    orderAmount: Number(record.orderAmount ?? record.totalAmount ?? 0),
+    orderStatus: resolveFulfillmentStatus(order),
+    createdAt: asOptionalString(record.createdAt),
+    createdDate: asOptionalString(record.createdDate),
+    orderDate: asOptionalString(record.orderDate),
+  };
+};
 
 export const fetchSellerOrders = async ({
   shopId,
