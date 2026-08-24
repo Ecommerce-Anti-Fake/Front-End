@@ -73,6 +73,7 @@ export default function SellerHeader() {
     {
       label: "Hỗ trợ",
       icon: CircleHelp,
+      onClick: () => navigate("/help/seller/process-order"),
     },
     {
       label: "Giới thiệu",
