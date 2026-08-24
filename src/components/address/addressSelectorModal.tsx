@@ -47,9 +47,16 @@ export default function AddressSelectorModal({
   };
 
   useEffect(() => {
-    if (open) {
-      fetchAddresses();
-    }
+    if (!open) return;
+
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (!cancelled) void fetchAddresses();
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, [open]);
 
   if (!open) return null;
