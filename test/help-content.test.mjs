@@ -91,6 +91,15 @@ test("canonical documentation Help links resolve to registered journeys", () => 
   }
 });
 
+test("legacy UAT draft points to the canonical master guide", () => {
+  const legacyGuide = fs.readFileSync(
+    new URL("../../docs/HUONG_DAN_SU_DUNG_ANTIFAKE.md", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(legacyGuide, /\]\(user-guide\/ANTIFAKE_USER_GUIDE\.md\)/);
+});
+
 test("visual manifest concrete assets exist", () => {
   const workspaceRoot = new URL("../../", import.meta.url);
   const manifest = fs.readFileSync(
