@@ -66,3 +66,27 @@ test("master guide Help links resolve to registered journeys", () => {
     assert.ok(getArticleForPath(route).article, `unregistered Help route ${route}`);
   }
 });
+
+test("canonical documentation Help links resolve to registered journeys", () => {
+  const documents = [
+    "ANTIFAKE_USER_GUIDE.md",
+    "JOURNEY_MAPS.md",
+    "DOCUMENTATION_REGISTRY.md",
+    "FEATURE_GUIDE_MATRIX.md",
+  ];
+
+  for (const document of documents) {
+    const content = fs.readFileSync(
+      new URL(`../../docs/user-guide/${document}`, import.meta.url),
+      "utf8",
+    );
+    const routes = [
+      ...content.matchAll(/(?:\]\(|`)(\/help\/[^)\s`]+)(?:\)|`)/g),
+    ].map((match) => match[1]);
+
+    assert.ok(routes.length > 0, `no Help routes found in ${document}`);
+    for (const route of routes) {
+      assert.ok(getArticleForPath(route).article, `unregistered Help route ${route} in ${document}`);
+    }
+  }
+});
