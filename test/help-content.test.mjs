@@ -104,3 +104,14 @@ test("visual manifest concrete assets exist", () => {
     assert.equal(fs.existsSync(new URL(asset, workspaceRoot)), true, `missing visual asset ${asset}`);
   }
 });
+
+test("feature matrix keeps incomplete journey statuses explicit", () => {
+  const matrix = fs.readFileSync(
+    new URL("../../docs/user-guide/FEATURE_GUIDE_MATRIX.md", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(matrix, /\| Chat \|[^\n]+\| PARTIAL \|/);
+  assert.match(matrix, /\| QR verification \|[^\n]+\| NOT_IMPLEMENTED \|/);
+  assert.match(matrix, /\| Admin journeys A01-A10 \|[^\n]+\| UNVERIFIED \|/);
+});
