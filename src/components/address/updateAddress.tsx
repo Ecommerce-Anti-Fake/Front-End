@@ -37,16 +37,25 @@ export default function UpdateAddress({ address, onClose, onSuccess }: Props) {
   });
 
   useEffect(() => {
-    setForm({
-      recipientName: address.recipientName,
-      phone: address.phone,
-      addressLine: address.addressLine,
-      provinceCode: address.provinceCode ?? "",
-      provinceName: address.provinceName ?? "",
-      wardCode: address.wardCode ?? "",
-      wardName: address.wardName ?? "",
-      isDefault: address.isDefault,
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (cancelled) return;
+
+      setForm({
+        recipientName: address.recipientName,
+        phone: address.phone,
+        addressLine: address.addressLine,
+        provinceCode: address.provinceCode ?? "",
+        provinceName: address.provinceName ?? "",
+        wardCode: address.wardCode ?? "",
+        wardName: address.wardName ?? "",
+        isDefault: address.isDefault,
+      });
     });
+
+    return () => {
+      cancelled = true;
+    };
   }, [address]);
 
   const [errors, setErrors] = useState({
@@ -79,7 +88,6 @@ export default function UpdateAddress({ address, onClose, onSuccess }: Props) {
 
   useEffect(() => {
     if (!form.provinceCode) {
-      setWards([]);
       return;
     }
 
@@ -102,6 +110,8 @@ export default function UpdateAddress({ address, onClose, onSuccess }: Props) {
 
     loadWards();
   }, [form.provinceCode]);
+
+  const visibleWards = form.provinceCode ? wards : [];
 
   const validate = () => {
     const newErrors = {
@@ -303,7 +313,7 @@ export default function UpdateAddress({ address, onClose, onSuccess }: Props) {
                   value={form.wardCode}
                   disabled={!form.provinceCode || loadingWards}
                   onChange={(e) => {
-                    const selectedWard = wards.find(
+                    const selectedWard = visibleWards.find(
                       (ward) => ward.wardCode === e.target.value,
                     );
 
@@ -317,7 +327,7 @@ export default function UpdateAddress({ address, onClose, onSuccess }: Props) {
                   <option value="">
                     {loadingWards ? "Đang tải..." : "Chọn phường/xã"}
                   </option>
-                  {wards.map((ward) => (
+                  {visibleWards.map((ward) => (
                     <option key={ward.wardCode} value={ward.wardCode}>
                       {ward.wardName}
                     </option>
