@@ -5,7 +5,7 @@ import "../../css/pages/productDetail.css";
 import Review from "../../components/product/review";
 import ShopCard from "../../components/shop/shopCard";
 import { MessageCircle, Star, Store } from "lucide-react";
-import { fetchOfferDetail } from "../../services/product.api";
+import { fetchOfferDetail, type OfferDetail } from "../../services/product.api";
 import { useNavigate, useParams } from "react-router-dom";
 import { fetchShopByOffer } from "../../services/shop.api";
 import "../../css/components/dataSkeleton.css";
@@ -15,6 +15,7 @@ import { getShopChatThread } from "../../services/chat.api";
 import ProductCard from "../../components/product/productCard";
 import { searchOffers } from "../../services/product.api";
 import type { ProductView } from "../../type/product";
+import type { shopCard } from "../../type/shop";
 import { useGlobalLoadingStore } from "../../store/globalLoadingStore";
 
 type ReviewItem = {
@@ -26,14 +27,44 @@ type ReviewItem = {
   media: string[];
 };
 
+type ProductDetailData = Omit<OfferDetail, "price" | "availableQuantity" | "imageUrls"> & {
+  price: number;
+  availableQuantity: number;
+  imageUrls: string[];
+  salesMode?: string;
+  minWholesaleQty?: number;
+  selectedVariantId?: string;
+  variantId?: string;
+  shopId?: string;
+  shop?: { shopId?: string; id?: string };
+};
+
+type ProductShop = shopCard & { id?: string };
+
+const getChatErrorMessage = (error: unknown): string => {
+  if (error && typeof error === "object") {
+    const record = error as { response?: unknown; message?: unknown };
+    if (record.response && typeof record.response === "object") {
+      const response = record.response as { data?: unknown };
+      if (response.data && typeof response.data === "object") {
+        const data = response.data as { message?: unknown };
+        if (typeof data.message === "string") return data.message;
+      }
+    }
+    if (typeof record.message === "string") return record.message;
+  }
+
+  return "Đã xảy ra lỗi khi tạo cuộc trò chuyện";
+};
+
 export default function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const showLoading = useGlobalLoadingStore((state) => state.showLoading);
   const hideLoading = useGlobalLoadingStore((state) => state.hideLoading);
   const [activeTab, setActiveTab] = useState("description");
-  const [product, setProduct] = useState<any>();
-  const [shop, setShop] = useState<any>();
+  const [product, setProduct] = useState<ProductDetailData>();
+  const [shop, setShop] = useState<ProductShop>();
   const [reviews, setReviews] = useState<ReviewItem[]>([]);
   const [averageRating, setAverageRating] = useState(0);
   const [totalReview, setTotalReview] = useState(0);
@@ -54,20 +85,23 @@ export default function ProductDetail() {
     const loadProduct = async () => {
       try {
         const data = await fetchOfferDetail(id);
-        setProduct(data);
+        setProduct({
+          ...data,
+          price: data.price ?? 0,
+          availableQuantity: data.availableQuantity ?? 0,
+          imageUrls: data.imageUrls ?? [],
+        });
       } catch (error) {
         console.error(error);
-      } finally {
       }
     };
 
     const loadShop = async () => {
       try {
-        const shop = await fetchShopByOffer(id);
+        const shop = await fetchShopByOffer(id) as ProductShop;
         setShop(shop);
       } catch (error) {
         console.error(error);
-      } finally {
       }
     };
 
@@ -99,7 +133,6 @@ export default function ProductDetail() {
 
   useEffect(() => {
     if (!product?.categoryId || !product?.id) {
-      setRelatedProducts([]);
       return;
     }
 
@@ -148,14 +181,9 @@ export default function ProductDetail() {
       navigate(`/chat/${response.threadId}`);
 
       return;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Lỗi tạo chat thread:", error);
-
-      throw new Error(
-        error?.response?.data?.message ||
-          error?.message ||
-          "Đã xảy ra lỗi khi tạo cuộc trò chuyện",
-      );
+      throw new Error(getChatErrorMessage(error), { cause: error });
     } finally {
       hideLoading();
     }
@@ -169,6 +197,10 @@ export default function ProductDetail() {
     );
   }
 
+  const visibleRelatedProducts = product.categoryId && product.id
+    ? relatedProducts
+    : [];
+
   return (
     <div className="product-detail-page">
       <div className="pd-top">
@@ -179,7 +211,7 @@ export default function ProductDetail() {
 
       <div className="pd-shop-box">
         <div className="pd-shop-left">
-          <ShopCard shop={shop} />
+          {shop && <ShopCard shop={shop} />}
         </div>
 
         <div className="pd-shop-right">
@@ -235,14 +267,14 @@ export default function ProductDetail() {
       </div>
 
 
-      {relatedProducts.length > 0 && (
+      {visibleRelatedProducts.length > 0 && (
         <section className="pd-related-section">
           <div className="pd-related-header">
             <h2>Có thể bạn sẽ thích</h2>
           </div>
 
           <div className="pd-related-grid">
-            {relatedProducts.map((item) => (
+            {visibleRelatedProducts.map((item) => (
               <ProductCard key={item.id} product={item} />
             ))}
           </div>
