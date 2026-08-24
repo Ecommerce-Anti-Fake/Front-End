@@ -11,6 +11,7 @@ import {
 } from "../../../../services/order.api";
 import { getMyShop } from "../../../../services/shop.api";
 import { formatVnd } from "../../../../ultil/currency";
+import ContextualHelpLink from "../../../../components/help/contextualHelpLink";
 
 type ViewOrder = {
   id: string;
@@ -165,6 +166,7 @@ export default function OrderManagement() {
           <h1>Quản lý đơn hàng</h1>
           <p>Theo dõi và xử lý đơn hàng của bạn với độ chính xác cao.</p>
         </div>
+        <ContextualHelpLink to="/help/seller/process-order">Quy trình xử lý đơn hàng</ContextualHelpLink>
       </div>
 
       <OrderStats shopId={shopId} />

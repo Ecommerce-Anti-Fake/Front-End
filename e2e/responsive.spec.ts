@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-for (const route of ["/", "/community", "/live", "/categories", "/qr", "/auth"]) {
+for (const route of ["/", "/community", "/live", "/categories", "/qr", "/auth", "/help"]) {
   test(`responsive smoke ${route} has no horizontal overflow`, async ({ page }) => {
     await page.goto(route, { waitUntil: "domcontentloaded" });
     await expect(page.locator("body")).not.toBeEmpty();

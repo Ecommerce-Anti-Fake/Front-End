@@ -1,6 +1,7 @@
 import { Link, QrCode, ShieldCheck, Upload } from "lucide-react";
 import { useState } from "react";
 import "../../css/pages/qr.css";
+import ContextualHelpLink from "../../components/help/contextualHelpLink";
 
 export default function QRPage() {
   const [activeTab, setActiveTab] = useState<"qr" | "link" | "code">("qr");
@@ -16,6 +17,7 @@ export default function QRPage() {
             Kiểm tra nguồn gốc sản phẩm bằng QR Code,
             liên kết sản phẩm hoặc mã xác thực.
           </p>
+          <ContextualHelpLink to="/help/qr/verify-product">Hướng dẫn kiểm tra sản phẩm</ContextualHelpLink>
         </div>
 
         <div className="qr-tabs">

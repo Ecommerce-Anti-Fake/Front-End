@@ -13,6 +13,7 @@ import {
   type ShopOffer,
 } from "../../../../services/shop.api";
 import { formatVnd } from "../../../../ultil/currency";
+import ContextualHelpLink from "../../../../components/help/contextualHelpLink";
 
 type Product = {
   id: string;
@@ -228,6 +229,7 @@ export default function ProductManagement() {
         <div>
           <h2>Quản lý sản phẩm</h2>
           <p>Theo dõi, chỉnh sửa và quản lý sản phẩm của cửa hàng.</p>
+          <ContextualHelpLink to="/help/seller/create-product">Cách đăng sản phẩm</ContextualHelpLink>
         </div>
 
         <button

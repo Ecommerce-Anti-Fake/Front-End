@@ -62,6 +62,7 @@ import AdminCategoriesPage from "./pages/admin/categories";
 import AdminWalletPage from "./pages/admin/wallet";
 import SellerVoucherManagement from "./pages/shop/seller/voucherManagement";
 import SellerLivePage from "./pages/shop/seller/live";
+import HelpCenterPage from "./pages/help";
 import {
   resolveAffiliateAttribution,
   saveAffiliateAttribution,
@@ -162,6 +163,7 @@ function App() {
               <Route path="/profile/settings" element={<Navigate to="/install" replace />} />
               <Route path="/" element={<HomePage />} />
               <Route path="/community" element={<CommunityPage />} />
+              <Route path="/help/*" element={<HelpCenterPage />} />
               <Route
                 path="/profile"
                 element={

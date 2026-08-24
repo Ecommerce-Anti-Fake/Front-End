@@ -28,6 +28,7 @@ import LoadingOverlay from "../loadingOverlay";
 import CompletionStep from "./CompletionStep";
 import StoreInfoStep from "./StoreInfoStep";
 import VerificationStep from "./VerificationStep";
+import ContextualHelpLink from "../help/contextualHelpLink";
 
 export type RegistrationStep = 1 | 2 | 3;
 export type BusinessType = "MANUFACTURER" | "DISTRIBUTOR";
@@ -497,6 +498,7 @@ export default function SellerRegistration() {
 
   return (
     <main className="seller-register-page">
+      <ContextualHelpLink to="/help/seller/register-shop">Điều kiện mở Shop</ContextualHelpLink>
       {(checkingExistingShop ||
         (step === 1 && loadingCategories) ||
         loadingRequirements ||

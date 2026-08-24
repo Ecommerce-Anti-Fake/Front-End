@@ -2,6 +2,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import "../../css/components/layout/header.css";
 import {
   Bell,
+  CircleHelp,
   ChevronRight,
   Download,
   Home,
@@ -72,6 +73,10 @@ export default function Header() {
       label: "Xác thực QR",
       path: "/qr",
     },
+    {
+      label: "Trợ giúp",
+      path: "/help",
+    },
   ];
 
   const mobileMenus = [
@@ -99,6 +104,11 @@ export default function Header() {
       label: "Danh mục",
       path: "/categories",
       icon: Shapes,
+    },
+    {
+      label: "Trợ giúp",
+      path: "/help",
+      icon: CircleHelp,
     },
 
     {

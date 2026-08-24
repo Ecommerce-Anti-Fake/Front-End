@@ -1,0 +1,20 @@
+.contextual-help-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  width: fit-content;
+  color: #a71919;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.contextual-help-link:hover {
+  color: #781313;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.contextual-help-link:focus-visible {
+  outline: 3px solid rgb(185 28 28 / 28%);
+  outline-offset: 3px;
+}

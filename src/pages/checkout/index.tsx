@@ -15,6 +15,7 @@ import CheckoutPayment from "../../components/checkout/checkoutPayment";
 import CheckoutSummary from "../../components/checkout/checkoutSummary";
 import CheckoutProducts from "../../components/checkout/checkoutProducts";
 import CheckoutShipping from "../../components/checkout/checkoutShipping";
+import ContextualHelpLink from "../../components/help/contextualHelpLink";
 import { fetchShippingOptions, quoteCartCheckout } from "../../services/cart.api";
 import { fetchBuyNowPreview, quoteBuyNowCheckout } from "../../services/product.api";
 import type { Address } from "../../type/address";
@@ -222,6 +223,7 @@ export default function CheckoutPage() {
   return (
     <div className="checkout-page">
       <div className="checkout-left">
+        <ContextualHelpLink to="/help/buyer/first-purchase/checkout">Hướng dẫn đặt hàng</ContextualHelpLink>
         {/* ADDRESS */}
         <CheckoutAddress onAddressChange={handleAddressChange} />
 
