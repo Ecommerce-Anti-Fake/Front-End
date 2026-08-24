@@ -16,7 +16,7 @@ import CheckoutSummary from "../../components/checkout/checkoutSummary";
 import CheckoutProducts from "../../components/checkout/checkoutProducts";
 import CheckoutShipping from "../../components/checkout/checkoutShipping";
 import { fetchShippingOptions, quoteCartCheckout } from "../../services/cart.api";
-import { quoteBuyNowCheckout } from "../../services/product.api";
+import { fetchBuyNowPreview, quoteBuyNowCheckout } from "../../services/product.api";
 import type { Address } from "../../type/address";
 
 export default function CheckoutPage() {
@@ -29,20 +29,14 @@ export default function CheckoutPage() {
   const [systemVoucherCode, setSystemVoucherCode] = useState("");
   const [shopVoucherCodes, setShopVoucherCodes] = useState<Record<string, string>>({});
   const [quote, setQuote] = useState<{ discountAmount: number; buyerPayableAmount: number } | null>(null);
+  const [quoteStatus, setQuoteStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
+  const [quoteError, setQuoteError] = useState("");
   const location = useLocation();
   const source: CheckoutSource =
     location.state?.source === "buy-now" ? "buy-now" : "cart";
   const buyNowSelection = location.state?.buyNowSelection as
     | BuyNowSelection
     | undefined;
-  const buyNowShippingOptions: ShippingOption[] = useMemo(
-    () =>
-      Array.isArray(location.state?.shippingOptions)
-        ? location.state.shippingOptions
-        : [],
-    [location.state],
-  );
-
   const shops: CheckoutShop[] = useMemo(
     () => location.state?.shops ?? [],
     [location.state],
@@ -61,23 +55,14 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     if (source === "buy-now") {
-      setShippingOptions(buyNowShippingOptions);
-      setSelectedShippingCode((current) =>
-        buyNowShippingOptions.some((option) => option.optionCode === current)
-          ? current
-          : (buyNowShippingOptions[0]?.optionCode ?? ""),
-      );
-      setShippingError(
-        buyNowShippingOptions.length > 0
-          ? ""
-          : "Không có phương thức vận chuyển phù hợp",
-      );
       return;
     }
 
     if (cartItemIds.length === 0 || !shippingAddressKey) {
-      setShippingOptions([]);
-      setSelectedShippingCode("");
+      queueMicrotask(() => {
+        setShippingOptions([]);
+        setSelectedShippingCode("");
+      });
       return;
     }
 
@@ -111,7 +96,64 @@ export default function CheckoutPage() {
     };
 
     loadShippingOptions();
-  }, [source, buyNowShippingOptions, cartItemIds, shippingAddressKey]);
+  }, [source, cartItemIds, shippingAddressKey]);
+
+  useEffect(() => {
+    if (source !== "buy-now" || !buyNowSelection) {
+      return;
+    }
+
+    let cancelled = false;
+    if (!shippingAddressKey) {
+      queueMicrotask(() => {
+        if (cancelled) return;
+        setShippingOptions([]);
+        setSelectedShippingCode("");
+        setShippingError("");
+        setShippingLoading(false);
+      });
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    const loadBuyNowShippingOptions = async () => {
+      try {
+        setShippingLoading(true);
+        setShippingError("");
+
+        const options = (
+          await fetchBuyNowPreview(buyNowSelection, { includeShipping: true })
+        ).shippingOptions;
+
+        if (cancelled) return;
+
+        setShippingOptions(options);
+        setSelectedShippingCode((current) =>
+          options.some((option) => option.optionCode === current)
+            ? current
+            : (options[0]?.optionCode ?? ""),
+        );
+      } catch (error) {
+        if (cancelled) return;
+        console.error(error);
+        setShippingOptions([]);
+        setSelectedShippingCode("");
+        setShippingError(
+          error instanceof Error
+            ? error.message
+            : "KhÃ´ng thá»ƒ láº¥y phÆ°Æ¡ng thá»©c váº­n chuyá»ƒn",
+        );
+      } finally {
+        if (!cancelled) setShippingLoading(false);
+      }
+    };
+
+    void loadBuyNowShippingOptions();
+    return () => {
+      cancelled = true;
+    };
+  }, [source, buyNowSelection, shippingAddressKey]);
 
   const subtotal = shops
     .flatMap((shop) => shop.items)
@@ -125,9 +167,19 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     if (!selectedShippingCode || (source === "cart" && cartItemIds.length === 0) || (source === "buy-now" && !buyNowSelection)) {
+      // Quote state must be cleared before the next request so stale totals can never be submitted.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setQuote(null);
+      setQuoteStatus("idle");
+      setQuoteError("");
       return;
     }
+
+    let cancelled = false;
+    setQuote(null);
+    setQuoteStatus("loading");
+    setQuoteError("");
+
     const loadQuote = async () => {
       try {
         const result = source === "buy-now" && buyNowSelection
@@ -146,16 +198,26 @@ export default function CheckoutPage() {
                 .filter(([, code]) => code.trim())
                 .map(([shopId, voucherCode]) => ({ shopId, voucherCode: voucherCode.trim() })),
             });
-        setQuote(result);
-      } catch {
-        setQuote(null);
+        if (!cancelled) {
+          setQuote(result);
+          setQuoteStatus("ready");
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setQuote(null);
+          setQuoteStatus("error");
+          setQuoteError(error instanceof Error ? error.message : "Không thể tính tổng tiền đơn hàng");
+        }
       }
     };
     void loadQuote();
-  }, [source, cartItemIds, selectedShippingCode, systemVoucherCode, shopVoucherCodes]);
+    return () => {
+      cancelled = true;
+    };
+  }, [source, buyNowSelection, cartItemIds, selectedShippingCode, shippingAddressKey, systemVoucherCode, shopVoucherCodes]);
 
   const discount = quote?.discountAmount ?? 0;
-  const total = quote?.buyerPayableAmount ?? subtotal + shippingFee;
+  const total = quote?.buyerPayableAmount ?? null;
 
   return (
     <div className="checkout-page">
@@ -191,6 +253,9 @@ export default function CheckoutPage() {
           shippingFee={shippingFee}
           discount={discount}
           total={total}
+          hasShippingAddress={Boolean(shippingAddressKey)}
+          quoteStatus={quoteStatus}
+          quoteError={quoteError}
           shops={shops}
           systemVoucherCode={systemVoucherCode}
           setSystemVoucherCode={setSystemVoucherCode}

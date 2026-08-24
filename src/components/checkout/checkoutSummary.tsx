@@ -22,7 +22,10 @@ interface Props {
   subtotal: number;
   shippingFee: number;
   discount: number;
-  total: number;
+  total: number | null;
+  hasShippingAddress: boolean;
+  quoteStatus: "idle" | "loading" | "ready" | "error";
+  quoteError: string;
   shops: CheckoutShop[];
   systemVoucherCode: string;
   setSystemVoucherCode: (value: string) => void;
@@ -46,6 +49,9 @@ export default function CheckoutSummary({
   shippingFee,
   discount,
   total,
+  hasShippingAddress,
+  quoteStatus,
+  quoteError,
   shops,
   systemVoucherCode,
   setSystemVoucherCode,
@@ -88,8 +94,18 @@ export default function CheckoutSummary({
       return;
     }
 
+    if (!hasShippingAddress) {
+      toast.error("Vui lòng thêm địa chỉ giao hàng trước khi đặt hàng");
+      return;
+    }
+
     if (!shippingOptionCode) {
       toast.error("Vui lòng chọn phương thức vận chuyển");
+      return;
+    }
+
+    if (quoteStatus !== "ready" || total === null) {
+      toast.error("Chưa tính được tổng tiền đơn hàng. Vui lòng thử lại.");
       return;
     }
 
@@ -220,15 +236,26 @@ export default function CheckoutSummary({
         <span>-{formatVnd(discount)}</span>
       </div>
 
+      {quoteStatus === "loading" && (
+        <small className="quote-state" role="status">
+          Đang cập nhật tổng tiền...
+        </small>
+      )}
+      {quoteStatus === "error" && (
+        <small className="quote-state shipping-error" role="alert">
+          {quoteError || "Không thể tính tổng tiền đơn hàng."}
+        </small>
+      )}
+
       <div className="summary-total-checkout">
         <span>Tổng cộng</span>
-        <strong>{formatVnd(total)}</strong>
+        <strong>{total === null ? "—" : formatVnd(total)}</strong>
       </div>
 
       <button
         type="button"
         className="checkout-btn"
-        disabled={loading}
+        disabled={loading || (hasShippingAddress && (quoteStatus !== "ready" || total === null))}
         onClick={handleCheckout}
       >
         Đặt hàng

@@ -153,7 +153,7 @@ export default function ProductInfo({ product }: { product: ProductInfoData }) {
         offerId: String(product.id),
         variantId: variantId ? String(variantId) : undefined,
         quantity,
-      });
+      }, { includeShipping: false });
 
       navigate("/checkout", {
         state: {

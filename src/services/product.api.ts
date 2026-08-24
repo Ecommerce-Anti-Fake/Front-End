@@ -205,16 +205,16 @@ export const fetchOfferDetail = async (id: string): Promise<OfferDetail> => {
   return data?.data ?? data;
 };
 
-export const fetchBuyNowPreview = async ({
-  offerId,
-  variantId,
-  quantity,
-}: BuyNowSelection): Promise<BuyNowPreview> => {
+export const fetchBuyNowPreview = async (
+  { offerId, variantId, quantity }: BuyNowSelection,
+  options: { includeShipping?: boolean } = {},
+): Promise<BuyNowPreview> => {
   const query = new URLSearchParams({
     offerId,
     quantity: String(quantity),
   });
   if (variantId) query.set("variantId", variantId);
+  if (options.includeShipping === false) query.set("includeShipping", "false");
 
   const response = await authFetch(
     `${BASE_URL}/api/offers/buy-now?${query.toString()}`,
