@@ -169,7 +169,13 @@ export const helpArticles: HelpArticle[] = [
     summary: "Giao diện QR hiện có để nhập hoặc quét thông tin kiểm tra.",
     keywords: ["QR", "xác thực", "nguồn gốc", "provenance"],
     status: "NOT_IMPLEMENTED",
-    sourceRefs: ["Front-End/src/pages/qr/index.tsx", "docs/UAT_ISSUES.md#AF-Q-001"],
+    sourceRefs: [
+      "Front-End/src/pages/qr/index.tsx",
+      "back-end/prisma/schema.prisma#VerificationLabel",
+      "back-end/prisma/schema.prisma#ProvenanceEvent",
+      "back-end/prisma/seeds/05-batches-qr.seed.ts",
+      "docs/UAT_ISSUES.md#AF-Q-001",
+    ],
     steps: [
       { slug: "open", title: "Mở xác thực QR", description: "Mở trang Xác thực QR từ menu công khai." },
       { slug: "enter-code", title: "Nhập thông tin kiểm tra", description: "Nhập dữ liệu test được cấp khi có môi trường xác minh phù hợp." },
