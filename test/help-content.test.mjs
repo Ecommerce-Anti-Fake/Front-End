@@ -143,3 +143,25 @@ test("feature matrix bridges canonical journeys to UAT and platform visuals", ()
     }
   }
 });
+
+test("journey bridge UAT references exist in the canonical UAT matrix", () => {
+  const guideMatrix = fs.readFileSync(
+    new URL("../../docs/user-guide/FEATURE_GUIDE_MATRIX.md", import.meta.url),
+    "utf8",
+  );
+  const uatMatrix = fs.readFileSync(
+    new URL("../../docs/UAT_TEST_MATRIX.md", import.meta.url),
+    "utf8",
+  );
+  const bridge = guideMatrix.split("## Journey/UAT traceability bridge")[1].split("\n| Feature | Role | UI |")[0];
+  const rows = bridge.split("\n").filter((line) => line.startsWith("| ") && !line.startsWith("|---") && !line.includes("| Feature |"));
+
+  assert.equal(rows.length, 28);
+  for (const row of rows) {
+    const columns = row.split("|").slice(1, -1).map((column) => column.trim());
+    assert.equal(columns.length, 8, `invalid journey bridge row: ${row}`);
+    for (const testId of columns[3].matchAll(/AF-[A-Z]+-\d{3}/g)) {
+      assert.match(uatMatrix, new RegExp(`\\| ${testId[0]} \\|`), `missing UAT case ${testId[0]}`);
+    }
+  }
+});
