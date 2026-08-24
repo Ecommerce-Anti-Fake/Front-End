@@ -165,3 +165,22 @@ test("journey bridge UAT references exist in the canonical UAT matrix", () => {
     }
   }
 });
+
+test("documentation registry lists every canonical journey", () => {
+  const registry = fs.readFileSync(
+    new URL("../../docs/user-guide/DOCUMENTATION_REGISTRY.md", import.meta.url),
+    "utf8",
+  );
+
+  for (const prefix of ["B", "S", "A"]) {
+    const max = prefix === "A" ? 10 : 9;
+    for (let index = 1; index <= max; index += 1) {
+      const journeyId = `${prefix}${String(index).padStart(2, "0")}`;
+      assert.equal(
+        registry.split("\n").some((row) => row.startsWith("| ") && row.includes("`" + journeyId + "`")),
+        true,
+        `missing registry journey ${journeyId}`,
+      );
+    }
+  }
+});
