@@ -20,6 +20,17 @@ test("Help Center covers source-backed buyer and seller support journeys", () =>
   }
 });
 
+test("Help registry covers canonical Buyer, Seller and Admin journey IDs", () => {
+  const journeyIds = new Set(helpArticles.map((article) => article.journey));
+
+  for (const prefix of ["B", "S", "A"]) {
+    const max = prefix === "A" ? 10 : 9;
+    for (let index = 1; index <= max; index += 1) {
+      assert.equal(journeyIds.has(`${prefix}${String(index).padStart(2, "0")}`), true, `missing journey ${prefix}${index}`);
+    }
+  }
+});
+
 test("support journeys retain an evidence status and at least one step", () => {
   const supportArticles = helpArticles.filter((article) =>
     ["voucher", "chat-shop", "livestream", "wallet", "affiliate", "operations"].includes(article.slug),
