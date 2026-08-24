@@ -29,7 +29,10 @@ test("support journeys retain an evidence status and at least one step", () => {
 });
 
 test("master guide Help links resolve to registered journeys", () => {
-  const guide = fs.readFileSync("../docs/user-guide/ANTIFAKE_USER_GUIDE.md", "utf8");
+  const guide = fs.readFileSync(
+    new URL("../../docs/user-guide/ANTIFAKE_USER_GUIDE.md", import.meta.url),
+    "utf8",
+  );
   const routes = [...guide.matchAll(/\]\((\/help\/[^)]+)\)/g)].map((match) => match[1]);
 
   assert.equal(routes.length > 0, true);
