@@ -128,7 +128,7 @@ test("visual manifest lists every canonical journey", () => {
       const row = rows.find((candidate) => candidate.startsWith(`| ${journeyId} |`));
 
       assert.ok(row, `missing visual manifest journey ${journeyId}`);
-      assert.match(row, /Desktop \+ Mobile/);
+      assert.match(row, /Desktop 1440×900 \+ Mobile 390×844/);
       if (prefix === "A") {
         assert.match(row, /Blocked by approved Admin identity/);
       } else if (journeyId === "B03") {
@@ -137,6 +137,26 @@ test("visual manifest lists every canonical journey", () => {
         assert.match(row, /Pending/);
       }
     }
+  }
+});
+
+test("visual manifest routes mirror canonical Help metadata", () => {
+  const manifest = fs.readFileSync(
+    new URL("../../docs/user-guide/VISUAL_MANIFEST.md", import.meta.url),
+    "utf8",
+  );
+  const rows = manifest.split("\n");
+
+  for (const article of helpArticles.filter((candidate) => /^[BSA]\d{2}$/.test(candidate.journey))) {
+    const row = rows.find((candidate) => candidate.startsWith(`| ${article.journey} |`));
+    assert.ok(row, `missing visual manifest row for ${article.journey}`);
+    const columns = row.split("|").slice(1, -1).map((column) => column.trim());
+
+    assert.equal(
+      columns[1].replace(/^`|`$/g, ""),
+      getArticleUrl(article),
+      `route drift for ${article.journey}`,
+    );
   }
 });
 
