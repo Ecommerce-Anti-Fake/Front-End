@@ -28,6 +28,21 @@ test("support journeys retain an evidence status and at least one step", () => {
   assert.equal(supportArticles.every((article) => article.status && article.steps.length > 0), true);
 });
 
+test("Help source references point to files in the workspace", () => {
+  const workspaceRoot = new URL("../../", import.meta.url);
+
+  for (const article of helpArticles) {
+    for (const sourceRef of article.sourceRefs) {
+      const filePath = sourceRef.split("#", 1)[0];
+      assert.equal(
+        fs.existsSync(new URL(`${filePath}`, workspaceRoot)),
+        true,
+        `missing source reference ${sourceRef}`,
+      );
+    }
+  }
+});
+
 test("master guide Help links resolve to registered journeys", () => {
   const guide = fs.readFileSync(
     new URL("../../docs/user-guide/ANTIFAKE_USER_GUIDE.md", import.meta.url),
