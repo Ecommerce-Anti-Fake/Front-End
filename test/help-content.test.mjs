@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { getArticleForPath, helpArticles } from "../src/data/helpCenter.ts";
+import { getArticleForPath, getArticleUrl, helpArticles } from "../src/data/helpCenter.ts";
 
 test("Help Center covers source-backed buyer and seller support journeys", () => {
   const keys = new Set(helpArticles.map((article) => `${article.role}/${article.slug}`));
@@ -182,5 +182,21 @@ test("documentation registry lists every canonical journey", () => {
         `missing registry journey ${journeyId}`,
       );
     }
+  }
+});
+
+test("canonical registry routes and statuses mirror Help metadata", () => {
+  const registry = fs.readFileSync(
+    new URL("../../docs/user-guide/DOCUMENTATION_REGISTRY.md", import.meta.url),
+    "utf8",
+  );
+  const registryRows = registry.split("\n").filter((row) => row.startsWith("| "));
+
+  for (const article of helpArticles.filter((candidate) => /^[BSA]\d{2}$/.test(candidate.journey))) {
+    const row = registryRows.find((candidate) => candidate.includes("`" + article.journey + "`"));
+    assert.ok(row, `missing registry row for ${article.journey}`);
+    const columns = row.split("|").slice(1, -1).map((column) => column.trim());
+    assert.equal(columns[2].replace(/^`|`$/g, ""), getArticleUrl(article));
+    assert.equal(columns[3], article.status, `status drift for ${article.journey}`);
   }
 });
