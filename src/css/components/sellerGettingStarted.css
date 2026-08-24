@@ -1,0 +1,86 @@
+.seller-getting-started {
+  margin-top: 18px;
+  padding: 20px;
+  border: 1px solid #eadede;
+  border-radius: 16px;
+  background: #fff;
+}
+
+.seller-getting-started-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.seller-getting-started-eyebrow {
+  color: #a71919;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.seller-getting-started h2 {
+  margin: 4px 0 0;
+  font-size: 21px;
+}
+
+.seller-getting-started p {
+  margin: 7px 0 0;
+  color: #6d5d5d;
+  font-size: 13px;
+}
+
+.seller-getting-started-progress {
+  color: #a71919;
+  font-size: 20px;
+  white-space: nowrap;
+}
+
+.seller-getting-started-bar {
+  display: block;
+  width: 100%;
+  height: 8px;
+  margin: 18px 0 12px;
+  accent-color: #b91c1c;
+}
+
+.seller-getting-started-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 18px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.seller-getting-started-list li a {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 0;
+  color: #604c4c;
+  text-decoration: none;
+}
+
+.seller-getting-started-list li a:hover,
+.seller-getting-started-list li a:focus-visible {
+  color: #a71919;
+}
+
+.seller-getting-started-list li svg { color: #b48686; }
+.seller-getting-started-list li.is-complete svg { color: #24723d; }
+.seller-getting-started-list small { color: #8f7777; font-size: 11px; }
+.seller-getting-started-list li.is-complete small { color: #24723d; }
+.seller-getting-started-loading { padding: 18px 0 2px; color: #6d5d5d; font-size: 13px; }
+.seller-getting-started-error { color: #9b1c1c !important; }
+.seller-getting-started-retry { display: inline-flex; align-items: center; gap: 6px; padding: 8px 11px; border: 1px solid #e8d5d5; background: #fff; color: #a71919; cursor: pointer; font-weight: 700; }
+
+@media (max-width: 576px) {
+  .seller-getting-started { padding: 16px; }
+  .seller-getting-started-list { grid-template-columns: 1fr; }
+  .seller-getting-started-list li a { min-height: 40px; }
+}

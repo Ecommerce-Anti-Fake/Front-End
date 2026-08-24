@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import SellerRevenueChart from "../../../../components/dashboard/sellerRevenueChart";
 import SellerStats from "../../../../components/dashboard/sellerStats";
 import SellerTopProducts from "../../../../components/dashboard/sellerTopProducts";
+import SellerGettingStarted from "../../../../components/dashboard/sellerGettingStarted";
 import OrderCard from "../../../../components/orderManagement/orderCard";
 import OrderTable from "../../../../components/orderManagement/orderTable";
 import "../../../../css/components/dataSkeleton.css";
@@ -54,6 +55,7 @@ const mapOrder = (order: SellerOrder): ViewOrder => ({
 
 export default function SellerDashboard() {
   const [shopId, setShopId] = useState("");
+  const [shopStatus, setShopStatus] = useState("");
   const [orders, setOrders] = useState<ViewOrder[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
   const [ordersError, setOrdersError] = useState("");
@@ -70,12 +72,14 @@ export default function SellerDashboard() {
 
         if (!nextShopId) {
           setShopId("");
+          setShopStatus("");
           setOrders([]);
           setOrdersError("Khong tim thay cua hang cua ban");
           return;
         }
 
         setShopId(String(nextShopId));
+        setShopStatus(String(shop?.shopStatus ?? ""));
 
         const data = await fetchSellerOrders({
           shopId: String(nextShopId),
@@ -132,6 +136,7 @@ export default function SellerDashboard() {
   return (
     <div className="seller-dashboard">
       <SellerStats shopId={shopId} />
+      {shopId && <SellerGettingStarted shopId={shopId} shopStatus={shopStatus} />}
 
       <div className="seller-dashboard-middle">
         <SellerRevenueChart shopId={shopId} />
