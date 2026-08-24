@@ -90,3 +90,17 @@ test("canonical documentation Help links resolve to registered journeys", () => 
     }
   }
 });
+
+test("visual manifest concrete assets exist", () => {
+  const workspaceRoot = new URL("../../", import.meta.url);
+  const manifest = fs.readFileSync(
+    new URL("../../docs/user-guide/VISUAL_MANIFEST.md", import.meta.url),
+    "utf8",
+  );
+  const assets = [...manifest.matchAll(/`(docs\/images\/[^`]+\.png)`/g)].map((match) => match[1]);
+
+  assert.ok(assets.length > 0);
+  for (const asset of assets) {
+    assert.equal(fs.existsSync(new URL(asset, workspaceRoot)), true, `missing visual asset ${asset}`);
+  }
+});
