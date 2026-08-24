@@ -1,5 +1,5 @@
 import { MapPin } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { getDefaultAddress } from "../../services/address.api";
 import type { Address } from "../../type/address";
 import AddressSelectorModal from "../address/addressSelectorModal";
@@ -12,7 +12,7 @@ export default function CheckoutAddress({ onAddressChange }: Props) {
   const [address, setAddress] = useState<Address>();
   const [openAddressModal, setOpenAddressModal] = useState(false);
 
-  const fetchDefaultAddress = async () => {
+  const fetchDefaultAddress = useCallback(async () => {
     try {
       const address = await getDefaultAddress();
       setAddress(address);
@@ -21,11 +21,18 @@ export default function CheckoutAddress({ onAddressChange }: Props) {
       console.error(error);
       onAddressChange?.(undefined);
     }
-  };
+  }, [onAddressChange]);
 
   useEffect(() => {
-    fetchDefaultAddress();
-  }, []);
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (!cancelled) void fetchDefaultAddress();
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [fetchDefaultAddress]);
 
   return (
     <div className="checkout-card">
