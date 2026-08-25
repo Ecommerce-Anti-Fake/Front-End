@@ -68,15 +68,16 @@ export default function PayoutAccountModal({
   const bankOptionRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const bankLookupRunRef = useRef(0);
   const challengeIdRef = useRef("");
+  const [eligibilityTime] = useState(() => Date.now());
   const currentUser = getUser() as { email?: string; phone?: string } | null;
 
   const eligibleAccounts = useMemo(
     () => payoutAccounts.filter(
       (item) =>
         item.verificationStatus === "VERIFIED" &&
-        new Date(item.availableAfter).getTime() <= Date.now(),
+        new Date(item.availableAfter).getTime() <= eligibilityTime,
     ),
-    [payoutAccounts],
+    [eligibilityTime, payoutAccounts],
   );
   const selectedBank = useMemo(
     () => banks.find((item) => item.bin === bankBin) ?? null,
@@ -89,36 +90,48 @@ export default function PayoutAccountModal({
 
   useEffect(() => {
     if (!open) return;
-    setBankBin("");
-    setBankSearch("");
-    setBankPickerOpen(false);
-    setHighlightedBankIndex(0);
-    setAccountNumber("");
-    setBankVerification(null);
-    setBankLookupBusy(false);
-    setBankLookupError("");
-    bankLookupRunRef.current += 1;
-    setAmount("");
-    setPayoutAccountId(eligibleAccounts[0]?.id ?? "");
-    setChannel(currentUser?.phone ? "PHONE" : "EMAIL");
-    setStep("form");
-    setOtp("");
-    setConfirmation(null);
+    let active = true;
+    queueMicrotask(() => {
+      if (!active) return;
 
-    if (mode === "add-account") {
-      setLoadingBanks(true);
-      fetchSupportedBanks()
-        .then((items) => setBanks(items.filter((item) => item.lookupSupported)))
-        .catch((error) => toast.error(error instanceof Error ? error.message : "Không thể tải ngân hàng"))
-        .finally(() => setLoadingBanks(false));
-    }
+      setBankBin("");
+      setBankSearch("");
+      setBankPickerOpen(false);
+      setHighlightedBankIndex(0);
+      setAccountNumber("");
+      setBankVerification(null);
+      setBankLookupBusy(false);
+      setBankLookupError("");
+      bankLookupRunRef.current += 1;
+      setAmount("");
+      setPayoutAccountId(eligibleAccounts[0]?.id ?? "");
+      setChannel(currentUser?.phone ? "PHONE" : "EMAIL");
+      setStep("form");
+      setOtp("");
+      setConfirmation(null);
+
+      if (mode === "add-account") {
+        setLoadingBanks(true);
+        fetchSupportedBanks()
+          .then((items) => {
+            if (active) setBanks(items.filter((item) => item.lookupSupported));
+          })
+          .catch((error) => {
+            if (active) toast.error(error instanceof Error ? error.message : "Không thể tải ngân hàng");
+          })
+          .finally(() => {
+            if (active) setLoadingBanks(false);
+          });
+      }
+    });
 
     return () => {
+      active = false;
       cleanupEmailListener.current?.();
       cleanupEmailListener.current = null;
       clearPhoneStepUp();
     };
-  }, [open, mode, shopId]);
+  }, [currentUser?.phone, eligibleAccounts, mode, open, shopId]);
 
   useEffect(() => {
     if (!bankPickerOpen) return;
