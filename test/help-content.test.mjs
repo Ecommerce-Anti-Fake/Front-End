@@ -39,6 +39,17 @@ test("support journeys retain an evidence status and at least one step", () => {
   assert.equal(supportArticles.every((article) => article.status && article.steps.length > 0), true);
 });
 
+test("QR Help describes the supported image path and fallback", () => {
+  const article = helpArticles.find((candidate) => candidate.slug === "verify-product");
+  assert.ok(article);
+
+  const stepText = article.steps.map((step) => step.description).join(" ");
+  assert.match(article.summary, /ảnh QR/);
+  assert.match(stepText, /PNG, JPEG hoặc WebP/);
+  assert.match(stepText, /ảnh rõ hơn/);
+  assert.doesNotMatch(stepText, /cần bộ giải mã tương thích/);
+});
+
 test("Help source references point to files in the workspace", () => {
   const workspaceRoot = new URL("../../", import.meta.url);
 

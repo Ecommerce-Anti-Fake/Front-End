@@ -166,7 +166,7 @@ export const helpArticles: HelpArticle[] = [
     role: "qr",
     journey: "B03",
     feature: "QR verification",
-    summary: "Nhập mã hoặc liên kết để nhận kết quả xác thực do máy chủ trả về.",
+    summary: "Nhập mã, liên kết hoặc tải ảnh QR để nhận kết quả xác thực do máy chủ trả về.",
     keywords: ["QR", "xác thực", "nguồn gốc", "provenance"],
     status: "PARTIAL",
     sourceRefs: [
@@ -181,8 +181,8 @@ export const helpArticles: HelpArticle[] = [
     ],
     steps: [
       { slug: "open", title: "Mở xác thực QR", description: "Mở trang Xác thực QR từ menu công khai." },
-      { slug: "enter-code", title: "Nhập thông tin kiểm tra", description: "Dán liên kết HTTP(S) có tham số code hoặc nhập mã xác thực được cấp." },
-      { slug: "result", title: "Đọc kết quả", description: "Đọc trạng thái và dữ liệu nguồn gốc do máy chủ trả về; ảnh QR trực tiếp vẫn cần bộ giải mã tương thích." },
+      { slug: "enter-code", title: "Nhập thông tin kiểm tra", description: "Tải ảnh PNG, JPEG hoặc WebP có mã QR dưới 5 MB, hoặc dán liên kết HTTP(S)/nhập mã xác thực được cấp." },
+      { slug: "result", title: "Đọc kết quả", description: "Đọc trạng thái và dữ liệu nguồn gốc do máy chủ trả về; nếu ảnh không đọc được, hãy thử ảnh rõ hơn hoặc dùng liên kết/mã." },
     ],
   },
   {
