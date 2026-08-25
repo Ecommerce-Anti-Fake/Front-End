@@ -21,7 +21,7 @@ import {
   updateOrderFulfillment,
   type FulfillmentStatus,
 } from "../../services/order.api";
-import { getMyShop } from "../../services/shop.api";
+import { getMyShop, type MyShop } from "../../services/shop.api";
 import type { OrderDetail, OrderItem, OrderShop } from "../../type/order";
 import { formatVnd } from "../../ultil/currency";
 
@@ -40,11 +40,7 @@ const paymentStatusLabels: Record<string, string> = {
   refunded: "Đã hoàn tiền",
 };
 
-const normalizeMyShop = (data: any) => {
-  const payload = data?.data ?? data?.items ?? data;
-  if (Array.isArray(payload)) return payload[0] ?? null;
-  return payload && typeof payload === "object" ? payload : null;
-};
+const normalizeMyShop = (data: MyShop[] | null): MyShop | null => data?.[0] ?? null;
 
 const normalizeStatus = (status?: string) => String(status ?? "").toLowerCase();
 
@@ -118,7 +114,7 @@ export default function OrderDetail() {
         if (cancelled) return;
 
         const shop = normalizeMyShop(shopData);
-        setShopId(String(shop?.shopId ?? shop?.id ?? ""));
+        setShopId(String(shop?.id ?? ""));
         setOrder(orderData);
       } catch (err: unknown) {
         if (!cancelled) {

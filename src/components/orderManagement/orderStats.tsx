@@ -38,10 +38,10 @@ export default function OrderStats({ shopId }: OrderStatsProps) {
       try {
         const data = await fetchShopOrderStatusSummary(shopId);
         if (!ignore) setSummary(data);
-      } catch (err: any) {
+      } catch (err: unknown) {
         if (!ignore) {
           setSummary(emptySummary);
-          setError(err.message || "Khong the tai thong ke don hang");
+          setError(err instanceof Error ? err.message : "Khong the tai thong ke don hang");
         }
       } finally {
         if (!ignore) setLoading(false);
