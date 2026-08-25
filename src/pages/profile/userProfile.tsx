@@ -16,18 +16,32 @@ type ProfileForm = {
 const defaultAvatar =
   "https://api.dicebear.com/9.x/initials/svg?seed=AntiFake&backgroundColor=f4e5e5";
 
-const getResponseData = (data: any) => data?.user || data?.data || data || {};
+type JsonRecord = Record<string, unknown>;
 
-const getAvatarUrl = (data: any) => {
+const asRecord = (value: unknown): JsonRecord => (
+  value !== null && typeof value === "object" ? value as JsonRecord : {}
+);
+
+const getResponseData = (data: unknown): JsonRecord => {
+  const root = asRecord(data);
+  if (root.user && typeof root.user === "object") return asRecord(root.user);
+  if (root.data && typeof root.data === "object") return asRecord(root.data);
+  return root;
+};
+
+const getString = (data: JsonRecord, key: string): string | undefined => (
+  typeof data[key] === "string" ? data[key] : undefined
+);
+
+const getAvatarUrl = (data: unknown): string | undefined => {
   const payload = getResponseData(data);
-  return (
-    payload.avatar ||
-    payload.avatarUrl ||
-    payload.url ||
-    data?.avatar ||
-    data?.avatarUrl ||
-    data?.url
-  );
+  const root = asRecord(data);
+  return getString(payload, "avatar")
+    ?? getString(payload, "avatarUrl")
+    ?? getString(payload, "url")
+    ?? getString(root, "avatar")
+    ?? getString(root, "avatarUrl")
+    ?? getString(root, "url");
 };
 
 export default function UserProfile() {
@@ -115,7 +129,7 @@ export default function UserProfile() {
       });
       const profileData = getResponseData(profileResponse);
 
-      let nextAvatar = profileData.avatar || form.avatar;
+      let nextAvatar = getString(profileData, "avatar") || form.avatar;
 
       if (avatarFile) {
         const avatarResponse = await uploadUserAvatar(avatarFile);
@@ -123,10 +137,12 @@ export default function UserProfile() {
       }
 
       const nextProfile: ProfileForm = {
-        displayName: profileData.displayName || nextDisplayName,
-        fullName: profileData.fullName || profileData.displayName || nextDisplayName,
-        email: profileData.email || form.email,
-        phone: profileData.phone || form.phone.trim(),
+        displayName: getString(profileData, "displayName") || nextDisplayName,
+        fullName: getString(profileData, "fullName")
+          || getString(profileData, "displayName")
+          || nextDisplayName,
+        email: getString(profileData, "email") || form.email,
+        phone: getString(profileData, "phone") || form.phone.trim(),
         avatar: nextAvatar,
       };
 
@@ -146,8 +162,8 @@ export default function UserProfile() {
       setAvatarFile(null);
       closeProfileModal();
       toast.success("Cập nhật hồ sơ thành công");
-    } catch (err: any) {
-      toast.error(err.message || "Cập nhật hồ sơ thất bại");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Cập nhật hồ sơ thất bại");
     } finally {
       setSaving(false);
       hideLoading();
