@@ -94,18 +94,37 @@ export default function MessageList({
   );
 
   useEffect(() => {
-    loadMessages();
+    let active = true;
+    queueMicrotask(() => {
+      if (active) void loadMessages();
+    });
+    return () => {
+      active = false;
+    };
   }, [loadMessages]);
 
   useEffect(() => {
-    if (!realtimeEvent) return;
+    let active = true;
+    if (!realtimeEvent) {
+      return () => {
+        active = false;
+      };
+    }
 
     const eventRoomId = realtimeEvent.threadId || realtimeEvent.roomId;
-    if (eventRoomId !== roomId) return;
+    if (eventRoomId !== roomId) {
+      return () => {
+        active = false;
+      };
+    }
 
     if (!realtimeEvent.message) {
-      loadMessages(false);
-      return;
+      queueMicrotask(() => {
+        if (active) void loadMessages(false);
+      });
+      return () => {
+        active = false;
+      };
     }
 
     const user = getUser();
@@ -116,17 +135,27 @@ export default function MessageList({
     );
 
     if (!newMessage || !newMessage.content) {
-      loadMessages(false);
-      return;
+      queueMicrotask(() => {
+        if (active) void loadMessages(false);
+      });
+      return () => {
+        active = false;
+      };
     }
 
-    setMessages((current) => {
-      if (current.some((message) => message.id === newMessage.id)) {
-        return current;
-      }
+    queueMicrotask(() => {
+      if (!active) return;
+      setMessages((current) => {
+        if (current.some((message) => message.id === newMessage.id)) {
+          return current;
+        }
 
-      return [...current, newMessage];
+        return [...current, newMessage];
+      });
     });
+    return () => {
+      active = false;
+    };
   }, [loadMessages, realtimeEvent, roomId]);
 
   useEffect(() => {
