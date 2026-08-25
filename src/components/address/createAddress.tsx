@@ -66,7 +66,6 @@ export default function CreateAddress({ onClose, onSuccess }: Props) {
 
   useEffect(() => {
     if (!form.provinceCode) {
-      setWards([]);
       return;
     }
 
@@ -89,6 +88,8 @@ export default function CreateAddress({ onClose, onSuccess }: Props) {
 
     loadWards();
   }, [form.provinceCode]);
+
+  const visibleWards = form.provinceCode ? wards : [];
 
   const validate = () => {
     const newErrors = {
@@ -290,7 +291,7 @@ export default function CreateAddress({ onClose, onSuccess }: Props) {
                   value={form.wardCode}
                   disabled={!form.provinceCode || loadingWards}
                   onChange={(e) => {
-                    const selectedWard = wards.find(
+                    const selectedWard = visibleWards.find(
                       (ward) => ward.wardCode === e.target.value,
                     );
 
@@ -304,7 +305,7 @@ export default function CreateAddress({ onClose, onSuccess }: Props) {
                   <option value="">
                     {loadingWards ? "Đang tải..." : "Chọn phường/xã"}
                   </option>
-                  {wards.map((ward) => (
+                  {visibleWards.map((ward) => (
                     <option key={ward.wardCode} value={ward.wardCode}>
                       {ward.wardName}
                     </option>
