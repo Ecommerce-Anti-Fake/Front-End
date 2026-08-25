@@ -118,8 +118,15 @@ export function useChatRealtime({
 
   useEffect(() => {
     threadIdRef.current = threadId;
-    setOnlineUserIds([]);
-    setTypingUserIds([]);
+    let active = true;
+    queueMicrotask(() => {
+      if (!active) return;
+      setOnlineUserIds([]);
+      setTypingUserIds([]);
+    });
+    return () => {
+      active = false;
+    };
   }, [threadId]);
 
   useEffect(() => {
@@ -145,8 +152,13 @@ export function useChatRealtime({
   useEffect(() => {
     if (!session) {
       socket.disconnect();
-      setConnected(false);
-      return;
+      let active = true;
+      queueMicrotask(() => {
+        if (active) setConnected(false);
+      });
+      return () => {
+        active = false;
+      };
     }
 
     let heartbeatIntervalId: number | null = null;
