@@ -9,7 +9,7 @@ import {
   fetchSellerOrders,
   type SellerOrder,
 } from "../../../../services/order.api";
-import { getMyShop } from "../../../../services/shop.api";
+import { getMyShop, type MyShop } from "../../../../services/shop.api";
 import { formatVnd } from "../../../../ultil/currency";
 import ContextualHelpLink from "../../../../components/help/contextualHelpLink";
 
@@ -25,11 +25,7 @@ type ViewOrder = {
 
 const PAGE_SIZE = 20;
 
-const normalizeMyShop = (data: any) => {
-  const payload = data?.data ?? data?.items ?? data;
-  if (Array.isArray(payload)) return payload[0] ?? null;
-  return payload && typeof payload === "object" ? payload : null;
-};
+const normalizeMyShop = (data: MyShop[] | null): MyShop | null => data?.[0] ?? null;
 
 const formatDate = (value?: string) => {
   if (!value) return "";
@@ -93,7 +89,7 @@ export default function OrderManagement() {
       try {
         const shopData = await getMyShop();
         const shop = normalizeMyShop(shopData);
-        const nextShopId = shop?.shopId || shop?.id;
+        const nextShopId = shop?.id;
 
         if (!nextShopId) {
           setError("Khong tim thay cua hang cua ban");
@@ -102,8 +98,8 @@ export default function OrderManagement() {
         }
 
         setShopId(String(nextShopId));
-      } catch (err: any) {
-        setError(err.message || "Khong the tai thong tin cua hang");
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : "Khong the tai thong tin cua hang");
         setLoading(false);
       }
     };
@@ -128,10 +124,10 @@ export default function OrderManagement() {
 
         setOrders(data.items.map(mapOrder));
         setTotal(data.total);
-      } catch (err: any) {
+      } catch (err: unknown) {
         setOrders([]);
         setTotal(0);
-        setError(err.message || "Khong the tai danh sach don hang");
+        setError(err instanceof Error ? err.message : "Khong the tai danh sach don hang");
       } finally {
         setLoading(false);
       }
@@ -141,7 +137,13 @@ export default function OrderManagement() {
   }, [shopId, activeStatus, page]);
 
   useEffect(() => {
-    setPage(1);
+    let active = true;
+    queueMicrotask(() => {
+      if (active) setPage(1);
+    });
+    return () => {
+      active = false;
+    };
   }, [activeStatus, search]);
 
   const filteredOrders = useMemo(() => {
