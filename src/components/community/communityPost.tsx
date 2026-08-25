@@ -43,8 +43,8 @@ export default function CommunityPost({ post }: Props) {
     navigate("/auth");
   };
 
-  const isAuthError = (err: any) => {
-    const message = String(err?.message || "").toLowerCase();
+  const isAuthError = (err: unknown) => {
+    const message = err instanceof Error ? err.message : String(err);
     return (
       message.includes("unauthorized") ||
       message.includes("401") ||
@@ -84,14 +84,14 @@ export default function CommunityPost({ post }: Props) {
       } else {
         await likePost(post.id, "LIKE");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       setLiked(oldLiked);
       setReactionCount(oldCount);
 
       if (isAuthError(err)) {
         redirectToLogin();
       } else {
-        toast.error(err.message || "Thao tác thất bại");
+        toast.error(err instanceof Error ? err.message : "Thao tác thất bại");
       }
     } finally {
       setLoadingLike(false);
