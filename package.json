@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@payos/payos-checkout": "^1.0.8",
+    "@zxing/browser": "0.2.1",
     "agora-rtc-sdk-ng": "4.24.6",
     "emoji-picker-react": "^4.19.1",
     "firebase": "^12.15.0",

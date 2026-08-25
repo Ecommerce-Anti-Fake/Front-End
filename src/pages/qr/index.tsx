@@ -1,14 +1,39 @@
+import { BrowserQRCodeReader } from "@zxing/browser";
 import { Link, QrCode, ShieldCheck, Upload } from "lucide-react";
 import { useState } from "react";
-import type { FormEvent } from "react";
+import type { ChangeEvent, FormEvent } from "react";
 import ContextualHelpLink from "../../components/help/contextualHelpLink";
 import { verifyProduct, type VerificationResult } from "../../services/verification.api";
 import "../../css/pages/qr.css";
 
 type VerificationTab = "qr" | "link" | "code";
 
-const UNSUPPORTED_IMAGE_MESSAGE =
-  "Hiện chưa thể đọc ảnh QR trực tiếp trên trình duyệt này. Vui lòng dán liên kết hoặc nhập mã xác thực.";
+const QR_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+const MAX_QR_IMAGE_BYTES = 5 * 1024 * 1024;
+const QR_IMAGE_TYPE_MESSAGE =
+  "Vui lòng chọn ảnh PNG, JPEG hoặc WebP nhỏ hơn 5 MB.";
+const QR_IMAGE_DECODE_MESSAGE =
+  "Không tìm thấy mã QR có thể đọc trong ảnh này. Vui lòng thử ảnh rõ hơn hoặc dán liên kết/mã xác thực.";
+const QR_IMAGE_DECODE_TIMEOUT_MS = 2500;
+
+async function decodeQrImage(objectUrl: string) {
+  let timeoutId: number | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timeoutId = window.setTimeout(
+      () => reject(new Error("QR_DECODE_TIMEOUT")),
+      QR_IMAGE_DECODE_TIMEOUT_MS,
+    );
+  });
+
+  try {
+    return await Promise.race([
+      new BrowserQRCodeReader().decodeFromImageUrl(objectUrl),
+      timeout,
+    ]);
+  } finally {
+    if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+  }
+}
 
 export default function QRPage() {
   const [activeTab, setActiveTab] = useState<VerificationTab>("qr");
@@ -17,25 +42,16 @@ export default function QRPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setResult(null);
-    setError(null);
-
-    if (activeTab === "qr") {
-      setError(UNSUPPORTED_IMAGE_MESSAGE);
-      return;
-    }
-
-    const value = input.trim();
-    if (!value) {
+  const verifyValue = async (value: string) => {
+    const normalizedValue = value.trim();
+    if (!normalizedValue) {
       setError("Vui lòng nhập mã hoặc liên kết xác thực.");
       return;
     }
 
     setLoading(true);
     try {
-      setResult(await verifyProduct(value));
+      setResult(await verifyProduct(normalizedValue));
     } catch (requestError) {
       setError(
         requestError instanceof Error
@@ -47,9 +63,47 @@ export default function QRPage() {
     }
   };
 
-  const handleFileSelection = () => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     setResult(null);
-    setError(UNSUPPORTED_IMAGE_MESSAGE);
+    setError(null);
+
+    if (activeTab === "qr" && !input.trim()) {
+      setError("Vui lòng chọn ảnh QR trước khi kiểm tra.");
+      return;
+    }
+
+    await verifyValue(input);
+  };
+
+  const handleFileSelection = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.currentTarget.files?.[0];
+    event.currentTarget.value = "";
+    setResult(null);
+    setError(null);
+    setInput("");
+
+    if (!file) return;
+    if (!QR_IMAGE_TYPES.has(file.type) || file.size > MAX_QR_IMAGE_BYTES) {
+      setError(QR_IMAGE_TYPE_MESSAGE);
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(file);
+    setLoading(true);
+    try {
+      const decoded = await decodeQrImage(objectUrl);
+      const decodedValue = decoded.getText().trim();
+      if (!decodedValue) throw new Error("QR_EMPTY_RESULT");
+
+      setInput(decodedValue);
+      await verifyValue(decodedValue);
+    } catch {
+      setError(QR_IMAGE_DECODE_MESSAGE);
+    } finally {
+      URL.revokeObjectURL(objectUrl);
+      setLoading(false);
+    }
   };
 
   return (
@@ -109,7 +163,7 @@ export default function QRPage() {
 
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="image/png,image/jpeg,image/webp"
                   hidden
                   data-testid="verification-file-input"
                   onChange={handleFileSelection}
