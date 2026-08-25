@@ -41,7 +41,13 @@ export default function ChatLayout() {
   }, []);
 
   useEffect(() => {
-    loadThreads();
+    let active = true;
+    queueMicrotask(() => {
+      if (active) void loadThreads();
+    });
+    return () => {
+      active = false;
+    };
   }, [loadThreads]);
 
   const threadIds = useMemo(() => rooms.map((room) => room.id), [rooms]);

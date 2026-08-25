@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Building2, MapPin, Plus } from "lucide-react";
 
 import "../../css/pages/profile/address.css";
@@ -35,11 +35,7 @@ export default function ProfileAddress() {
   const showLoading = useGlobalLoadingStore((state) => state.showLoading);
   const hideLoading = useGlobalLoadingStore((state) => state.hideLoading);
 
-  useEffect(() => {
-    loadAddresses();
-  }, []);
-
-  const loadAddresses = async () => {
+  const loadAddresses = useCallback(async () => {
     try {
       setLoading(true);
       const data = await getUserAddresses();
@@ -50,7 +46,17 @@ export default function ProfileAddress() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    queueMicrotask(() => {
+      if (active) void loadAddresses();
+    });
+    return () => {
+      active = false;
+    };
+  }, [loadAddresses]);
 
   const handleDelete = async (id: string) => {
     try {

@@ -25,8 +25,15 @@ export default function SearchSidebar({
   const selectedCategoryId = searchParams.get("categoryId");
 
   useEffect(() => {
-    setFromPrice(searchParams.get("minPrice") || "");
-    setToPrice(searchParams.get("maxPrice") || "");
+    let active = true;
+    queueMicrotask(() => {
+      if (!active) return;
+      setFromPrice(searchParams.get("minPrice") || "");
+      setToPrice(searchParams.get("maxPrice") || "");
+    });
+    return () => {
+      active = false;
+    };
   }, [searchParams]);
 
   const navigateWithParams = (params: URLSearchParams) => {

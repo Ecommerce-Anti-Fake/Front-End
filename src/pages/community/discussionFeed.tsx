@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import CommunityPost from "../../components/community/communityPost";
 import CreatePostBox from "../../components/community/createPostBox";
 import type { SocialPost } from "../../type/community";
@@ -9,7 +9,7 @@ export default function DiscussionFeed() {
   const [posts, setPosts] = useState<SocialPost[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchPosts = async () => {
+  const fetchPosts = useCallback(async () => {
     try {
       const data = await getSocialPosts(1, 20);
       setPosts(data);
@@ -18,11 +18,17 @@ export default function DiscussionFeed() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchPosts();
-  }, []);
+    let active = true;
+    queueMicrotask(() => {
+      if (active) void fetchPosts();
+    });
+    return () => {
+      active = false;
+    };
+  }, [fetchPosts]);
 
   if (loading) return <div className="data-skeleton data-skeleton-comments" role="status" aria-label="Đang tải bài viết">{Array.from({ length: 4 }, (_, i) => <div className="data-skeleton-row" key={i}><span className="data-skeleton-thumbnail" /><span className="data-skeleton-lines"><span /><span /><span /></span></div>)}</div>;
 

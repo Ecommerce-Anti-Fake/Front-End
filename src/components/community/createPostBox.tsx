@@ -103,8 +103,8 @@ export default function CreatePostBox({ onCreated }: CreatePostBoxProps) {
       });
       closeComposer(true);
       onCreated?.();
-    } catch (err: any) {
-      setError(err.message || "Dang bai viet that bai");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Dang bai viet that bai");
     } finally {
       setSubmitting(false);
       hideLoading();

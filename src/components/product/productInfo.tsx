@@ -55,7 +55,7 @@ export default function ProductInfo({ product }: { product: ProductInfoData }) {
   const hideLoading = useGlobalLoadingStore((state) => state.hideLoading);
   const refreshCart = useCartStore((state) => state.refreshCart);
   const optionGroups = product.optionGroups ?? [];
-  const variants = product.variants ?? [];
+  const variants = useMemo(() => product.variants ?? [], [product.variants]);
   const hasVariants = variants.length > 0;
   const selectedOptionValueIds = optionGroups
     .map((group) => selectedOptions[group.id])
