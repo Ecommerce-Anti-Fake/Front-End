@@ -11,7 +11,7 @@ import {
   fetchSellerOrders,
   type SellerOrder,
 } from "../../../../services/order.api";
-import { getMyShop } from "../../../../services/shop.api";
+import { getMyShop, type MyShop } from "../../../../services/shop.api";
 import { formatVnd } from "../../../../ultil/currency";
 
 type ViewOrder = {
@@ -23,11 +23,7 @@ type ViewOrder = {
   status: string;
 };
 
-const normalizeMyShop = (data: any) => {
-  const payload = data?.data ?? data?.items ?? data;
-  if (Array.isArray(payload)) return payload[0] ?? null;
-  return payload && typeof payload === "object" ? payload : null;
-};
+const normalizeMyShop = (data: MyShop[] | null): MyShop | null => data?.[0] ?? null;
 
 const formatDate = (value?: string) => {
   if (!value) return "";
@@ -68,7 +64,7 @@ export default function SellerDashboard() {
 
         const shopData = await getMyShop();
         const shop = normalizeMyShop(shopData);
-        const nextShopId = shop?.shopId || shop?.id;
+        const nextShopId = shop?.id;
 
         if (!nextShopId) {
           setShopId("");
