@@ -70,6 +70,7 @@ test("master guide Help links resolve to registered journeys", () => {
 test("canonical documentation Help links resolve to registered journeys", () => {
   const documents = [
     "ANTIFAKE_USER_GUIDE.md",
+    "ANTIFAKE_USER_GUIDE_EBOOK.md",
     "JOURNEY_MAPS.md",
     "DOCUMENTATION_REGISTRY.md",
     "FEATURE_GUIDE_MATRIX.md",
