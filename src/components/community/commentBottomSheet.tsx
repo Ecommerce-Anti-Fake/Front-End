@@ -31,10 +31,18 @@ export default function CommentBottomSheet({ open, onClose, postId }: Props) {
   const hideLoading = useGlobalLoadingStore((state) => state.hideLoading);
 
   useEffect(() => {
-    if (!open) {
+    if (open) return;
+
+    let active = true;
+    queueMicrotask(() => {
+      if (!active) return;
       setPendingComments([]);
       setReplyTo(null);
-    }
+    });
+
+    return () => {
+      active = false;
+    };
   }, [open, postId]);
 
   if (!open) return null;
@@ -45,8 +53,8 @@ export default function CommentBottomSheet({ open, onClose, postId }: Props) {
     navigate("/auth");
   };
 
-  const isAuthError = (err: any) => {
-    const message = String(err?.message || "").toLowerCase();
+  const isAuthError = (err: unknown) => {
+    const message = err instanceof Error ? err.message : String(err);
     return (
       message.includes("unauthorized") ||
       message.includes("401") ||
@@ -155,13 +163,13 @@ export default function CommentBottomSheet({ open, onClose, postId }: Props) {
           });
         }
       })
-      .catch((err: any) => {
+      .catch((err: unknown) => {
         removePendingComment(tempId);
 
         if (isAuthError(err)) {
           redirectToLogin();
         } else {
-          toast.error(err.message || "Đăng bình luận thất bại");
+          toast.error(err instanceof Error ? err.message : "Đăng bình luận thất bại");
         }
       })
       .finally(() => {
