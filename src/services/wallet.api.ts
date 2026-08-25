@@ -174,24 +174,43 @@ export type WalletReconciliationReport = {
 
 export type WalletListPagination = { page: number; limit: number; total: number; totalPages: number };
 
+type JsonRecord = Record<string, unknown>;
+type ListPayload<T> = T[] | { items?: T[]; pagination?: WalletListPagination };
+
+const isRecord = (value: unknown): value is JsonRecord => (
+  typeof value === "object" && value !== null
+);
+
+const getListItems = <T>(payload: ListPayload<T>): T[] => (
+  Array.isArray(payload) ? payload : payload.items ?? []
+);
+
 const unwrap = async <T>(response: Response, fallback: string): Promise<T> => {
   const data = await response.json();
   if (!response.ok) throw new Error(data.message || data.error || fallback);
   return data?.data ?? data;
 };
 
-const normalizeTransactions = (payload: any, page: number, limit: number): WalletTransactionsResponse => {
-  const items = Array.isArray(payload?.data)
+const normalizeTransactions = (payload: unknown, page: number, limit: number): WalletTransactionsResponse => {
+  const items = isRecord(payload) && Array.isArray(payload.data)
     ? payload.data
-    : Array.isArray(payload?.items) ? payload.items : Array.isArray(payload) ? payload : [];
-  const pagination = payload?.pagination ?? payload;
+    : isRecord(payload) && Array.isArray(payload.items)
+      ? payload.items
+      : Array.isArray(payload) ? payload : [];
+  const pagination = isRecord(payload) && isRecord(payload.pagination)
+    ? payload.pagination
+    : isRecord(payload) ? payload : {};
+  const readNumber = (key: string, fallback: number): number => {
+    const value = pagination[key];
+    return typeof value === "number" || typeof value === "string" ? Number(value) : fallback;
+  };
   return {
-    data: items,
+    data: items as WalletTransaction[],
     pagination: {
-      page: Number(pagination?.page ?? page),
-      pageSize: Number(pagination?.pageSize ?? pagination?.limit ?? limit),
-      totalItems: Number(pagination?.totalItems ?? items.length),
-      totalPages: Number(pagination?.totalPages ?? 1),
+      page: readNumber("page", page),
+      pageSize: readNumber("pageSize", readNumber("limit", limit)),
+      totalItems: readNumber("totalItems", items.length),
+      totalPages: readNumber("totalPages", 1),
     },
   };
 };
@@ -262,10 +281,10 @@ export const createMyWithdrawal = async (payload: CreateWithdrawalPayload): Prom
   }), "Không thể tạo yêu cầu rút tiền");
 
 export const fetchMyWithdrawals = async (): Promise<WalletWithdrawal[]> => {
-  const payload: any = await unwrap(await authFetch(`${BASE_URL}/api/wallet/me/withdrawals`, {
+  const payload = await unwrap<ListPayload<WalletWithdrawal>>(await authFetch(`${BASE_URL}/api/wallet/me/withdrawals`, {
     method: "GET", headers: { Accept: "application/json" },
   }), "Không thể tải danh sách rút tiền");
-  return Array.isArray(payload?.items) ? payload.items : Array.isArray(payload) ? payload : [];
+  return getListItems(payload);
 };
 
 export const cancelMyWithdrawal = async (id: string) => unwrap(await authFetch(
@@ -286,11 +305,11 @@ export const createShopWalletTopUp = async (
 }), "Không thể tạo yêu cầu nạp tiền cho shop");
 
 export const fetchShopCodSettlements = async (shopId: string): Promise<CodShopSettlement[]> => {
-  const payload: any = await unwrap(await authFetch(
+  const payload = await unwrap<ListPayload<CodShopSettlement>>(await authFetch(
     `${BASE_URL}/api/shops/${shopId}/wallet/cod-settlements`,
     { method: "GET", headers: { Accept: "application/json" } },
   ), "Không thể tải nghĩa vụ COD");
-  return Array.isArray(payload?.items) ? payload.items : Array.isArray(payload) ? payload : [];
+  return getListItems(payload);
 };
 
 export const fetchShopWalletTransactions = async (shopId: string, page = 1, limit = 20): Promise<WalletTransactionsResponse> => {
@@ -306,10 +325,10 @@ export const createShopWithdrawal = async (shopId: string, payload: CreateWithdr
   }), "Không thể tạo yêu cầu rút tiền");
 
 export const fetchShopWithdrawals = async (shopId: string): Promise<WalletWithdrawal[]> => {
-  const payload: any = await unwrap(await authFetch(`${BASE_URL}/api/shops/${shopId}/wallet/withdrawals`, {
+  const payload = await unwrap<ListPayload<WalletWithdrawal>>(await authFetch(`${BASE_URL}/api/shops/${shopId}/wallet/withdrawals`, {
     method: "GET", headers: { Accept: "application/json" },
   }), "Không thể tải danh sách rút tiền");
-  return Array.isArray(payload?.items) ? payload.items : Array.isArray(payload) ? payload : [];
+  return getListItems(payload);
 };
 
 export const cancelShopWithdrawal = async (shopId: string, id: string) => unwrap(await authFetch(
@@ -360,12 +379,14 @@ export const fetchAdminWalletWithdrawals = async (page = 1, limit = 20, status =
   items: WalletWithdrawal[]; pagination: WalletListPagination;
 }> => {
   const query = new URLSearchParams({ page: String(page), limit: String(limit), ...(status ? { status } : {}) });
-  const payload: any = await unwrap(await authFetch(`${BASE_URL}/api/admin/wallet-withdrawals?${query}`, {
+  const payload = await unwrap<ListPayload<WalletWithdrawal>>(await authFetch(`${BASE_URL}/api/admin/wallet-withdrawals?${query}`, {
     method: "GET", headers: { Accept: "application/json" },
   }), "Không thể tải yêu cầu rút tiền");
   return {
-    items: Array.isArray(payload?.items) ? payload.items : Array.isArray(payload) ? payload : [],
-    pagination: payload?.pagination ?? { page, limit, total: 0, totalPages: 0 },
+    items: getListItems(payload),
+    pagination: !Array.isArray(payload) && payload.pagination
+      ? payload.pagination
+      : { page, limit, total: 0, totalPages: 0 },
   };
 };
 
@@ -412,10 +433,10 @@ export const revealPayoutAccount = async (id: string, reason: string): Promise<P
   }), "Không thể xem số tài khoản");
 
 export const fetchPlatformWallets = async (): Promise<PlatformWalletSnapshot[]> => {
-  const payload: any = await unwrap(await authFetch(`${BASE_URL}/api/admin/wallets/platform`, {
+  const payload = await unwrap<ListPayload<PlatformWalletSnapshot>>(await authFetch(`${BASE_URL}/api/admin/wallets/platform`, {
     method: "GET", headers: { Accept: "application/json" },
   }), "Không thể tải ví hệ thống");
-  return Array.isArray(payload) ? payload : payload?.items ?? [];
+  return getListItems(payload);
 };
 
 export const fetchWalletReconciliation = async (params: Record<string, string> = {}): Promise<WalletReconciliationReport> => {
