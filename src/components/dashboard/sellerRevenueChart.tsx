@@ -44,11 +44,10 @@ export default function SellerRevenueChart({ shopId }: SellerRevenueChartProps) 
   const [data, setData] = useState<ChartPoint[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const weekRange = useMemo(getCurrentWeekRange, []);
+  const weekRange = useMemo(() => getCurrentWeekRange(), []);
 
   useEffect(() => {
     if (!shopId) {
-      setData([]);
       return;
     }
 
@@ -94,6 +93,9 @@ export default function SellerRevenueChart({ shopId }: SellerRevenueChartProps) 
     };
   }, [shopId, weekRange.fromDate, weekRange.toDate]);
 
+  const visibleData = shopId ? data : [];
+  const visibleError = shopId ? error : "";
+
   return (
     <div className="seller-chart-card">
       <div className="seller-card-header">
@@ -104,19 +106,19 @@ export default function SellerRevenueChart({ shopId }: SellerRevenueChartProps) 
         <div className="seller-dashboard-orders-state"><div className="data-skeleton data-skeleton-chart" role="status" aria-label="Đang tải biểu đồ">{Array.from({ length: 8 }, (_, i) => <span key={i} />)}</div></div>
       )}
 
-      {!loading && error && (
-        <div className="seller-dashboard-orders-state error">{error}</div>
+      {!loading && visibleError && (
+        <div className="seller-dashboard-orders-state error">{visibleError}</div>
       )}
 
-      {!loading && !error && data.length === 0 && (
+      {!loading && !visibleError && visibleData.length === 0 && (
         <div className="seller-dashboard-orders-state">
           Chua co du lieu doanh thu trong tuan nay
         </div>
       )}
 
-      {!loading && !error && data.length > 0 && (
+      {!loading && !visibleError && visibleData.length > 0 && (
         <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={data}>
+          <LineChart data={visibleData}>
             <XAxis dataKey="day" />
             <YAxis tickFormatter={(value) => `${Number(value) / 1000000}tr`} />
             <Tooltip
