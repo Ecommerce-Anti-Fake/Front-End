@@ -1,4 +1,20 @@
-export default function ProductSpecification({ product }: any) {
+import type { OfferDetail } from "../../services/product.api";
+
+type ProductSpecificationProps = {
+  product: Pick<
+    OfferDetail,
+    | "gtin"
+    | "parcelWeightGrams"
+    | "parcelLengthCm"
+    | "parcelWidthCm"
+    | "parcelHeightCm"
+    | "categoryName"
+    | "productModelName"
+    | "availableQuantity"
+  >;
+};
+
+export default function ProductSpecification({ product }: ProductSpecificationProps) {
   return (
     <div className="pd-spec">
       <h3>Thông số kỹ thuật</h3>
