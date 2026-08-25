@@ -16,7 +16,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import {
@@ -188,19 +188,17 @@ function OfferOptionsAndVariants({ offer }: { offer: OfferDetail }) {
   const [loading, setLoading] = useState(false);
   const [savingId, setSavingId] = useState("");
 
-  const toForm = (variant: OfferVariant): VariantForm => ({
-    priceOverride: toFormNumber(variant.priceOverride ?? variant.price),
-    availableQuantity: toFormNumber(variant.availableQuantity),
-  });
-
-  const loadActiveVariants = async () => {
+  const loadActiveVariants = useCallback(async () => {
     setLoading(true);
     try {
       const data = await fetchOfferVariants(offer.id, true);
       setVariants(data);
       setForms(
         data.reduce<Record<string, VariantForm>>((result, variant) => {
-          result[variant.id] = toForm(variant);
+          result[variant.id] = {
+            priceOverride: toFormNumber(variant.priceOverride ?? variant.price),
+            availableQuantity: toFormNumber(variant.availableQuantity),
+          };
           return result;
         }, {}),
       );
@@ -209,11 +207,17 @@ function OfferOptionsAndVariants({ offer }: { offer: OfferDetail }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [offer.id]);
 
   useEffect(() => {
-    loadActiveVariants();
-  }, [offer.id]);
+    let active = true;
+    queueMicrotask(() => {
+      if (active) void loadActiveVariants();
+    });
+    return () => {
+      active = false;
+    };
+  }, [loadActiveVariants]);
 
   const loadDeletedVariants = async () => {
     setShowDeleted(true);
@@ -294,7 +298,13 @@ function OfferOptionsAndVariants({ offer }: { offer: OfferDetail }) {
       const restoredVariant = { ...variant, isActive: true };
       setDeletedVariants((current) => current.filter((item) => item.id !== variant.id));
       setVariants((current) => [...current, restoredVariant]);
-      setForms((current) => ({ ...current, [variant.id]: toForm(restoredVariant) }));
+      setForms((current) => ({
+        ...current,
+        [variant.id]: {
+          priceOverride: toFormNumber(restoredVariant.priceOverride ?? restoredVariant.price),
+          availableQuantity: toFormNumber(restoredVariant.availableQuantity),
+        },
+      }));
       toast.success("Đã thêm lại variant");
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Không thể thêm lại variant");
@@ -338,7 +348,7 @@ function OfferOptionsAndVariants({ offer }: { offer: OfferDetail }) {
           <div className="seller-product-detail-empty">Không còn variant đang hoạt động.</div>
         )}
         {!loading && variants.map((variant) => {
-          const form = forms[variant.id] ?? toForm(variant);
+          const form = forms[variant.id] ?? toVariantForm(variant);
           return (
             <div className="seller-product-variant-row" key={variant.id}>
               <strong>{getVariantDisplayName(offer, variant)}</strong>
@@ -449,7 +459,7 @@ export function VariantUpdatePanel({
   const [loadError, setLoadError] = useState("");
   const [showOnlyActive, setShowOnlyActive] = useState(true);
 
-  const loadVariants = async (isActive?: boolean) => {
+  const loadVariants = useCallback(async (isActive?: boolean) => {
     if (!offer.id) return;
 
     setLoading(true);
@@ -470,11 +480,17 @@ export function VariantUpdatePanel({
     } finally {
       setLoading(false);
     }
-  };
+  }, [offer.id]);
 
   useEffect(() => {
-    loadVariants(showOnlyActive ? true : undefined);
-  }, [offer.id, showOnlyActive]);
+    let active = true;
+    queueMicrotask(() => {
+      if (active) void loadVariants(showOnlyActive ? true : undefined);
+    });
+    return () => {
+      active = false;
+    };
+  }, [loadVariants, showOnlyActive]);
 
   const updateVariantField = <K extends keyof VariantForm>(
     variantId: string,
@@ -581,15 +597,7 @@ export function VariantUpdatePanel({
                 </div>
                 <div className="seller-product-variant-combo">
                   <strong>{comboName || "Chưa có cặp phân loại"}</strong>
-                  {false ? (
-                    <div>
-                      {[].map((pair) => (
-                        <span key={pair}>{pair}</span>
-                      ))}
-                    </div>
-                  ) : (
-                    <small>Chưa có cặp phân loại</small>
-                  )}
+                  <small>Chưa có cặp phân loại</small>
                 </div>
 
                 <label className="seller-product-variant-sku-input">
@@ -671,7 +679,7 @@ export default function SellerProductDetail() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [offer, setOffer] = useState<OfferDetail | null>(null);
   const [form, setForm] = useState<UpdateOfferForm>(initialUpdateForm);
-  const [editing, setEditing] = useState(searchParams.get("edit") === "1");
+  const editing = searchParams.get("edit") === "1";
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
@@ -735,10 +743,6 @@ export default function SellerProductDetail() {
     loadOffer();
   }, [offerId]);
 
-  useEffect(() => {
-    setEditing(searchParams.get("edit") === "1");
-  }, [searchParams]);
-
   const imageUrls = useMemo(() => {
     const images = [offer?.thumbnailUrl, ...(offer?.imageUrls ?? [])].filter(
       Boolean,
@@ -782,7 +786,6 @@ export default function SellerProductDetail() {
   };
 
   const closeEditMode = () => {
-    setEditing(false);
     setSearchParams({});
     if (offer) fillFormFromOffer(offer);
   };
@@ -811,7 +814,6 @@ export default function SellerProductDetail() {
 
       setOffer(nextOffer);
       fillFormFromOffer(nextOffer);
-      setEditing(false);
       setSearchParams({});
       toast.success("Cập nhật sản phẩm thành công");
     } catch (err: unknown) {
@@ -963,7 +965,6 @@ export default function SellerProductDetail() {
                 type="button"
                 className="seller-product-detail-edit-btn"
                 onClick={() => {
-                  setEditing(true);
                   setSearchParams({ edit: "1" });
                 }}
               >
