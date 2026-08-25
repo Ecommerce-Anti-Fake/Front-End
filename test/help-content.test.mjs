@@ -167,7 +167,7 @@ test("feature matrix keeps incomplete journey statuses explicit", () => {
   );
 
   assert.match(matrix, /\| Chat \|[^\n]+\| PARTIAL \|/);
-  assert.match(matrix, /\| QR verification \|[^\n]+\| NOT_IMPLEMENTED \|/);
+  assert.match(matrix, /\| QR verification \|[^\n]+\| PARTIAL \|/);
   assert.match(matrix, /\| Admin journeys A01-A10 \|[^\n]+\| UNVERIFIED \|/);
 });
 
