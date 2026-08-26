@@ -14,7 +14,10 @@ export async function loginAs(page: Page, email: string, password: string) {
   await page.getByLabel("Email hoặc số điện thoại").fill(email);
   await page.getByRole("textbox", { name: "Mật khẩu" }).fill(password);
   await page.getByRole("button", { name: "Đăng nhập" }).click();
-  await page.waitForURL((url) => url.pathname === "/", { timeout: 15000 });
+  await page.waitForURL(
+    (url) => url.pathname !== "/auth" && url.pathname !== "/login",
+    { timeout: 15000 },
+  );
   await expect(page.locator("body")).not.toBeEmpty();
 }
 

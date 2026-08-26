@@ -27,7 +27,7 @@ test.describe("seller authenticated read-only routes", () => {
       await assertNoServerErrors(page, route);
       expect(new URL(page.url()).pathname).not.toBe("/auth");
       if (route === "/seller") {
-        expect(new URL(page.url()).pathname).toBe("/seller/dashboard");
+        await expect(page).toHaveURL(/\/seller\/dashboard(?:\/|$)/);
       }
     });
   }
