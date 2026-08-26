@@ -60,6 +60,9 @@
 .help-step-list a:hover, .help-step-list a.is-current { color: #a71919; background: #fff7f6; }
 .help-step-list .help-overview-link { display: block; margin-bottom: 12px; color: #a71919; font-size: 13px; font-weight: 800; }
 .help-step-content { display: grid; align-content: start; gap: 18px; padding: 28px; }
+.help-visual { margin: 0; overflow: hidden; border: 1px solid #eadede; background: #fff; }
+.help-visual img { display: block; width: 100%; height: auto; }
+.help-visual figcaption { padding: 10px 14px; border-top: 1px solid #f0e5e5; color: #8f6161; font-size: 12px; font-weight: 700; }
 .help-visual-placeholder { display: grid; min-height: 210px; place-items: center; align-content: center; gap: 8px; padding: 24px; border: 1px dashed #dcbebe; color: #986868; background: #fffafa; text-align: center; }
 .help-visual-placeholder svg { color: #b91c1c; }
 .help-visual-placeholder span { max-width: 430px; font-size: 13px; }

@@ -62,6 +62,7 @@ function JourneyView({ article, stepSlug, platform, onPlatformChange }: {
   const currentStep = article.steps[currentIndex];
   const previousStep = article.steps[currentIndex - 1];
   const nextStep = article.steps[currentIndex + 1];
+  const visual = currentStep.visual;
 
   return (
     <article className="help-journey" aria-labelledby="help-journey-title">
@@ -112,11 +113,20 @@ function JourneyView({ article, stepSlug, platform, onPlatformChange }: {
         </nav>
 
         <section className="help-step-content">
-          <div className="help-visual-placeholder" role="status">
-            <BookOpen size={28} aria-hidden="true" />
-            <strong>Visual {platform === "mobile" ? "Mobile" : "Desktop"} đang chờ evidence</strong>
-            <span>Chỉ thêm screenshot sau khi đúng revision, viewport và test data được xác minh.</span>
-          </div>
+          {visual ? (
+            <figure className="help-visual" data-testid="help-visual">
+              <img src={visual[platform]} alt={visual.alt} loading="eager" />
+              <figcaption>
+                Visual {platform === "mobile" ? "Mobile" : "Desktop"} đã đăng ký cho bước này.
+              </figcaption>
+            </figure>
+          ) : (
+            <div className="help-visual-placeholder" role="status">
+              <BookOpen size={28} aria-hidden="true" />
+              <strong>Visual {platform === "mobile" ? "Mobile" : "Desktop"} đang chờ evidence</strong>
+              <span>Chỉ thêm screenshot sau khi đúng revision, viewport và test data được xác minh.</span>
+            </div>
+          )}
           {currentStep.tip && <p className="help-tip"><CircleHelp size={17} aria-hidden="true" /> {currentStep.tip}</p>}
           <div className="help-result-note">
             <strong>Kết quả mong đợi</strong>
@@ -175,6 +185,8 @@ export default function HelpCenterPage() {
           <Search size={18} aria-hidden="true" />
           <span className="sr-only">Tìm trong hướng dẫn</span>
           <input
+            id="help-search"
+            name="query"
             type="search"
             aria-label="Tìm trong hướng dẫn"
             placeholder="Tìm theo đơn hàng, Shop, QR..."

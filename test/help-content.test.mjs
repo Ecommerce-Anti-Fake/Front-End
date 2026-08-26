@@ -39,6 +39,32 @@ test("support journeys retain an evidence status and at least one step", () => {
   assert.equal(supportArticles.every((article) => article.status && article.steps.length > 0), true);
 });
 
+test("accepted journey steps expose platform-specific visuals", () => {
+  const expected = [
+    ["B01", "register", "/help/visuals/b01-registration-desktop.png", "/help/visuals/b01-registration-mobile.png"],
+    ["B02", "search", "/help/visuals/b02-discovery-desktop.png", "/help/visuals/b02-discovery-mobile.png"],
+    ["B02", "detail", "/help/visuals/b02-product-detail-desktop.png", "/help/visuals/b02-product-detail-mobile.png"],
+    ["B09", "discover", "/help/visuals/b09-live-discovery-desktop.png", "/help/visuals/b09-live-discovery-mobile.png"],
+  ];
+
+  for (const [journey, stepSlug, desktop, mobile] of expected) {
+    const article = helpArticles.find((candidate) => candidate.journey === journey);
+    const step = article?.steps.find((candidate) => candidate.slug === stepSlug);
+    assert.ok(step, `missing ${journey}/${stepSlug}`);
+    assert.ok(step.visual, `missing visual metadata for ${journey}/${stepSlug}`);
+    assert.equal(step.visual.desktop, desktop);
+    assert.equal(step.visual.mobile, mobile);
+    assert.equal(typeof step.visual.alt, "string");
+    for (const asset of [desktop, mobile]) {
+      assert.equal(
+        fs.existsSync(new URL(`../public${asset}`, import.meta.url)),
+        true,
+        `missing served visual ${asset}`,
+      );
+    }
+  }
+});
+
 test("QR Help describes the supported image path and fallback", () => {
   const article = helpArticles.find((candidate) => candidate.slug === "verify-product");
   assert.ok(article);

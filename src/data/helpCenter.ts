@@ -13,6 +13,13 @@ export type HelpStep = {
   title: string;
   description: string;
   tip?: string;
+  visual?: HelpVisual;
+};
+
+export type HelpVisual = {
+  desktop: string;
+  mobile: string;
+  alt: string;
 };
 
 export type HelpArticle = {
@@ -75,7 +82,16 @@ export const helpArticles: HelpArticle[] = [
     status: "PARTIAL",
     sourceRefs: ["Front-End/src/pages/auth/index.tsx", "Front-End/src/pages/profile/index.tsx", "docs/UAT_TEST_MATRIX.md#AF-API-001"],
     steps: [
-      { slug: "register", title: "Đăng ký hoặc đăng nhập", description: "Dùng luồng xác thực đang được hệ thống cung cấp và chờ xác minh nếu tài khoản yêu cầu." },
+      {
+        slug: "register",
+        title: "Đăng ký hoặc đăng nhập",
+        description: "Dùng luồng xác thực đang được hệ thống cung cấp và chờ xác minh nếu tài khoản yêu cầu.",
+        visual: {
+          desktop: "/help/visuals/b01-registration-desktop.png",
+          mobile: "/help/visuals/b01-registration-mobile.png",
+          alt: "Màn hình đăng ký tài khoản Buyer trên Desktop hoặc Mobile",
+        },
+      },
       { slug: "profile", title: "Hoàn thiện hồ sơ", description: "Kiểm tra thông tin tài khoản sau khi đăng nhập thành công." },
       { slug: "address", title: "Thêm địa chỉ", description: "Thêm địa chỉ giao hàng trước khi bắt đầu checkout." },
     ],
@@ -91,9 +107,36 @@ export const helpArticles: HelpArticle[] = [
     status: "PARTIAL",
     sourceRefs: ["Front-End/src/pages/search/index.tsx", "Front-End/src/pages/product/productDetail.tsx", "Front-End/src/App.tsx"],
     steps: [
-      { slug: "search", title: "Tìm sản phẩm", description: "Dùng tìm kiếm hoặc danh mục để mở sản phẩm công khai." },
-      { slug: "detail", title: "Kiểm tra chi tiết", description: "Đối chiếu Shop, giá, tồn kho, biến thể và nội dung đang hiển thị." },
-      { slug: "choose", title: "Chọn biến thể phù hợp", description: "Chỉ tiếp tục với biến thể còn khả dụng và thông tin phù hợp với nhu cầu." },
+      {
+        slug: "search",
+        title: "Tìm sản phẩm",
+        description: "Dùng tìm kiếm hoặc danh mục để mở sản phẩm công khai.",
+        visual: {
+          desktop: "/help/visuals/b02-discovery-desktop.png",
+          mobile: "/help/visuals/b02-discovery-mobile.png",
+          alt: "Màn hình khám phá catalog sản phẩm trên Desktop hoặc Mobile",
+        },
+      },
+      {
+        slug: "detail",
+        title: "Kiểm tra chi tiết",
+        description: "Đối chiếu Shop, giá, tồn kho, biến thể và nội dung đang hiển thị.",
+        visual: {
+          desktop: "/help/visuals/b02-product-detail-desktop.png",
+          mobile: "/help/visuals/b02-product-detail-mobile.png",
+          alt: "Màn hình chi tiết sản phẩm và biến thể trên Desktop hoặc Mobile",
+        },
+      },
+      {
+        slug: "choose",
+        title: "Chọn biến thể phù hợp",
+        description: "Chỉ tiếp tục với biến thể còn khả dụng và thông tin phù hợp với nhu cầu.",
+        visual: {
+          desktop: "/help/visuals/b02-product-detail-desktop.png",
+          mobile: "/help/visuals/b02-product-detail-mobile.png",
+          alt: "Màn hình chọn biến thể sản phẩm trên Desktop hoặc Mobile",
+        },
+      },
     ],
   },
   {
@@ -155,7 +198,16 @@ export const helpArticles: HelpArticle[] = [
     status: "PARTIAL",
     sourceRefs: ["Front-End/src/pages/live/index.tsx", "docs/user-guide/FEATURE_GUIDE_MATRIX.md#Livestream"],
     steps: [
-      { slug: "discover", title: "Tìm phiên live", description: "Mở danh sách livestream công khai và chọn phiên đang hiển thị." },
+      {
+        slug: "discover",
+        title: "Tìm phiên live",
+        description: "Mở danh sách livestream công khai và chọn phiên đang hiển thị.",
+        visual: {
+          desktop: "/help/visuals/b09-live-discovery-desktop.png",
+          mobile: "/help/visuals/b09-live-discovery-mobile.png",
+          alt: "Màn hình khám phá livestream công khai trên Desktop hoặc Mobile",
+        },
+      },
       { slug: "watch", title: "Xem phiên live", description: "Theo dõi nội dung và sản phẩm được ghim trong phiên." },
       { slug: "shop", title: "Mở sản phẩm", description: "Mở sản phẩm từ phiên live; provider và mutation cần trạng thái runtime tương ứng." },
     ],

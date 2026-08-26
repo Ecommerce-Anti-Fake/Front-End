@@ -7,7 +7,7 @@ test.describe("Help Center and Journey Center", () => {
     await expect(
       page.getByRole("heading", { name: "Trung tâm trợ giúp AntiFake", level: 1 }),
     ).toBeVisible();
-    await expect(page.getByRole("searchbox", { name: "Tìm trong hướng dẫn" })).toBeVisible();
+    await expect(page.getByRole("searchbox", { name: "Tìm trong hướng dẫn" })).toHaveAttribute("name", "query");
     await expect(page.getByRole("button", { name: "Người mua" })).toBeVisible();
     await page.getByRole("link", { name: "Mua sản phẩm đầu tiên" }).click();
     await expect(page.getByRole("button", { name: "Desktop" })).toBeVisible();
@@ -23,6 +23,23 @@ test.describe("Help Center and Journey Center", () => {
 
     await page.getByRole("button", { name: "Desktop" }).click();
     await expect(page.getByTestId("help-platform-label")).toHaveText("Hướng dẫn Desktop");
+  });
+
+  test("renders the registered visual for the selected platform", async ({ page }) => {
+    await page.goto("/help/buyer/discover/search");
+
+    const platformLabel = await page.getByTestId("help-platform-label").textContent();
+    const platform = platformLabel?.includes("Mobile") ? "mobile" : "desktop";
+    const visual = page.getByRole("img", { name: /catalog/i });
+    await expect(visual).toBeVisible();
+    await expect(visual).toHaveAttribute("src", new RegExp(`b02-discovery-${platform}\\.png$`));
+  });
+
+  test("keeps pending steps on the evidence placeholder", async ({ page }) => {
+    await page.goto("/help/buyer/account-start/profile");
+
+    await expect(page.locator('[data-testid="help-visual"]')).toHaveCount(0);
+    await expect(page.locator(".help-visual-placeholder")).toBeVisible();
   });
 
   test("deep links open the requested journey step", async ({ page }) => {
