@@ -20,15 +20,16 @@ const sellerRoutes = [
 ];
 
 test.describe("seller authenticated read-only routes", () => {
-  for (const route of sellerRoutes) {
-    test(`loads ${route} without a server error`, async ({ page }) => {
-      test.skip(!sellerEmail || !password, "UAT_SELLER_EMAIL and UAT_TEST_PASSWORD are required");
-      await loginAs(page, sellerEmail!, password!);
+  test("loads all seller routes without a server error", async ({ page }) => {
+    test.skip(!sellerEmail || !password, "UAT_SELLER_EMAIL and UAT_TEST_PASSWORD are required");
+    await loginAs(page, sellerEmail!, password!);
+
+    for (const route of sellerRoutes) {
       await assertNoServerErrors(page, route);
       expect(new URL(page.url()).pathname).not.toBe("/auth");
       if (route === "/seller") {
         await expect(page).toHaveURL(/\/seller\/dashboard(?:\/|$)/);
       }
-    });
-  }
+    }
+  });
 });

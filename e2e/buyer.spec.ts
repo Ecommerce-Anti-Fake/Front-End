@@ -17,12 +17,13 @@ const buyerRoutes = [
 ];
 
 test.describe("buyer authenticated read-only routes", () => {
-  for (const route of buyerRoutes) {
-    test(`loads ${route} without a server error`, async ({ page }) => {
-      test.skip(!buyerEmail || !password, "UAT_USER_EMAIL and UAT_TEST_PASSWORD are required");
-      await loginAs(page, buyerEmail!, password!);
+  test("loads all buyer routes without a server error", async ({ page }) => {
+    test.skip(!buyerEmail || !password, "UAT_USER_EMAIL and UAT_TEST_PASSWORD are required");
+    await loginAs(page, buyerEmail!, password!);
+
+    for (const route of buyerRoutes) {
       await assertNoServerErrors(page, route);
       expect(new URL(page.url()).pathname).not.toBe("/auth");
-    });
-  }
+    }
+  });
 });
