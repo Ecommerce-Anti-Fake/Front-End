@@ -27,3 +27,16 @@ test("unknown credentials stay on auth with a recoverable error", async ({ page 
   await expect(page.locator("body")).not.toBeEmpty();
   expect(serverErrors).toEqual([]);
 });
+
+test("buyer auth switches from login to a settled registration form", async ({ page }) => {
+  await page.goto("/auth", { waitUntil: "networkidle" });
+  await expect(page.locator('input[type="password"]').first()).toBeVisible();
+
+  await page.locator(".login-register button").click();
+  const registrationCard = page.locator(".register-card");
+  await expect(registrationCard).toBeVisible();
+  await expect
+    .poll(async () => registrationCard.evaluate((element) => getComputedStyle(element).opacity))
+    .toBe("1");
+  await expect(page.locator(".loading-overlay")).toHaveCount(0);
+});
