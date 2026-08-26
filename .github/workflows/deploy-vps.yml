@@ -130,6 +130,17 @@ jobs:
             echo "5. Build frontend"
             echo "========================================"
 
+            # The previous visual namespace lived below public/help. Git does
+            # not remove empty directories left on an existing VPS checkout,
+            # and an empty dist/help directory makes Nginx return 403 instead
+            # of falling back to the SPA for the /help route.
+            if [ -d "$APP_DIR/public/help/visuals" ]; then
+              rm -rf "$APP_DIR/public/help/visuals"
+            fi
+            if [ -d "$APP_DIR/public/help" ]; then
+              rmdir "$APP_DIR/public/help" || true
+            fi
+
             npm run build
 
             if [ ! -d "$DIST_DIR" ]; then

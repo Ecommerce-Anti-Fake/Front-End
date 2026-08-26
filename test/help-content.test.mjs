@@ -41,10 +41,10 @@ test("support journeys retain an evidence status and at least one step", () => {
 
 test("accepted journey steps expose platform-specific visuals", () => {
   const expected = [
-    ["B01", "register", "/help/visuals/b01-registration-desktop.png", "/help/visuals/b01-registration-mobile.png"],
-    ["B02", "search", "/help/visuals/b02-discovery-desktop.png", "/help/visuals/b02-discovery-mobile.png"],
-    ["B02", "detail", "/help/visuals/b02-product-detail-desktop.png", "/help/visuals/b02-product-detail-mobile.png"],
-    ["B09", "discover", "/help/visuals/b09-live-discovery-desktop.png", "/help/visuals/b09-live-discovery-mobile.png"],
+    ["B01", "register", "/journey-visuals/b01-registration-desktop.png", "/journey-visuals/b01-registration-mobile.png"],
+    ["B02", "search", "/journey-visuals/b02-discovery-desktop.png", "/journey-visuals/b02-discovery-mobile.png"],
+    ["B02", "detail", "/journey-visuals/b02-product-detail-desktop.png", "/journey-visuals/b02-product-detail-mobile.png"],
+    ["B09", "discover", "/journey-visuals/b09-live-discovery-desktop.png", "/journey-visuals/b09-live-discovery-mobile.png"],
   ];
 
   for (const [journey, stepSlug, desktop, mobile] of expected) {
@@ -52,6 +52,8 @@ test("accepted journey steps expose platform-specific visuals", () => {
     const step = article?.steps.find((candidate) => candidate.slug === stepSlug);
     assert.ok(step, `missing ${journey}/${stepSlug}`);
     assert.ok(step.visual, `missing visual metadata for ${journey}/${stepSlug}`);
+    assert.equal(step.visual.desktop.startsWith("/help/"), false);
+    assert.equal(step.visual.mobile.startsWith("/help/"), false);
     assert.equal(step.visual.desktop, desktop);
     assert.equal(step.visual.mobile, mobile);
     assert.equal(typeof step.visual.alt, "string");
