@@ -262,7 +262,7 @@ export const helpArticles: HelpArticle[] = [
     feature: "Product management",
     summary: "Tạo sản phẩm, thêm media, biến thể, giá và tồn kho để gửi duyệt.",
     keywords: ["sản phẩm", "media", "biến thể", "SKU", "tồn kho"],
-    status: "SOURCE_VERIFIED",
+    status: "PARTIAL",
     sourceRefs: ["Front-End/src/pages/shop/seller/productManagement/index.tsx", "back-end/apps/api-gateway/src/modules/offer/offer.controller.ts", "docs/UAT_TEST_MATRIX.md#AF-S-002"],
     steps: [
       { slug: "basic-info", title: "Nhập thông tin cơ bản", description: "Nhập tên, danh mục và mô tả theo biểu mẫu tạo sản phẩm." },
@@ -279,7 +279,7 @@ export const helpArticles: HelpArticle[] = [
     feature: "Seller orders",
     summary: "Kiểm tra đơn, xác nhận, chuẩn bị và hoàn tất xử lý theo trạng thái thực tế.",
     keywords: ["đơn hàng", "seller", "xác nhận", "chuẩn bị", "giao hàng"],
-    status: "SOURCE_VERIFIED",
+    status: "PARTIAL",
     sourceRefs: ["Front-End/src/pages/shop/seller/orderManagement/index.tsx", "back-end/apps/api-gateway/src/modules/order/order.controller.ts", "docs/UAT_TEST_MATRIX.md#AF-S-003"],
     steps: [
       { slug: "orders", title: "Mở danh sách đơn", description: "Vào Seller Dashboard và mở mục đơn hàng của Shop." },
@@ -298,7 +298,7 @@ export const helpArticles: HelpArticle[] = [
     feature: "Shop profile and business settings",
     summary: "Hoàn thiện thông tin Shop, địa chỉ và cấu hình được hệ thống hỗ trợ.",
     keywords: ["Shop", "thông tin", "địa chỉ", "business", "thiết lập"],
-    status: "SOURCE_VERIFIED",
+    status: "PARTIAL",
     sourceRefs: ["Front-End/src/pages/shop/seller/shopInfo/index.tsx", "Front-End/src/pages/shop/seller/businessInfo.tsx", "back-end/libs/shops/src/presentation/rpc/shops.rpc-controller.ts"],
     steps: [
       { slug: "profile", title: "Mở thông tin Shop", description: "Vào Seller Center và kiểm tra Shop đang được gắn với tài khoản hiện tại." },
@@ -314,7 +314,7 @@ export const helpArticles: HelpArticle[] = [
     feature: "Product management",
     summary: "Sửa sản phẩm, biến thể, tồn kho và xử lý các trạng thái duyệt hiện có.",
     keywords: ["sản phẩm", "sửa", "tồn kho", "biến thể", "từ chối", "gửi duyệt"],
-    status: "SOURCE_VERIFIED",
+    status: "PARTIAL",
     sourceRefs: ["Front-End/src/pages/shop/seller/productManagement/index.tsx", "Front-End/src/pages/shop/seller/productManagement/detail.tsx", "back-end/libs/offers/src/presentation/rpc/offers.rpc-controller.ts"],
     steps: [
       { slug: "open", title: "Mở danh sách sản phẩm", description: "Lọc và chọn sản phẩm thuộc Shop hiện tại." },
@@ -346,7 +346,7 @@ export const helpArticles: HelpArticle[] = [
     feature: "Shop voucher",
     summary: "Tạo ưu đãi Shop với điều kiện áp dụng do hệ thống kiểm tra.",
     keywords: ["voucher", "Shop", "khuyến mãi", "checkout"],
-    status: "SOURCE_VERIFIED",
+    status: "PARTIAL",
     sourceRefs: ["Front-End/src/pages/shop/seller/voucherManagement/index.tsx", "Front-End/src/services/voucher.api.ts"],
     steps: [
       { slug: "open", title: "Mở Voucher của Shop", description: "Vào Seller Center và mở mục Voucher của Shop." },
