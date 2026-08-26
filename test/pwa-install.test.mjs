@@ -109,4 +109,6 @@ test("service worker never serves the SPA fallback for Firebase auth handlers", 
   assert.equal(isDenied("/__/auth/iframe"), true);
   assert.equal(isDenied("/__/auth"), true);
   assert.equal(isDenied("/auth"), false);
+  assert.equal(isDenied("/help"), true);
+  assert.equal(isDenied("/help/buyer/discover"), true);
 });
