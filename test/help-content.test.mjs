@@ -286,3 +286,33 @@ test("canonical registry routes and statuses mirror Help metadata", () => {
     assert.equal(columns[3], article.status, `status drift for ${article.journey}`);
   }
 });
+
+test("canonical guide and ebook embed accepted annotated journey visuals", () => {
+  const documents = [
+    "ANTIFAKE_USER_GUIDE.md",
+    "ANTIFAKE_USER_GUIDE_EBOOK.md",
+  ];
+  const acceptedVisuals = [
+    "../images/auth/registration-desktop-production-6b24be3-annotated.png",
+    "../images/auth/registration-mobile-production-6b24be3-annotated.png",
+    "../images/buyer/catalog-home-desktop-production-6b24be3-annotated.png",
+    "../images/buyer/catalog-home-mobile-production-6b24be3-annotated.png",
+    "../images/buyer/product-detail-desktop-production-6b24be3-annotated.png",
+    "../images/buyer/product-detail-mobile-production-6b24be3-annotated.png",
+    "../images/buyer/live-discovery-desktop-production-6b24be3-annotated.png",
+    "../images/buyer/live-discovery-mobile-production-6b24be3-annotated.png",
+  ];
+
+  for (const document of documents) {
+    const documentUrl = new URL(`../../docs/user-guide/${document}`, import.meta.url);
+    const content = fs.readFileSync(documentUrl, "utf8");
+    for (const visual of acceptedVisuals) {
+      assert.equal(content.includes(`](${visual})`), true, `${document} is missing ${visual}`);
+      assert.equal(
+        fs.existsSync(new URL(visual, documentUrl)),
+        true,
+        `missing embedded visual ${visual}`,
+      );
+    }
+  }
+});
