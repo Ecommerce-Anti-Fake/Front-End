@@ -57,6 +57,15 @@ test.describe("Help Center and Journey Center", () => {
     }
   });
 
+  test("does not present an absent Admin journey as actionable instructions", async ({ page }) => {
+    await page.goto("/help/admin/admin-kyc/pending");
+
+    await expect(page.getByRole("heading", { name: "Xử lý KYC", level: 2 })).toBeVisible();
+    await expect(page.getByRole("status")).toContainText("Tính năng chưa sẵn sàng");
+    await expect(page.getByText("Mở hồ sơ chờ xử lý")).toHaveCount(0);
+    await expect(page.getByRole("link", { name: /Tiếp theo/ })).toHaveCount(0);
+  });
+
   test("renders the accepted Affiliate visual for the selected platform", async ({ page }, testInfo) => {
     const platform = testInfo.project.name === "mobile" ? "mobile" : "desktop";
     await page.goto("/help/seller/affiliate/program");

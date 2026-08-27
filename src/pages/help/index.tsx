@@ -52,12 +52,44 @@ function ArticleCard({ article }: { article: HelpArticle }) {
   );
 }
 
+function UnavailableJourney({ article }: { article: HelpArticle }) {
+  return (
+    <article className="help-journey" aria-labelledby="help-journey-title">
+      <Link className="help-breadcrumb" to="/help">Trung tâm trợ giúp AntiFake</Link>
+      <div className="help-journey-header">
+        <div>
+          <p className="help-eyebrow">{helpRoleLabels[article.role]} · {article.journey}</p>
+          <h2 id="help-journey-title">{article.title}</h2>
+          <p>{article.summary}</p>
+        </div>
+      </div>
+      <div className="help-progress">
+        <span>Journey {article.journey}</span>
+        <span>{availability(article.status)}</span>
+      </div>
+      <div className="help-journey-unavailable" role="status">
+        <BookOpen size={28} aria-hidden="true" />
+        <strong>{availability(article.status)}</strong>
+        <p>Chưa có route frontend được đăng ký cho journey này. Không có bước thao tác production để làm theo.</p>
+      </div>
+      <div className="help-step-navigation">
+        <span />
+        <Link to="/help">Về Help Center</Link>
+      </div>
+    </article>
+  );
+}
+
 function JourneyView({ article, stepSlug, platform, onPlatformChange }: {
   article: HelpArticle;
   stepSlug?: string;
   platform: HelpPlatform;
   onPlatformChange: (platform: HelpPlatform) => void;
 }) {
+  if (article.status === "NOT_IMPLEMENTED") {
+    return <UnavailableJourney article={article} />;
+  }
+
   const currentIndex = Math.max(0, article.steps.findIndex((step) => step.slug === stepSlug));
   const currentStep = article.steps[currentIndex];
   const previousStep = article.steps[currentIndex - 1];
