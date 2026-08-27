@@ -47,7 +47,7 @@ function ArticleCard({ article }: { article: HelpArticle }) {
       </div>
       <h2>{article.title}</h2>
       <p>{article.summary}</p>
-      <span className="help-card-link">Xem hành trình <ArrowRight size={16} aria-hidden="true" /></span>
+      <span className="help-card-link">{article.status === "NOT_IMPLEMENTED" ? "Xem trạng thái" : "Xem hành trình"} <ArrowRight size={16} aria-hidden="true" /></span>
     </Link>
   );
 }

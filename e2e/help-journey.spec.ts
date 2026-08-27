@@ -53,7 +53,9 @@ test.describe("Help Center and Journey Center", () => {
     await page.getByRole("button", { name: "Quản trị viên" }).click();
 
     for (const title of ["Xử lý KYC", "Moderation nội dung", "Theo dõi Order và Payment", "Audit và monitoring"]) {
-      await expect(page.getByRole("link", { name: new RegExp(title) })).toContainText("Tính năng chưa sẵn sàng");
+      const journeyCard = page.getByRole("link", { name: new RegExp(title) });
+      await expect(journeyCard).toContainText("Tính năng chưa sẵn sàng");
+      await expect(journeyCard).toContainText("Xem trạng thái");
     }
   });
 
