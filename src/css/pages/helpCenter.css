@@ -53,21 +53,21 @@
 .help-platform-buttons { display: flex; gap: 6px; }
 .help-platform-buttons button { padding: 8px 11px; font-size: 13px; }
 .help-progress { display: flex; justify-content: space-between; gap: 16px; padding: 12px 30px; border-bottom: 1px solid #f0e5e5; color: #8f6161; font-size: 13px; font-weight: 700; }
-.help-journey-unavailable { display: grid; min-height: 280px; place-items: center; align-content: center; gap: 10px; padding: 36px 30px; border-bottom: 1px solid #f0e5e5; color: #986868; text-align: center; }
+.help-journey-unavailable { display: grid; min-height: 280px; place-items: center; align-content: center; gap: 10px; padding: 36px 30px; border-bottom: 1px solid #f0e5e5; color: #8f4c4c; text-align: center; }
 .help-journey-unavailable svg { color: #b91c1c; }
 .help-journey-unavailable strong { color: #a34b17; font-size: 18px; }
 .help-journey-unavailable p { max-width: 560px; margin: 0; color: #6d5d5d; font-size: 14px; }
 .help-journey-body { display: grid; grid-template-columns: 250px minmax(0, 1fr); min-height: 410px; }
 .help-step-list { display: flex; flex-direction: column; padding: 24px 0; border-right: 1px solid #f0e5e5; }
 .help-step-list a { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 8px; padding: 11px 22px; color: #6d5d5d; font-size: 14px; }
-.help-step-list a span { color: #b48686; font-size: 12px; font-weight: 800; }
+.help-step-list a span { color: #8f4c4c; font-size: 12px; font-weight: 800; }
 .help-step-list a:hover, .help-step-list a.is-current { color: #a71919; background: #fff7f6; }
 .help-step-list .help-overview-link { display: block; margin-bottom: 12px; color: #a71919; font-size: 13px; font-weight: 800; }
 .help-step-content { display: grid; align-content: start; gap: 18px; padding: 28px; }
 .help-visual { margin: 0; overflow: hidden; border: 1px solid #eadede; background: #fff; }
 .help-visual img { display: block; width: 100%; height: auto; }
 .help-visual figcaption { padding: 10px 14px; border-top: 1px solid #f0e5e5; color: #8f6161; font-size: 12px; font-weight: 700; }
-.help-visual-placeholder { display: grid; min-height: 210px; place-items: center; align-content: center; gap: 8px; padding: 24px; border: 1px dashed #dcbebe; color: #986868; background: #fffafa; text-align: center; }
+.help-visual-placeholder { display: grid; min-height: 210px; place-items: center; align-content: center; gap: 8px; padding: 24px; border: 1px dashed #dcbebe; color: #8f4c4c; background: #fffafa; text-align: center; }
 .help-visual-placeholder svg { color: #b91c1c; }
 .help-visual-placeholder span { max-width: 430px; font-size: 13px; }
 .help-tip { display: flex; align-items: flex-start; gap: 8px; margin: 0; padding: 12px 14px; color: #6d5521; background: #fff9e8; font-size: 14px; }
