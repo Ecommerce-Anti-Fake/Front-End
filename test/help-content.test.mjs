@@ -170,7 +170,7 @@ test("visual manifest lists every canonical journey", () => {
       assert.ok(row, `missing visual manifest journey ${journeyId}`);
       assert.match(row, /Desktop 1440×900 \+ Mobile 390×844/);
       if (prefix === "A") {
-        assert.match(row, /Blocked by approved Admin identity/);
+        assert.match(row, /Pending targeted Admin visual evidence/);
       } else if (journeyId === "B03") {
         assert.match(row, /Do not publish as final/);
       } else {
@@ -208,7 +208,22 @@ test("feature matrix keeps incomplete journey statuses explicit", () => {
 
   assert.match(matrix, /\| Chat \|[^\n]+\| PARTIAL \|/);
   assert.match(matrix, /\| QR verification \|[^\n]+\| PARTIAL \|/);
-  assert.match(matrix, /\| Admin journeys A01-A10 \|[^\n]+\| UNVERIFIED \|/);
+  assert.match(matrix, /\| Admin journeys A01-A10 \|[^\n]+\| PARTIAL \|/);
+});
+
+test("Admin Help statuses match the verified read-only route subset", () => {
+  const statusByJourney = new Map(
+    helpArticles
+      .filter((article) => /^A\d{2}$/.test(article.journey))
+      .map((article) => [article.journey, article.status]),
+  );
+
+  for (const journey of ["A01", "A02", "A04", "A05", "A08", "A09"]) {
+    assert.equal(statusByJourney.get(journey), "PARTIAL", `expected ${journey} to be PARTIAL`);
+  }
+  for (const journey of ["A03", "A06", "A07", "A10"]) {
+    assert.equal(statusByJourney.get(journey), "UNVERIFIED", `expected ${journey} to remain UNVERIFIED`);
+  }
 });
 
 test("feature matrix bridges canonical journeys to UAT and platform visuals", () => {

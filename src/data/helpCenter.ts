@@ -394,7 +394,7 @@ export const helpArticles: HelpArticle[] = [
     feature: "Admin dashboard",
     summary: "Mở các chỉ số và khu vực vận hành được cấp cho tài khoản Admin.",
     keywords: ["Admin", "dashboard", "KPI", "vận hành"],
-    status: "UNVERIFIED",
+    status: "PARTIAL",
     sourceRefs: ["Front-End/src/pages/admin/index.tsx", "Front-End/src/App.tsx", "docs/UAT_TEST_MATRIX.md#AF-AD-001"],
     steps: [
       { slug: "open", title: "Mở Dashboard", description: "Cần tài khoản Admin active và session hợp lệ; tài khoản bị suspended không được dùng để xác minh." },
@@ -409,7 +409,7 @@ export const helpArticles: HelpArticle[] = [
     feature: "Admin users",
     summary: "Tìm kiếm và xem trạng thái tài khoản trong phạm vi quyền Admin.",
     keywords: ["Admin", "user", "tài khoản", "suspended", "active"],
-    status: "UNVERIFIED",
+    status: "PARTIAL",
     sourceRefs: ["Front-End/src/pages/admin/users/index.tsx", "back-end/libs/auth/src/presentation/rpc/auth.rpc-controller.ts", "docs/UAT_TEST_MATRIX.md#AF-AD-001"],
     steps: [
       { slug: "search", title: "Tìm người dùng", description: "Mở danh sách và tìm theo control đang có; không truy cập dữ liệu ngoài phạm vi được cấp." },
@@ -439,7 +439,7 @@ export const helpArticles: HelpArticle[] = [
     feature: "Shop review",
     summary: "Kiểm tra hồ sơ đăng ký Shop và trạng thái phê duyệt.",
     keywords: ["Admin", "Shop", "duyệt Shop", "hồ sơ"],
-    status: "UNVERIFIED",
+    status: "PARTIAL",
     sourceRefs: ["Front-End/src/pages/admin/shopRegistrations/index.tsx", "back-end/libs/shops/src/presentation/rpc/shops.rpc-controller.ts", "docs/UAT_TEST_MATRIX.md#AF-AD-001"],
     steps: [
       { slug: "inspect", title: "Kiểm tra hồ sơ", description: "Đối chiếu thông tin Shop, tài liệu và KYC theo dữ liệu thật." },
@@ -454,7 +454,7 @@ export const helpArticles: HelpArticle[] = [
     feature: "Product moderation",
     summary: "Xem sản phẩm chờ duyệt và xử lý trạng thái moderation.",
     keywords: ["Admin", "sản phẩm", "moderation", "approve", "reject"],
-    status: "UNVERIFIED",
+    status: "PARTIAL",
     sourceRefs: ["Front-End/src/pages/admin/productRegistrations/index.tsx", "back-end/libs/offers/src/presentation/rpc/offers.rpc-controller.ts", "docs/UAT_TEST_MATRIX.md#AF-AD-001"],
     steps: [
       { slug: "pending", title: "Lọc sản phẩm chờ duyệt", description: "Dùng bộ lọc và dữ liệu server để chọn hồ sơ cần xem." },
@@ -499,7 +499,7 @@ export const helpArticles: HelpArticle[] = [
     feature: "Wallet and financial operations",
     summary: "Xem ví, đối soát và xử lý tài khoản payout trong môi trường được phê duyệt.",
     keywords: ["Admin", "wallet", "payout", "đối soát", "tài chính"],
-    status: "UNVERIFIED",
+    status: "PARTIAL",
     sourceRefs: ["Front-End/src/pages/admin/wallet/index.tsx", "back-end/libs/wallet/src/presentation/rpc/wallet.rpc-controller.ts", "docs/UAT_TEST_MATRIX.md#AF-AD-001"],
     steps: [
       { slug: "reconciliation", title: "Mở đối soát", description: "Đọc số dư và báo cáo do backend trả về." },
@@ -514,7 +514,7 @@ export const helpArticles: HelpArticle[] = [
     feature: "Platform promotion",
     summary: "Quản lý voucher hệ thống theo trạng thái và quyền được cấp.",
     keywords: ["Admin", "voucher", "khuyến mãi", "platform"],
-    status: "UNVERIFIED",
+    status: "PARTIAL",
     sourceRefs: ["Front-End/src/pages/admin/vouchers/index.tsx", "back-end/libs/orders/src/presentation/rpc/orders.rpc-controller.ts", "docs/UAT_TEST_MATRIX.md#AF-AD-001"],
     steps: [
       { slug: "list", title: "Mở danh sách voucher", description: "Đối chiếu mã, thời hạn, phạm vi và status từ server." },
@@ -544,7 +544,7 @@ export const helpArticles: HelpArticle[] = [
     feature: "Admin review",
     summary: "Tài liệu nội bộ cho việc xem và xử lý hồ sơ trong quyền Admin.",
     keywords: ["Admin", "KYC", "Shop", "sản phẩm", "duyệt"],
-    status: "UNVERIFIED",
+    status: "PARTIAL",
     sourceRefs: ["Front-End/src/App.tsx", "back-end/apps/api-gateway/src/modules/admin/admin.controller.ts", "docs/UAT_TEST_MATRIX.md#AF-AD-001"],
     steps: [
       { slug: "dashboard", title: "Mở Admin Dashboard", description: "Cần tài khoản Admin active và session hợp lệ để truy cập." },
@@ -560,7 +560,7 @@ export const helpArticles: HelpArticle[] = [
     feature: "Users, KYC, moderation, wallet",
     summary: "Tài liệu định hướng cho các khu vực Admin được backend cấp quyền.",
     keywords: ["Admin", "user", "KYC", "moderation", "wallet", "audit"],
-    status: "UNVERIFIED",
+    status: "PARTIAL",
     sourceRefs: ["Front-End/src/App.tsx", "back-end/apps/api-gateway/src/modules/admin/admin.controller.ts", "docs/UAT_TEST_MATRIX.md#AF-AD-001"],
     steps: [
       { slug: "dashboard", title: "Mở Admin Dashboard", description: "Cần tài khoản Admin active và session hợp lệ." },
