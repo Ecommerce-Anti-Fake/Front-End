@@ -48,6 +48,15 @@ test.describe("Help Center and Journey Center", () => {
     }
   });
 
+  test("renders the accepted Affiliate visual for the selected platform", async ({ page }, testInfo) => {
+    const platform = testInfo.project.name === "mobile" ? "mobile" : "desktop";
+    await page.goto("/help/seller/affiliate/program");
+    await expect(page.locator('[data-testid="help-visual"] img')).toHaveAttribute(
+      "src",
+      new RegExp(`affiliate-program-${platform}\\.png$`),
+    );
+  });
+
   test("keeps pending steps on the evidence placeholder", async ({ page }) => {
     await page.goto("/help/buyer/account-start/profile");
 

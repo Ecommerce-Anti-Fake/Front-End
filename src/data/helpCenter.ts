@@ -365,7 +365,16 @@ export const helpArticles: HelpArticle[] = [
     status: "PARTIAL",
     sourceRefs: ["Front-End/src/pages/shop/seller/affiliate/index.tsx", "docs/user-guide/FEATURE_GUIDE_MATRIX.md#Affiliate"],
     steps: [
-      { slug: "program", title: "Mở chương trình", description: "Xem chương trình Affiliate được trả về cho Shop hiện tại." },
+      {
+        slug: "program",
+        title: "Mở chương trình",
+        description: "Xem chương trình Affiliate được trả về cho Shop hiện tại.",
+        visual: {
+          desktop: "/journey-visuals/affiliate-program-desktop.png",
+          mobile: "/journey-visuals/affiliate-program-mobile.png",
+          alt: "Màn hình chương trình Affiliate trên Desktop hoặc Mobile",
+        },
+      },
       { slug: "conversion", title: "Theo dõi chuyển đổi", description: "Đối chiếu conversion và commission với trạng thái backend." },
       { slug: "payout", title: "Kiểm tra payout", description: "Payout chỉ được coi là hoàn tất khi backend xác nhận trạng thái." },
     ],

@@ -48,6 +48,7 @@ test("accepted journey steps expose platform-specific visuals", () => {
     ["A01", "open", "/journey-visuals/admin-dashboard-desktop.png", "/journey-visuals/admin-dashboard-mobile.png"],
     ["A05", "pending", "/journey-visuals/admin-product-review-desktop.png", "/journey-visuals/admin-product-review-mobile.png"],
     ["A09", "list", "/journey-visuals/admin-promotions-desktop.png", "/journey-visuals/admin-promotions-mobile.png"],
+    ["S07", "program", "/journey-visuals/affiliate-program-desktop.png", "/journey-visuals/affiliate-program-mobile.png"],
   ];
 
   for (const [journey, stepSlug, desktop, mobile] of expected) {
