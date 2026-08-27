@@ -35,6 +35,19 @@ test.describe("Help Center and Journey Center", () => {
     await expect(visual).toHaveAttribute("src", new RegExp(`b02-discovery-${platform}\\.png$`));
   });
 
+  test("renders the accepted Admin visuals for the selected platform", async ({ page }) => {
+    const platform = page.viewportSize?.width === 390 ? "mobile" : "desktop";
+    const expected = [
+      ["/help/admin/admin-product-review/pending", `admin-product-review-${platform}.png`],
+      ["/help/admin/admin-promotions/list", `admin-promotions-${platform}.png`],
+    ] as const;
+
+    for (const [route, asset] of expected) {
+      await page.goto(route);
+      await expect(page.locator('[data-testid="help-visual"] img')).toHaveAttribute("src", new RegExp(`${asset}$`));
+    }
+  });
+
   test("keeps pending steps on the evidence placeholder", async ({ page }) => {
     await page.goto("/help/buyer/account-start/profile");
 

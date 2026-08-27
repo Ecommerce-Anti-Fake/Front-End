@@ -466,7 +466,16 @@ export const helpArticles: HelpArticle[] = [
     status: "PARTIAL",
     sourceRefs: ["Front-End/src/pages/admin/productRegistrations/index.tsx", "back-end/libs/offers/src/presentation/rpc/offers.rpc-controller.ts", "docs/UAT_TEST_MATRIX.md#AF-AD-001"],
     steps: [
-      { slug: "pending", title: "Lọc sản phẩm chờ duyệt", description: "Dùng bộ lọc và dữ liệu server để chọn hồ sơ cần xem." },
+      {
+        slug: "pending",
+        title: "Lọc sản phẩm chờ duyệt",
+        description: "Dùng bộ lọc và dữ liệu server để chọn hồ sơ cần xem.",
+        visual: {
+          desktop: "/journey-visuals/admin-product-review-desktop.png",
+          mobile: "/journey-visuals/admin-product-review-mobile.png",
+          alt: "Màn hình duyệt sản phẩm AntiFake trên Desktop hoặc Mobile",
+        },
+      },
       { slug: "decision", title: "Ghi kết quả duyệt", description: "Đối chiếu lý do và trạng thái sau khi backend xác nhận." },
     ],
   },
@@ -526,7 +535,16 @@ export const helpArticles: HelpArticle[] = [
     status: "PARTIAL",
     sourceRefs: ["Front-End/src/pages/admin/vouchers/index.tsx", "back-end/libs/orders/src/presentation/rpc/orders.rpc-controller.ts", "docs/UAT_TEST_MATRIX.md#AF-AD-001"],
     steps: [
-      { slug: "list", title: "Mở danh sách voucher", description: "Đối chiếu mã, thời hạn, phạm vi và status từ server." },
+      {
+        slug: "list",
+        title: "Mở danh sách voucher",
+        description: "Đối chiếu mã, thời hạn, phạm vi và status từ server.",
+        visual: {
+          desktop: "/journey-visuals/admin-promotions-desktop.png",
+          mobile: "/journey-visuals/admin-promotions-mobile.png",
+          alt: "Màn hình voucher hệ thống AntiFake trên Desktop hoặc Mobile",
+        },
+      },
       { slug: "change", title: "Cập nhật status", description: "Chỉ thay đổi khi có fixture và quyền Admin được phê duyệt." },
     ],
   },
