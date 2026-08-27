@@ -35,8 +35,8 @@ test.describe("Help Center and Journey Center", () => {
     await expect(visual).toHaveAttribute("src", new RegExp(`b02-discovery-${platform}\\.png$`));
   });
 
-  test("renders the accepted Admin visuals for the selected platform", async ({ page }) => {
-    const platform = page.viewportSize?.width === 390 ? "mobile" : "desktop";
+  test("renders the accepted Admin visuals for the selected platform", async ({ page }, testInfo) => {
+    const platform = testInfo.project.name === "mobile" ? "mobile" : "desktop";
     const expected = [
       ["/help/admin/admin-product-review/pending", `admin-product-review-${platform}.png`],
       ["/help/admin/admin-promotions/list", `admin-promotions-${platform}.png`],
