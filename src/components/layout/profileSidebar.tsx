@@ -53,8 +53,8 @@ const menus = [
     icon: BadgePercent,
   },
   {
-    label: "Lịch sử xác thực QR",
-    path: "/profile/verify-history",
+    label: "Xác thực sản phẩm bằng QR",
+    path: "/qr",
     icon: QrCode,
   },
   {
