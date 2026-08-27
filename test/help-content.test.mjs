@@ -45,6 +45,7 @@ test("accepted journey steps expose platform-specific visuals", () => {
     ["B02", "search", "/journey-visuals/b02-discovery-desktop.png", "/journey-visuals/b02-discovery-mobile.png"],
     ["B02", "detail", "/journey-visuals/b02-product-detail-desktop.png", "/journey-visuals/b02-product-detail-mobile.png"],
     ["B09", "discover", "/journey-visuals/b09-live-discovery-desktop.png", "/journey-visuals/b09-live-discovery-mobile.png"],
+    ["A01", "open", "/journey-visuals/admin-dashboard-desktop.png", "/journey-visuals/admin-dashboard-mobile.png"],
   ];
 
   for (const [journey, stepSlug, desktop, mobile] of expected) {
@@ -170,7 +171,7 @@ test("visual manifest lists every canonical journey", () => {
       assert.ok(row, `missing visual manifest journey ${journeyId}`);
       assert.match(row, /Desktop 1440×900 \+ Mobile 390×844/);
       if (prefix === "A") {
-        assert.match(row, /Pending targeted Admin visual evidence|No final annotated visual yet/);
+        assert.match(row, /Pending targeted Admin visual evidence|No final annotated visual yet|annotated captures inspected/);
       } else if (journeyId === "B03") {
         assert.match(row, /Do not publish as final/);
       } else {

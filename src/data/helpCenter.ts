@@ -397,7 +397,16 @@ export const helpArticles: HelpArticle[] = [
     status: "PARTIAL",
     sourceRefs: ["Front-End/src/pages/admin/index.tsx", "Front-End/src/App.tsx", "docs/UAT_TEST_MATRIX.md#AF-AD-001"],
     steps: [
-      { slug: "open", title: "Mở Dashboard", description: "Cần tài khoản Admin active và session hợp lệ; tài khoản bị suspended không được dùng để xác minh." },
+      {
+        slug: "open",
+        title: "Mở Dashboard",
+        description: "Cần tài khoản Admin active và session hợp lệ; tài khoản bị suspended không được dùng để xác minh.",
+        visual: {
+          desktop: "/journey-visuals/admin-dashboard-desktop.png",
+          mobile: "/journey-visuals/admin-dashboard-mobile.png",
+          alt: "Màn hình Dashboard quản trị AntiFake trên Desktop hoặc Mobile",
+        },
+      },
       { slug: "read", title: "Đọc chỉ số", description: "Đối chiếu số liệu với backend và revision đang chạy trước khi đưa ra quyết định." },
     ],
   },
