@@ -48,6 +48,15 @@ test.describe("Help Center and Journey Center", () => {
     }
   });
 
+  test("marks absent Admin routes as not implemented", async ({ page }) => {
+    await page.goto("/help");
+    await page.getByRole("button", { name: "Quản trị viên" }).click();
+
+    for (const title of ["Xử lý KYC", "Moderation nội dung", "Theo dõi Order và Payment", "Audit và monitoring"]) {
+      await expect(page.getByRole("link", { name: new RegExp(title) })).toContainText("Tính năng chưa sẵn sàng");
+    }
+  });
+
   test("renders the accepted Affiliate visual for the selected platform", async ({ page }, testInfo) => {
     const platform = testInfo.project.name === "mobile" ? "mobile" : "desktop";
     await page.goto("/help/seller/affiliate/program");
