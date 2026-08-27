@@ -82,4 +82,12 @@ test.describe("Help Center and Journey Center", () => {
       "/help/qr/verify-product",
     );
   });
+
+  test("footer verification help deep-links to the QR journey", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.getByRole("link", { name: "Hướng dẫn xác thực" })).toHaveAttribute(
+      "href",
+      "/help/qr/verify-product",
+    );
+  });
 });

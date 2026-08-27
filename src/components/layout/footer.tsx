@@ -3,6 +3,7 @@ import {
   Mail,
   Phone,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import "../../css/components/layout/footer.css";
 
 export default function Footer() {
@@ -44,7 +45,7 @@ export default function Footer() {
         <div className="footer-links">
           <h3>Hỗ trợ</h3>
 
-          <a href="#">Hướng dẫn xác thực</a>
+          <Link to="/help/qr/verify-product">Hướng dẫn xác thực</Link>
           <a href="#">Liên hệ hỗ trợ</a>
           <a href="#">Quy định chung</a>
         </div>
