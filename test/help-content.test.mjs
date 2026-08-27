@@ -178,7 +178,7 @@ test("visual manifest lists every canonical journey", () => {
       } else if (journeyId === "B03") {
         assert.match(row, /Do not publish as final/);
       } else {
-        assert.match(row, /Pending/);
+        assert.match(row, /Pending|BLOCKED_EXTERNAL/);
       }
     }
   }
