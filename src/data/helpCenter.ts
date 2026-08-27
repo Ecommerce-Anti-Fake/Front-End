@@ -442,7 +442,7 @@ export const helpArticles: HelpArticle[] = [
     feature: "KYC review",
     summary: "Xem hồ sơ KYC và xử lý theo quyền, trạng thái và lý do được hệ thống hỗ trợ.",
     keywords: ["Admin", "KYC", "xác minh", "duyệt", "từ chối"],
-    status: "UNVERIFIED",
+    status: "NOT_IMPLEMENTED",
     sourceRefs: ["Front-End/src/pages/admin/shopRegistrations/index.tsx", "back-end/libs/shops/src/presentation/rpc/shops.rpc-controller.ts", "docs/UAT_TEST_MATRIX.md#AF-AD-001"],
     steps: [
       { slug: "pending", title: "Mở hồ sơ chờ xử lý", description: "Chỉ dùng danh sách và hồ sơ do backend trả về." },
@@ -496,7 +496,7 @@ export const helpArticles: HelpArticle[] = [
     feature: "Reports and moderation",
     summary: "Xem các khu vực moderation được backend cấp quyền.",
     keywords: ["Admin", "moderation", "report", "nội dung"],
-    status: "UNVERIFIED",
+    status: "NOT_IMPLEMENTED",
     sourceRefs: ["Front-End/src/pages/admin/index.tsx", "back-end/libs/orders/src/presentation/rpc/orders.rpc-controller.ts", "docs/UAT_TEST_MATRIX.md#AF-AD-001"],
     steps: [
       { slug: "queue", title: "Mở hàng đợi", description: "Chỉ xử lý report hoặc case xuất hiện trong giao diện được cấp quyền." },
@@ -511,7 +511,7 @@ export const helpArticles: HelpArticle[] = [
     feature: "Order and payment oversight",
     summary: "Theo dõi order, payment và đối soát trong phạm vi quyền Admin.",
     keywords: ["Admin", "order", "payment", "đối soát"],
-    status: "UNVERIFIED",
+    status: "NOT_IMPLEMENTED",
     sourceRefs: ["Front-End/src/pages/admin/index.tsx", "back-end/libs/orders/src/presentation/rpc/orders.rpc-controller.ts", "docs/UAT_TEST_MATRIX.md#AF-AD-001"],
     steps: [
       { slug: "find", title: "Tìm giao dịch", description: "Dùng dữ liệu server để tìm order hoặc payment cần kiểm tra." },
@@ -565,7 +565,7 @@ export const helpArticles: HelpArticle[] = [
     feature: "Audit and monitoring",
     summary: "Theo dõi audit evidence và health signals có trong hệ thống.",
     keywords: ["Admin", "audit", "monitoring", "health", "evidence"],
-    status: "UNVERIFIED",
+    status: "NOT_IMPLEMENTED",
     sourceRefs: ["Front-End/src/pages/admin/wallet/index.tsx", "docs/UAT_REPORT.md", "docs/UAT_TEST_MATRIX.md#AF-AD-001"],
     steps: [
       { slug: "observe", title: "Quan sát chỉ số", description: "Ghi lại revision, thời điểm và phạm vi dữ liệu khi kiểm tra." },

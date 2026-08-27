@@ -226,7 +226,7 @@ test("Admin Help statuses match the verified read-only route subset", () => {
     assert.equal(statusByJourney.get(journey), "PARTIAL", `expected ${journey} to be PARTIAL`);
   }
   for (const journey of ["A03", "A06", "A07", "A10"]) {
-    assert.equal(statusByJourney.get(journey), "UNVERIFIED", `expected ${journey} to remain UNVERIFIED`);
+    assert.equal(statusByJourney.get(journey), "NOT_IMPLEMENTED", `expected ${journey} to remain NOT_IMPLEMENTED`);
   }
 });
 
