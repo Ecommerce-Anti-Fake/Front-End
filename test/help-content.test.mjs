@@ -315,6 +315,8 @@ test("canonical guide and ebook embed accepted annotated journey visuals", () =>
   const acceptedVisuals = [
     "../images/auth/registration-desktop-production-6b24be3-annotated.png",
     "../images/auth/registration-mobile-production-6b24be3-annotated.png",
+    "../images/buyer/cart-desktop-production-8157ffa-annotated.png",
+    "../images/buyer/cart-mobile-production-8157ffa-annotated.png",
     "../images/buyer/catalog-home-desktop-production-6b24be3-annotated.png",
     "../images/buyer/catalog-home-mobile-production-6b24be3-annotated.png",
     "../images/buyer/product-detail-desktop-production-6b24be3-annotated.png",
