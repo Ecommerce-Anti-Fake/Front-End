@@ -110,11 +110,13 @@ function JourneyView({ article, stepSlug, platform, onPlatformChange }: {
     return <UnavailableJourney article={article} />;
   }
 
-  const currentIndex = Math.max(0, article.steps.findIndex((step) => step.slug === stepSlug));
-  const currentStep = article.steps[currentIndex];
-  const previousStep = article.steps[currentIndex - 1];
-  const nextStep = article.steps[currentIndex + 1];
-  const visual = currentStep.visual;
+  const currentIndex = stepSlug ? article.steps.findIndex((step) => step.slug === stepSlug) : -1;
+  const currentStep = currentIndex >= 0 ? article.steps[currentIndex] : undefined;
+  const isOverview = !currentStep;
+  const previousStep = currentStep ? article.steps[currentIndex - 1] : undefined;
+  const nextStep = currentStep ? article.steps[currentIndex + 1] : undefined;
+  const firstStep = article.steps[0];
+  const visual = currentStep?.visual;
 
   return (
     <article className="help-journey" aria-labelledby="help-journey-title">
@@ -122,8 +124,8 @@ function JourneyView({ article, stepSlug, platform, onPlatformChange }: {
       <div className="help-journey-header">
         <div>
           <p className="help-eyebrow">{helpRoleLabels[article.role]} · {article.journey}</p>
-          <h2 id="help-journey-title">{currentStep.title}</h2>
-          <p>{currentStep.description}</p>
+          <h2 id="help-journey-title">{isOverview ? article.title : currentStep.title}</h2>
+          <p>{isOverview ? article.summary : currentStep.description}</p>
         </div>
         <div className="help-platform-switcher" aria-label="Chọn nền tảng hướng dẫn">
           <span className="help-platform-label" data-testid="help-platform-label">Hướng dẫn {platform === "mobile" ? "Mobile" : "Desktop"}</span>
@@ -143,14 +145,17 @@ function JourneyView({ article, stepSlug, platform, onPlatformChange }: {
         </div>
       </div>
 
-      <div className="help-progress" aria-label={`Tiến trình bước ${currentIndex + 1} trên ${article.steps.length}`}>
-        <span>Bước {currentIndex + 1}/{article.steps.length}</span>
+      <div
+        className="help-progress"
+        aria-label={isOverview ? `Tổng quan Journey ${article.journey}` : `Tiến trình bước ${currentIndex + 1} trên ${article.steps.length}`}
+      >
+        <span>{isOverview ? `Tổng quan · ${article.steps.length} bước` : `Bước ${currentIndex + 1}/${article.steps.length}`}</span>
         <span>{availability(article.status)}</span>
       </div>
 
       <div className="help-journey-body">
         <nav className="help-step-list" aria-label="Các bước trong hành trình">
-          <Link className="help-overview-link" to={getArticleUrl(article)}>Tổng quan hành trình</Link>
+          <Link className="help-overview-link" to={getArticleUrl(article)} aria-current={isOverview ? "page" : undefined}>Tổng quan hành trình</Link>
           {article.steps.map((step, index) => (
             <Link
               className={index === currentIndex ? "is-current" : ""}
@@ -164,32 +169,59 @@ function JourneyView({ article, stepSlug, platform, onPlatformChange }: {
           ))}
         </nav>
 
-        <section className="help-step-content">
-          {visual ? (
-            <figure className="help-visual" data-testid="help-visual">
-              <img src={visual[platform]} alt={visual.alt} loading="eager" />
-              <figcaption>
-                Visual {platform === "mobile" ? "Mobile" : "Desktop"} đã đăng ký cho bước này.
-              </figcaption>
-            </figure>
-          ) : (
-            <div className="help-visual-placeholder" role="status">
+        <section className={isOverview ? "help-step-content help-journey-overview" : "help-step-content"}>
+          {isOverview ? (
+            <div className="help-overview-panel" data-testid="help-overview">
               <BookOpen size={28} aria-hidden="true" />
-              <strong>Visual {platform === "mobile" ? "Mobile" : "Desktop"} đang chờ evidence</strong>
-              <span>Chỉ thêm screenshot sau khi đúng revision, viewport và test data được xác minh.</span>
+              <h3>{article.title}</h3>
+              <p>{article.summary}</p>
+              <ol className="help-overview-list">
+                {article.steps.map((step, index) => (
+                  <li key={step.slug}>
+                    <span>{String(index + 1).padStart(2, "0")}</span>
+                    <Link to={getArticleUrl(article, step.slug)}>{step.title}</Link>
+                  </li>
+                ))}
+              </ol>
+              {firstStep && (
+                <Link className="help-overview-start" data-testid="help-overview-start" to={getArticleUrl(article, firstStep.slug)}>
+                  Bắt đầu hành trình <ArrowRight size={16} aria-hidden="true" />
+                </Link>
+              )}
+              <div className="help-result-note">
+                <strong>{availability(article.status)}</strong>
+                <p>Hành trình này không thay thế bước kiểm thử hoặc quyền backend.</p>
+              </div>
             </div>
+          ) : (
+            <>
+              {visual ? (
+                <figure className="help-visual" data-testid="help-visual">
+                  <img src={visual[platform]} alt={visual.alt} loading="eager" />
+                  <figcaption>
+                    Visual {platform === "mobile" ? "Mobile" : "Desktop"} đã đăng ký cho bước này.
+                  </figcaption>
+                </figure>
+              ) : (
+                <div className="help-visual-placeholder" role="status">
+                  <BookOpen size={28} aria-hidden="true" />
+                  <strong>Visual {platform === "mobile" ? "Mobile" : "Desktop"} đang chờ evidence</strong>
+                  <span>Chỉ thêm screenshot sau khi đúng revision, viewport và test data được xác minh.</span>
+                </div>
+              )}
+              {currentStep.tip && <p className="help-tip"><CircleHelp size={17} aria-hidden="true" /> {currentStep.tip}</p>}
+              <div className="help-result-note">
+                <strong>Kết quả mong đợi</strong>
+                <p>{availability(article.status)}. Không dùng bài này để thay thế bước kiểm thử hoặc quyền backend.</p>
+              </div>
+            </>
           )}
-          {currentStep.tip && <p className="help-tip"><CircleHelp size={17} aria-hidden="true" /> {currentStep.tip}</p>}
-          <div className="help-result-note">
-            <strong>Kết quả mong đợi</strong>
-            <p>{availability(article.status)}. Không dùng bài này để thay thế bước kiểm thử hoặc quyền backend.</p>
-          </div>
         </section>
       </div>
 
       <div className="help-step-navigation">
-        {previousStep ? <Link to={getArticleUrl(article, previousStep.slug)}><ArrowLeft size={16} /> Trước</Link> : <span />}
-        {nextStep ? <Link to={getArticleUrl(article, nextStep.slug)}>Tiếp theo <ArrowRight size={16} /></Link> : <Link to="/help">Về Help Center</Link>}
+        {!isOverview && previousStep ? <Link to={getArticleUrl(article, previousStep.slug)}><ArrowLeft size={16} /> Trước</Link> : <span />}
+        {isOverview && firstStep ? <Link to={getArticleUrl(article, firstStep.slug)}>Bắt đầu <ArrowRight size={16} /></Link> : nextStep ? <Link to={getArticleUrl(article, nextStep.slug)}>Tiếp theo <ArrowRight size={16} /></Link> : <Link to="/help">Về Help Center</Link>}
       </div>
     </article>
   );

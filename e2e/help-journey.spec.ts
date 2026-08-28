@@ -14,6 +14,16 @@ test.describe("Help Center and Journey Center", () => {
     await expect(page.getByRole("button", { name: "Mobile" })).toBeVisible();
   });
 
+  test("article route opens a journey overview before step one", async ({ page }) => {
+    await page.goto("/help/buyer/first-purchase");
+
+    await expect(page.getByTestId("help-overview")).toBeVisible();
+    await expect(page.getByTestId("help-overview-start")).toHaveAttribute(
+      "href",
+      "/help/buyer/first-purchase/discover",
+    );
+  });
+
   test("uses the mobile guide when the viewport is mobile and allows override", async ({ page }) => {
     test.skip(page.viewportSize?.width !== 390, "mobile project only");
     await page.goto("/help/buyer/first-purchase/add-to-cart");

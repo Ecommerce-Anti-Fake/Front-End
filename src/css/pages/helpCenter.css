@@ -64,6 +64,16 @@
 .help-step-list a:hover, .help-step-list a.is-current { color: #a71919; background: #fff7f6; }
 .help-step-list .help-overview-link { display: block; margin-bottom: 12px; color: #a71919; font-size: 13px; font-weight: 800; }
 .help-step-content { display: grid; align-content: start; gap: 18px; padding: 28px; }
+.help-journey-overview { align-content: stretch; }
+.help-overview-panel { display: grid; align-content: start; gap: 14px; min-height: 100%; padding: 26px; border: 1px solid #eadede; background: #fffafa; }
+.help-overview-panel > svg { color: #b91c1c; }
+.help-overview-panel h3 { margin: 0; font-size: 24px; }
+.help-overview-panel > p { max-width: 680px; margin: 0; color: #6d5d5d; }
+.help-overview-list { display: grid; gap: 8px; margin: 4px 0 2px; padding: 0; list-style: none; }
+.help-overview-list li { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 8px; align-items: center; padding: 10px 12px; border: 1px solid #f0e5e5; background: #fff; }
+.help-overview-list li span { color: #8f4c4c; font-size: 12px; font-weight: 800; }
+.help-overview-list li a { color: #a71919; font-weight: 700; }
+.help-overview-start { display: inline-flex; align-items: center; justify-content: center; gap: 7px; width: fit-content; padding: 10px 14px; color: #fff; background: #b91c1c; font-weight: 800; }
 .help-visual { margin: 0; overflow: hidden; border: 1px solid #eadede; background: #fff; }
 .help-visual img { display: block; width: 100%; height: auto; }
 .help-visual figcaption { padding: 10px 14px; border-top: 1px solid #f0e5e5; color: #8f6161; font-size: 12px; font-weight: 700; }
