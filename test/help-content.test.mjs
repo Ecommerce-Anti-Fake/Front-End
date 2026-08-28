@@ -42,6 +42,7 @@ test("support journeys retain an evidence status and at least one step", () => {
 test("accepted journey steps expose platform-specific visuals", () => {
   const expected = [
     ["B01", "register", "/journey-visuals/b01-registration-desktop.png", "/journey-visuals/b01-registration-mobile.png"],
+    ["B04", "cart", "/journey-visuals/b04-cart-desktop.png", "/journey-visuals/b04-cart-mobile.png"],
     ["B02", "search", "/journey-visuals/b02-discovery-desktop.png", "/journey-visuals/b02-discovery-mobile.png"],
     ["B02", "detail", "/journey-visuals/b02-product-detail-desktop.png", "/journey-visuals/b02-product-detail-mobile.png"],
     ["B09", "discover", "/journey-visuals/b09-live-discovery-desktop.png", "/journey-visuals/b09-live-discovery-mobile.png"],

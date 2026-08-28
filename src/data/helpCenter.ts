@@ -50,7 +50,16 @@ export const helpArticles: HelpArticle[] = [
       { slug: "discover", title: "Tìm sản phẩm", description: "Mở catalog hoặc tìm kiếm để chọn sản phẩm công khai phù hợp." },
       { slug: "product-detail", title: "Xem chi tiết", description: "Kiểm tra thông tin sản phẩm, shop, giá, tồn kho và biến thể." },
       { slug: "add-to-cart", title: "Thêm vào giỏ", description: "Chọn biến thể và số lượng, sau đó thêm sản phẩm vào giỏ hàng." },
-      { slug: "cart", title: "Kiểm tra giỏ hàng", description: "Chọn sản phẩm cần mua và kiểm tra số lượng trước khi tiếp tục." },
+      {
+        slug: "cart",
+        title: "Kiểm tra giỏ hàng",
+        description: "Chọn sản phẩm cần mua và kiểm tra số lượng trước khi tiếp tục.",
+        visual: {
+          desktop: "/journey-visuals/b04-cart-desktop.png",
+          mobile: "/journey-visuals/b04-cart-mobile.png",
+          alt: "Giỏ hàng với huy hiệu tổng số lượng và điều khiển số lượng sản phẩm trên Desktop hoặc Mobile",
+        },
+      },
       { slug: "checkout", title: "Chuẩn bị thanh toán", description: "Chọn địa chỉ và phương thức vận chuyển. Tổng tiền phải đến từ báo giá server." },
       { slug: "order", title: "Theo dõi đơn hàng", description: "Sau khi đặt hàng thành công, mở đơn hàng để theo dõi trạng thái và các bước tiếp theo." },
     ],
