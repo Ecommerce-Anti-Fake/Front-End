@@ -35,6 +35,16 @@ test.describe("Help Center and Journey Center", () => {
     await expect(visual).toHaveAttribute("src", new RegExp(`b02-discovery-${platform}\\.png$`));
   });
 
+  test("renders the B04 cart visual for the selected platform", async ({ page }, testInfo) => {
+    const platform = testInfo.project.name === "mobile" ? "mobile" : "desktop";
+    await page.goto("/help/buyer/first-purchase/cart");
+
+    await expect(page.locator('[data-testid="help-visual"] img')).toHaveAttribute(
+      "src",
+      new RegExp(`b04-cart-${platform}\\.png$`),
+    );
+  });
+
   test("renders the accepted Admin visuals for the selected platform", async ({ page }, testInfo) => {
     const platform = testInfo.project.name === "mobile" ? "mobile" : "desktop";
     const expected = [
