@@ -175,7 +175,7 @@ test("visual manifest lists every canonical journey", () => {
       assert.ok(row, `missing visual manifest journey ${journeyId}`);
       assert.match(row, /Desktop 1440×900 \+ Mobile 390×844/);
       if (prefix === "A") {
-        assert.match(row, /Pending targeted Admin visual evidence|No final annotated visual yet|annotated captures inspected/);
+        assert.match(row, /Pending (targeted Admin visual evidence|PII-reviewed Admin user list\/detail fixture|sanitized Shop application in review queue|approved withdrawal fixture with payout-provider sandbox)|No final annotated visual yet|annotated captures inspected/);
       } else if (journeyId === "B03") {
         assert.match(row, /Do not publish as final/);
       } else {
