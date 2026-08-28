@@ -25,6 +25,16 @@ test.describe("Help Center and Journey Center", () => {
     await expect(page.getByTestId("help-platform-label")).toHaveText("Hướng dẫn Desktop");
   });
 
+  test("preserves a manual platform choice across reload", async ({ page }) => {
+    await page.goto("/help/buyer/discover/search");
+
+    await page.getByRole("button", { name: "Mobile" }).click();
+    await expect(page.getByTestId("help-platform-label")).toHaveText("Hướng dẫn Mobile");
+
+    await page.reload();
+    await expect(page.getByTestId("help-platform-label")).toHaveText("Hướng dẫn Mobile");
+  });
+
   test("renders the registered visual for the selected platform", async ({ page }) => {
     await page.goto("/help/buyer/discover/search");
 

@@ -14,11 +14,31 @@ import {
 } from "../../data/helpCenter";
 
 const roles: Array<"all" | HelpRole> = ["all", "buyer", "seller", "admin", "qr"];
+const HELP_PLATFORM_PREFERENCE_KEY = "antifake.help.platform";
 
 function detectPlatform(): HelpPlatform {
   return typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches
     ? "mobile"
     : "desktop";
+}
+
+function readPlatformPreference(): HelpPlatform | undefined {
+  if (typeof window === "undefined") return undefined;
+
+  try {
+    const stored = window.sessionStorage.getItem(HELP_PLATFORM_PREFERENCE_KEY);
+    return stored === "desktop" || stored === "mobile" ? stored : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function savePlatformPreference(platform: HelpPlatform) {
+  try {
+    window.sessionStorage.setItem(HELP_PLATFORM_PREFERENCE_KEY, platform);
+  } catch {
+    // Private browsing or a blocked storage area should not disable Help Center.
+  }
 }
 
 function availability(status: DocumentationStatus) {
@@ -181,8 +201,13 @@ export default function HelpCenterPage() {
   const [query, setQuery] = useState(() => new URLSearchParams(location.search).get("q") ?? "");
   const [role, setRole] = useState<"all" | HelpRole>("all");
   const [viewportPlatform, setViewportPlatform] = useState<HelpPlatform>(detectPlatform);
-  const [platformOverride, setPlatformOverride] = useState<HelpPlatform>();
+  const [platformOverride, setPlatformOverride] = useState<HelpPlatform | undefined>(readPlatformPreference);
   const platform = platformOverride ?? viewportPlatform;
+
+  const handlePlatformChange = (nextPlatform: HelpPlatform) => {
+    setPlatformOverride(nextPlatform);
+    savePlatformPreference(nextPlatform);
+  };
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -245,7 +270,7 @@ export default function HelpCenterPage() {
           </section>
         </>
       ) : (
-        <JourneyView article={article} stepSlug={stepSlug} platform={platform} onPlatformChange={setPlatformOverride} />
+        <JourneyView article={article} stepSlug={stepSlug} platform={platform} onPlatformChange={handlePlatformChange} />
       )}
     </main>
   );
