@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import crypto from "node:crypto";
 import fs from "node:fs";
 import {
   getArticleForPath,
@@ -313,6 +314,107 @@ test("visual manifest concrete assets exist", () => {
   assert.ok(assets.length > 0);
   for (const asset of assets) {
     assert.equal(fs.existsSync(new URL(asset, workspaceRoot)), true, `missing visual asset ${asset}`);
+  }
+});
+
+test("served Journey visuals are exact annotated evidence copies", () => {
+  const manifest = fs.readFileSync(
+    new URL("../../WorkSpace/docs/user-guide/VISUAL_MANIFEST.md", import.meta.url),
+    "utf8",
+  );
+  const visualEvidence = {
+    "/journey-visuals/admin-dashboard-desktop.png": [
+      "docs/images/admin/admin-dashboard-desktop-production-bb0eee1.png",
+      "docs/images/admin/admin-dashboard-desktop-production-bb0eee1-annotated.png",
+    ],
+    "/journey-visuals/admin-dashboard-mobile.png": [
+      "docs/images/admin/admin-dashboard-mobile-production-bb0eee1.png",
+      "docs/images/admin/admin-dashboard-mobile-production-bb0eee1-annotated.png",
+    ],
+    "/journey-visuals/admin-product-review-desktop.png": [
+      "docs/images/admin/admin-product-registrations-desktop-production-9637e9f.png",
+      "docs/images/admin/admin-product-registrations-desktop-production-9637e9f-annotated.png",
+    ],
+    "/journey-visuals/admin-product-review-mobile.png": [
+      "docs/images/admin/admin-product-registrations-mobile-production-9637e9f.png",
+      "docs/images/admin/admin-product-registrations-mobile-production-9637e9f-annotated.png",
+    ],
+    "/journey-visuals/admin-promotions-desktop.png": [
+      "docs/images/admin/admin-vouchers-desktop-production-9637e9f.png",
+      "docs/images/admin/admin-vouchers-desktop-production-9637e9f-annotated.png",
+    ],
+    "/journey-visuals/admin-promotions-mobile.png": [
+      "docs/images/admin/admin-vouchers-mobile-production-9637e9f.png",
+      "docs/images/admin/admin-vouchers-mobile-production-9637e9f-annotated.png",
+    ],
+    "/journey-visuals/affiliate-program-desktop.png": [
+      "docs/images/affiliate/affiliate-program-desktop-production-7e7a12a.png",
+      "docs/images/affiliate/affiliate-program-desktop-production-7e7a12a-annotated.png",
+    ],
+    "/journey-visuals/affiliate-program-mobile.png": [
+      "docs/images/affiliate/affiliate-program-mobile-production-7e7a12a.png",
+      "docs/images/affiliate/affiliate-program-mobile-production-7e7a12a-annotated.png",
+    ],
+    "/journey-visuals/b01-registration-desktop.png": [
+      "docs/images/auth/registration-desktop-production-6b24be3.png",
+      "docs/images/auth/registration-desktop-production-6b24be3-annotated.png",
+    ],
+    "/journey-visuals/b01-registration-mobile.png": [
+      "docs/images/auth/registration-mobile-production-6b24be3.png",
+      "docs/images/auth/registration-mobile-production-6b24be3-annotated.png",
+    ],
+    "/journey-visuals/b02-discovery-desktop.png": [
+      "docs/images/buyer/catalog-home-desktop-production-6b24be3.png",
+      "docs/images/buyer/catalog-home-desktop-production-6b24be3-annotated.png",
+    ],
+    "/journey-visuals/b02-discovery-mobile.png": [
+      "docs/images/buyer/catalog-home-mobile-production-6b24be3.png",
+      "docs/images/buyer/catalog-home-mobile-production-6b24be3-annotated.png",
+    ],
+    "/journey-visuals/b02-product-detail-desktop.png": [
+      "docs/images/buyer/product-detail-desktop-production-6b24be3.png",
+      "docs/images/buyer/product-detail-desktop-production-6b24be3-annotated.png",
+    ],
+    "/journey-visuals/b02-product-detail-mobile.png": [
+      "docs/images/buyer/product-detail-mobile-production-6b24be3.png",
+      "docs/images/buyer/product-detail-mobile-production-6b24be3-annotated.png",
+    ],
+    "/journey-visuals/b04-cart-desktop.png": [
+      "docs/images/buyer/cart-desktop-production-8157ffa.png",
+      "docs/images/buyer/cart-desktop-production-8157ffa-annotated.png",
+    ],
+    "/journey-visuals/b04-cart-mobile.png": [
+      "docs/images/buyer/cart-mobile-production-8157ffa.png",
+      "docs/images/buyer/cart-mobile-production-8157ffa-annotated.png",
+    ],
+    "/journey-visuals/b09-live-discovery-desktop.png": [
+      "docs/images/buyer/live-discovery-desktop-production-6b24be3.png",
+      "docs/images/buyer/live-discovery-desktop-production-6b24be3-annotated.png",
+    ],
+    "/journey-visuals/b09-live-discovery-mobile.png": [
+      "docs/images/buyer/live-discovery-mobile-production-6b24be3.png",
+      "docs/images/buyer/live-discovery-mobile-production-6b24be3-annotated.png",
+    ],
+  };
+
+  const sha256 = (fileUrl) => crypto
+    .createHash("sha256")
+    .update(fs.readFileSync(fileUrl))
+    .digest("hex");
+
+  for (const [servedPath, [rawAsset, annotatedAsset]] of Object.entries(visualEvidence)) {
+    const servedFile = new URL(`../public${servedPath}`, import.meta.url);
+    const rawFile = new URL(`../../WorkSpace/${rawAsset}`, import.meta.url);
+    const annotatedFile = new URL(`../../WorkSpace/${annotatedAsset}`, import.meta.url);
+    assert.match(manifest, new RegExp(`\\|.*${servedPath.replaceAll("/", "\\/")}.*\\|.*${rawAsset.replaceAll("/", "\\/")}.*\\|.*${annotatedAsset.replaceAll("/", "\\/")}`));
+    assert.equal(fs.existsSync(servedFile), true, `missing served visual ${servedPath}`);
+    assert.equal(fs.existsSync(rawFile), true, `missing raw evidence ${rawAsset}`);
+    assert.equal(fs.existsSync(annotatedFile), true, `missing annotated evidence ${annotatedAsset}`);
+    assert.equal(
+      sha256(servedFile),
+      sha256(annotatedFile),
+      `served visual is not the annotated evidence copy: ${servedPath}`,
+    );
   }
 });
 
