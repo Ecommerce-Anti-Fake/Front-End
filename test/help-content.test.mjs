@@ -1,7 +1,15 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { getArticleForPath, getArticleUrl, helpArticles } from "../src/data/helpCenter.ts";
+import {
+  getArticleForPath,
+  getArticleUrl,
+  getVisibleHelpArticles,
+  helpArticles,
+} from "../src/data/helpCenter.ts";
+
+const repositoryRoot = new URL("../../", import.meta.url);
+const workspaceRoot = new URL("../../WorkSpace/", import.meta.url);
 
 test("Help Center covers source-backed buyer and seller support journeys", () => {
   const keys = new Set(helpArticles.map((article) => `${article.role}/${article.slug}`));
@@ -18,6 +26,85 @@ test("Help Center covers source-backed buyer and seller support journeys", () =>
   ]) {
     assert.equal(keys.has(key), true, `missing ${key}`);
   }
+});
+
+test("every Help article and step has user-facing text", () => {
+  for (const article of helpArticles) {
+    assert.ok(article.title.trim(), `missing article title for ${article.journey}`);
+    assert.ok(article.summary.trim(), `missing article summary for ${article.journey}`);
+    assert.ok(article.steps.length > 0, `missing steps for ${article.journey}`);
+
+    for (const step of article.steps) {
+      assert.ok(step.title.trim(), `missing step title for ${article.journey}/${step.slug}`);
+      assert.ok(step.description.trim(), `missing step description for ${article.journey}/${step.slug}`);
+    }
+  }
+});
+
+test("public and Admin Help audiences cannot see each other's articles", () => {
+  const publicArticles = getVisibleHelpArticles("public");
+  const adminArticles = getVisibleHelpArticles("admin");
+
+  assert.equal(publicArticles.every((article) => article.role !== "admin"), true);
+  assert.equal(adminArticles.every((article) => article.role === "admin"), true);
+  assert.equal(getArticleForPath("/help/admin/admin-dashboard").article, undefined);
+
+  const adminArticle = getArticleForPath("/admin/help/admin/admin-dashboard", "admin").article;
+  assert.equal(adminArticle?.journey, "A01");
+  assert.equal(getArticleUrl(adminArticle), "/admin/help/admin/admin-dashboard");
+  assert.equal(getArticleUrl(adminArticle, undefined, "admin"), "/admin/help/admin/admin-dashboard");
+});
+
+test("annotated Help visuals define a written explanation for every marker", () => {
+  const expectedMarkers = new Map([
+    ["B01/register", [1, 2, 3]],
+    ["B04/cart", [1, 2]],
+    ["B02/search", [1, 2, 3]],
+    ["B02/detail", [1, 2, 3]],
+    ["B02/choose", [1, 2, 3]],
+    ["B09/discover", [1, 2, 3]],
+    ["A01/open", [1, 2, 3]],
+    ["A05/pending", [1, 2, 3]],
+    ["A09/list", [1, 2, 3]],
+    ["S07/program", [1, 2, 3]],
+  ]);
+  const visualSteps = helpArticles.flatMap((article) =>
+    article.steps
+      .filter((step) => step.visual)
+      .map((step) => ({ journey: article.journey, step })),
+  );
+
+  assert.equal(visualSteps.length, expectedMarkers.size);
+
+  for (const [key, numbers] of expectedMarkers) {
+    const [journey, stepSlug] = key.split("/");
+    const step = helpArticles
+      .find((article) => article.journey === journey)
+      ?.steps.find((candidate) => candidate.slug === stepSlug);
+
+    assert.ok(step?.visual, `missing visual for ${key}`);
+    assert.deepEqual(step.visual.markers.map((marker) => marker.number), numbers);
+    assert.equal(new Set(numbers).size, numbers.length, `duplicate marker for ${key}`);
+    assert.deepEqual(numbers, numbers.map((_, index) => index + 1));
+    assert.equal(
+      step.visual.markers.every((marker) => marker.guidance.trim().length > 0),
+      true,
+      `missing written guidance for ${key}`,
+    );
+  }
+});
+
+test("Help quality report records step-level coverage and remaining blockers", () => {
+  const report = fs.readFileSync(
+    new URL("../../WorkSpace/docs/user-guide/HELP_CENTER_QUALITY_AUDIT.md", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(report, /\*\*30\*\* \| \*\*88\*\*/);
+  assert.match(report, /ARTICLE_ID.*FINAL_STATUS/);
+  assert.match(report, /BLOCKED_FIXTURE/);
+  assert.match(report, /BLOCKED_PROVIDER/);
+  assert.match(report, /NOT_IMPLEMENTED/);
 });
 
 test("Help registry covers canonical Buyer, Seller and Admin journey IDs", () => {
@@ -84,13 +171,12 @@ test("QR Help describes the supported image path and fallback", () => {
 });
 
 test("Help source references point to files in the workspace", () => {
-  const workspaceRoot = new URL("../../", import.meta.url);
-
   for (const article of helpArticles) {
     for (const sourceRef of article.sourceRefs) {
       const filePath = sourceRef.split("#", 1)[0];
+      const sourceRoot = filePath.startsWith("docs/") ? workspaceRoot : repositoryRoot;
       assert.equal(
-        fs.existsSync(new URL(`${filePath}`, workspaceRoot)),
+        fs.existsSync(new URL(filePath, sourceRoot)),
         true,
         `missing source reference ${sourceRef}`,
       );
@@ -100,14 +186,15 @@ test("Help source references point to files in the workspace", () => {
 
 test("master guide Help links resolve to registered journeys", () => {
   const guide = fs.readFileSync(
-    new URL("../../docs/user-guide/ANTIFAKE_USER_GUIDE.md", import.meta.url),
+    new URL("../../WorkSpace/docs/user-guide/ANTIFAKE_USER_GUIDE.md", import.meta.url),
     "utf8",
   );
-  const routes = [...guide.matchAll(/\]\((\/help\/[^)]+)\)/g)].map((match) => match[1]);
+  const routes = [...guide.matchAll(/\]\((\/(?:admin\/)?help\/[^)]+)\)/g)].map((match) => match[1]);
 
   assert.equal(routes.length > 0, true);
   for (const route of routes) {
-    assert.ok(getArticleForPath(route).article, `unregistered Help route ${route}`);
+    const audience = route.startsWith("/admin/help") ? "admin" : "public";
+    assert.ok(getArticleForPath(route, audience).article, `unregistered Help route ${route}`);
   }
 });
 
@@ -122,23 +209,24 @@ test("canonical documentation Help links resolve to registered journeys", () => 
 
   for (const document of documents) {
     const content = fs.readFileSync(
-      new URL(`../../docs/user-guide/${document}`, import.meta.url),
+      new URL(`../../WorkSpace/docs/user-guide/${document}`, import.meta.url),
       "utf8",
     );
     const routes = [
-      ...content.matchAll(/(?:\]\(|`)(\/help\/[^)\s`]+)(?:\)|`)/g),
+      ...content.matchAll(/(?:\]\(|`)(\/(?:admin\/)?help\/[^)\s`]+)(?:\)|`)/g),
     ].map((match) => match[1]);
 
     assert.ok(routes.length > 0, `no Help routes found in ${document}`);
     for (const route of routes) {
-      assert.ok(getArticleForPath(route).article, `unregistered Help route ${route} in ${document}`);
+      const audience = route.startsWith("/admin/help") ? "admin" : "public";
+      assert.ok(getArticleForPath(route, audience).article, `unregistered Help route ${route} in ${document}`);
     }
   }
 });
 
 test("legacy UAT draft points to the canonical master guide", () => {
   const legacyGuide = fs.readFileSync(
-    new URL("../../docs/HUONG_DAN_SU_DUNG_ANTIFAKE.md", import.meta.url),
+    new URL("../../WorkSpace/docs/HUONG_DAN_SU_DUNG_ANTIFAKE.md", import.meta.url),
     "utf8",
   );
 
@@ -146,9 +234,8 @@ test("legacy UAT draft points to the canonical master guide", () => {
 });
 
 test("visual manifest concrete assets exist", () => {
-  const workspaceRoot = new URL("../../", import.meta.url);
   const manifest = fs.readFileSync(
-    new URL("../../docs/user-guide/VISUAL_MANIFEST.md", import.meta.url),
+    new URL("../../WorkSpace/docs/user-guide/VISUAL_MANIFEST.md", import.meta.url),
     "utf8",
   );
   const assets = [...manifest.matchAll(/`(docs\/images\/[^`]+\.png)`/g)].map((match) => match[1]);
@@ -161,7 +248,7 @@ test("visual manifest concrete assets exist", () => {
 
 test("visual manifest lists every canonical journey", () => {
   const manifest = fs.readFileSync(
-    new URL("../../docs/user-guide/VISUAL_MANIFEST.md", import.meta.url),
+    new URL("../../WorkSpace/docs/user-guide/VISUAL_MANIFEST.md", import.meta.url),
     "utf8",
   );
   const rows = manifest.split("\n");
@@ -187,7 +274,7 @@ test("visual manifest lists every canonical journey", () => {
 
 test("visual manifest routes mirror canonical Help metadata", () => {
   const manifest = fs.readFileSync(
-    new URL("../../docs/user-guide/VISUAL_MANIFEST.md", import.meta.url),
+    new URL("../../WorkSpace/docs/user-guide/VISUAL_MANIFEST.md", import.meta.url),
     "utf8",
   );
   const rows = manifest.split("\n");
@@ -199,7 +286,7 @@ test("visual manifest routes mirror canonical Help metadata", () => {
 
     assert.equal(
       columns[1].replace(/^`|`$/g, ""),
-      getArticleUrl(article),
+      getArticleUrl(article, undefined, article.role === "admin" ? "admin" : "public"),
       `route drift for ${article.journey}`,
     );
   }
@@ -207,7 +294,7 @@ test("visual manifest routes mirror canonical Help metadata", () => {
 
 test("feature matrix keeps incomplete journey statuses explicit", () => {
   const matrix = fs.readFileSync(
-    new URL("../../docs/user-guide/FEATURE_GUIDE_MATRIX.md", import.meta.url),
+    new URL("../../WorkSpace/docs/user-guide/FEATURE_GUIDE_MATRIX.md", import.meta.url),
     "utf8",
   );
 
@@ -233,7 +320,7 @@ test("Admin Help statuses match the verified read-only route subset", () => {
 
 test("feature matrix bridges canonical journeys to UAT and platform visuals", () => {
   const matrix = fs.readFileSync(
-    new URL("../../docs/user-guide/FEATURE_GUIDE_MATRIX.md", import.meta.url),
+    new URL("../../WorkSpace/docs/user-guide/FEATURE_GUIDE_MATRIX.md", import.meta.url),
     "utf8",
   );
 
@@ -252,11 +339,11 @@ test("feature matrix bridges canonical journeys to UAT and platform visuals", ()
 
 test("journey bridge UAT references exist in the canonical UAT matrix", () => {
   const guideMatrix = fs.readFileSync(
-    new URL("../../docs/user-guide/FEATURE_GUIDE_MATRIX.md", import.meta.url),
+    new URL("../../WorkSpace/docs/user-guide/FEATURE_GUIDE_MATRIX.md", import.meta.url),
     "utf8",
   );
   const uatMatrix = fs.readFileSync(
-    new URL("../../docs/UAT_TEST_MATRIX.md", import.meta.url),
+    new URL("../../WorkSpace/docs/UAT_TEST_MATRIX.md", import.meta.url),
     "utf8",
   );
   const bridge = guideMatrix.split("## Journey/UAT traceability bridge")[1].split("\n| Feature | Role | UI |")[0];
@@ -274,7 +361,7 @@ test("journey bridge UAT references exist in the canonical UAT matrix", () => {
 
 test("documentation registry lists every canonical journey", () => {
   const registry = fs.readFileSync(
-    new URL("../../docs/user-guide/DOCUMENTATION_REGISTRY.md", import.meta.url),
+    new URL("../../WorkSpace/docs/user-guide/DOCUMENTATION_REGISTRY.md", import.meta.url),
     "utf8",
   );
 
@@ -293,7 +380,7 @@ test("documentation registry lists every canonical journey", () => {
 
 test("canonical registry routes and statuses mirror Help metadata", () => {
   const registry = fs.readFileSync(
-    new URL("../../docs/user-guide/DOCUMENTATION_REGISTRY.md", import.meta.url),
+    new URL("../../WorkSpace/docs/user-guide/DOCUMENTATION_REGISTRY.md", import.meta.url),
     "utf8",
   );
   const registryRows = registry.split("\n").filter((row) => row.startsWith("| "));
@@ -302,7 +389,10 @@ test("canonical registry routes and statuses mirror Help metadata", () => {
     const row = registryRows.find((candidate) => candidate.includes("`" + article.journey + "`"));
     assert.ok(row, `missing registry row for ${article.journey}`);
     const columns = row.split("|").slice(1, -1).map((column) => column.trim());
-    assert.equal(columns[2].replace(/^`|`$/g, ""), getArticleUrl(article));
+    assert.equal(
+      columns[2].replace(/^`|`$/g, ""),
+      getArticleUrl(article, undefined, article.role === "admin" ? "admin" : "public"),
+    );
     assert.equal(columns[3], article.status, `status drift for ${article.journey}`);
   }
 });
@@ -330,7 +420,7 @@ test("canonical guide and ebook embed accepted annotated journey visuals", () =>
   ];
 
   for (const document of documents) {
-    const documentUrl = new URL(`../../docs/user-guide/${document}`, import.meta.url);
+    const documentUrl = new URL(`../../WorkSpace/docs/user-guide/${document}`, import.meta.url);
     const content = fs.readFileSync(documentUrl, "utf8");
     for (const visual of acceptedVisuals) {
       assert.equal(content.includes(`](${visual})`), true, `${document} is missing ${visual}`);

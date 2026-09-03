@@ -29,7 +29,8 @@
   gap: 14px;
 }
 
-.admin-header-actions button {
+.admin-header-actions button,
+.admin-header-help {
   width: 34px;
   height: 34px;
   border: 0;

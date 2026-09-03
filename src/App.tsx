@@ -60,6 +60,7 @@ import GlobalLoadingOverlay from "./components/common/globalLoadingOverlay";
 import CategoriesPage from "./pages/categories";
 import AdminCategoriesPage from "./pages/admin/categories";
 import AdminWalletPage from "./pages/admin/wallet";
+import AdminHelpPage from "./pages/admin/help";
 import SellerVoucherManagement from "./pages/shop/seller/voucherManagement";
 import SellerLivePage from "./pages/shop/seller/live";
 import HelpCenterPage from "./pages/help";
@@ -320,6 +321,7 @@ function App() {
               }
             >
               <Route index element={<AdminDashboardPage />} />
+              <Route path="help/*" element={<AdminHelpPage />} />
               <Route path="users" element={<AdminUsersPage />} />
               <Route path="users/:userId" element={<AdminUserDetailPage />} />
               <Route

@@ -37,9 +37,9 @@ export default function AdminHeader() {
         <button type="button" aria-label="Cài đặt">
           <Settings size={18} />
         </button>
-        <button type="button" aria-label="Trợ giúp">
+        <Link className="admin-header-help" to="/admin/help" aria-label="Trợ giúp">
           <CircleHelp size={18} />
-        </button>
+        </Link>
         <div className="admin-header-profile">
           <div>
             <strong>{adminName}</strong>

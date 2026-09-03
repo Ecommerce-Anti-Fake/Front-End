@@ -1,4 +1,19 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
+
+async function seedRole(page: Page, role: "admin" | "buyer" | "seller" | "affiliate") {
+  await page.addInitScript((userRole) => {
+    localStorage.setItem("accessToken", "test.token.value");
+    localStorage.setItem(
+      "user",
+      JSON.stringify({
+        id: "uat-user",
+        email: `${userRole}@example.test`,
+        role: userRole,
+        accountStatus: "ACTIVE",
+      }),
+    );
+  }, role);
+}
 
 test.describe("Help Center and Journey Center", () => {
   test("shows searchable role journeys and platform controls", async ({ page }) => {
@@ -67,9 +82,10 @@ test.describe("Help Center and Journey Center", () => {
 
   test("renders the accepted Admin visuals for the selected platform", async ({ page }, testInfo) => {
     const platform = testInfo.project.name === "mobile" ? "mobile" : "desktop";
+    await seedRole(page, "admin");
     const expected = [
-      ["/help/admin/admin-product-review/pending", `admin-product-review-${platform}.png`],
-      ["/help/admin/admin-promotions/list", `admin-promotions-${platform}.png`],
+      ["/admin/help/admin/admin-product-review/pending", `admin-product-review-${platform}.png`],
+      ["/admin/help/admin/admin-promotions/list", `admin-promotions-${platform}.png`],
     ] as const;
 
     for (const [route, asset] of expected) {
@@ -78,24 +94,66 @@ test.describe("Help Center and Journey Center", () => {
     }
   });
 
-  test("marks absent Admin routes as not implemented", async ({ page }) => {
+  test("keeps Admin Help out of the public catalog and deep links", async ({ page }) => {
     await page.goto("/help");
-    await page.getByRole("button", { name: "Quản trị viên" }).click();
+    await expect(page.getByRole("button", { name: "Quản trị viên" })).toHaveCount(0);
+    await expect(page.getByText("Admin Dashboard")).toHaveCount(0);
+    await page.getByRole("searchbox", { name: "Tìm trong hướng dẫn" }).fill("Admin Dashboard");
+    await expect(page.getByRole("status")).toContainText("Chưa có bài phù hợp");
 
-    for (const title of ["Xử lý KYC", "Moderation nội dung", "Theo dõi Order và Payment", "Audit và monitoring"]) {
-      const journeyCard = page.getByRole("link", { name: new RegExp(title) });
-      await expect(journeyCard).toContainText("Tính năng chưa sẵn sàng");
-      await expect(journeyCard).toContainText("Xem trạng thái");
-    }
+    await page.goto("/help/admin/admin-dashboard");
+    await expect(page.getByText("Admin Dashboard")).toHaveCount(0);
   });
 
-  test("does not present an absent Admin journey as actionable instructions", async ({ page }) => {
-    await page.goto("/help/admin/admin-kyc/pending");
+  test("denies guest access to Admin Help", async ({ page }) => {
+    await page.route("**/api/auth/refresh", (route) =>
+      route.fulfill({ status: 401, contentType: "application/json", body: "{}" }),
+    );
+    await page.goto("/admin/help");
+    await expect(page).toHaveURL(/\/auth$/);
+  });
 
-    await expect(page.getByRole("heading", { name: "Xử lý KYC", level: 2 })).toBeVisible();
-    await expect(page.getByRole("status")).toContainText("Tính năng chưa sẵn sàng");
-    await expect(page.getByText("Mở hồ sơ chờ xử lý")).toHaveCount(0);
-    await expect(page.getByRole("link", { name: /Tiếp theo/ })).toHaveCount(0);
+  test("denies buyer access to Admin Help", async ({ page }) => {
+    await seedRole(page, "buyer");
+    await page.goto("/admin/help");
+    await expect(page).toHaveURL(/\/$/);
+  });
+
+  test("denies seller access to Admin Help", async ({ page }) => {
+    await seedRole(page, "seller");
+    await page.goto("/admin/help");
+    await expect(page).toHaveURL(/\/$/);
+  });
+
+  test("denies affiliate access to Admin Help", async ({ page }) => {
+    await seedRole(page, "affiliate");
+    await page.goto("/admin/help");
+    await expect(page).toHaveURL(/\/$/);
+  });
+
+  test("renders Admin Help inside the protected Admin shell", async ({ page }) => {
+    await seedRole(page, "admin");
+    await page.goto("/admin/help");
+
+    await expect(page.getByRole("heading", { name: "Hướng dẫn vận hành Admin", level: 1 })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Hướng dẫn", exact: true })).toHaveAttribute(
+      "href",
+      "/admin/help",
+    );
+    await expect(page.getByRole("link", { name: "Trợ giúp" })).toHaveAttribute("href", "/admin/help");
+
+    await page.locator('a[href="/admin/help/admin/admin-dashboard"]').first().click();
+    await expect(page).toHaveURL(/\/admin\/help\/admin\/admin-dashboard$/);
+    await expect(page.getByRole("heading", { name: "Admin Dashboard", level: 2 })).toBeVisible();
+  });
+
+  test("keeps public and Admin Help within the viewport", async ({ page }) => {
+    await page.goto("/help");
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+
+    await seedRole(page, "admin");
+    await page.goto("/admin/help");
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   });
 
   test("renders the accepted Affiliate visual for the selected platform", async ({ page }, testInfo) => {

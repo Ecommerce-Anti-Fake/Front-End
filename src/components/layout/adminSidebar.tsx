@@ -1,6 +1,7 @@
 import {
   BadgeCheck,
   Banknote,
+  BookOpen,
   FileCheck2,
   LayoutDashboard,
   LogOut,
@@ -61,6 +62,11 @@ const adminMenus = [
     label: "Chat",
     path: "/admin/chat",
     icon: MessageSquareText,
+  },
+  {
+    label: "Hướng dẫn",
+    path: "/admin/help",
+    icon: BookOpen,
   },
 ];
 

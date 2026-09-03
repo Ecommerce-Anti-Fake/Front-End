@@ -7,6 +7,12 @@ export type DocumentationStatus =
 
 export type HelpPlatform = "desktop" | "mobile";
 export type HelpRole = "buyer" | "seller" | "admin" | "qr";
+export type HelpAudience = "public" | "admin";
+
+export type HelpMarker = {
+  number: number;
+  guidance: string;
+};
 
 export type HelpStep = {
   slug: string;
@@ -20,6 +26,7 @@ export type HelpVisual = {
   desktop: string;
   mobile: string;
   alt: string;
+  markers: HelpMarker[];
 };
 
 export type HelpArticle = {
@@ -58,6 +65,10 @@ export const helpArticles: HelpArticle[] = [
           desktop: "/journey-visuals/b04-cart-desktop.png",
           mobile: "/journey-visuals/b04-cart-mobile.png",
           alt: "Giỏ hàng với huy hiệu tổng số lượng và điều khiển số lượng sản phẩm trên Desktop hoặc Mobile",
+          markers: [
+            { number: 1, guidance: "Kiểm tra tổng số lượng trên biểu tượng giỏ hàng." },
+            { number: 2, guidance: "Dùng nút -/+ để thay đổi số lượng sản phẩm." },
+          ],
         },
       },
       { slug: "checkout", title: "Chuẩn bị thanh toán", description: "Chọn địa chỉ và phương thức vận chuyển. Tổng tiền phải đến từ báo giá server." },
@@ -99,6 +110,11 @@ export const helpArticles: HelpArticle[] = [
           desktop: "/journey-visuals/b01-registration-desktop.png",
           mobile: "/journey-visuals/b01-registration-mobile.png",
           alt: "Màn hình đăng ký tài khoản Buyer trên Desktop hoặc Mobile",
+          markers: [
+            { number: 1, guidance: "Xác nhận bạn đang ở màn hình Tạo tài khoản." },
+            { number: 2, guidance: "Điền họ tên, email, số điện thoại và mật khẩu." },
+            { number: 3, guidance: "Đồng ý điều khoản, rồi chọn Đăng ký ngay." },
+          ],
         },
       },
       { slug: "profile", title: "Hoàn thiện hồ sơ", description: "Kiểm tra thông tin tài khoản sau khi đăng nhập thành công." },
@@ -124,6 +140,11 @@ export const helpArticles: HelpArticle[] = [
           desktop: "/journey-visuals/b02-discovery-desktop.png",
           mobile: "/journey-visuals/b02-discovery-mobile.png",
           alt: "Màn hình khám phá catalog sản phẩm trên Desktop hoặc Mobile",
+          markers: [
+            { number: 1, guidance: "Chọn danh mục phù hợp với sản phẩm cần tìm." },
+            { number: 2, guidance: "Xem khu vực giới thiệu và khám phá sản phẩm." },
+            { number: 3, guidance: "Mở khu vực Flash Sale để xem sản phẩm đang giảm giá." },
+          ],
         },
       },
       {
@@ -134,6 +155,11 @@ export const helpArticles: HelpArticle[] = [
           desktop: "/journey-visuals/b02-product-detail-desktop.png",
           mobile: "/journey-visuals/b02-product-detail-mobile.png",
           alt: "Màn hình chi tiết sản phẩm và biến thể trên Desktop hoặc Mobile",
+          markers: [
+            { number: 1, guidance: "Xem hình ảnh và thông tin nhận diện sản phẩm." },
+            { number: 2, guidance: "Chọn biến thể và số lượng còn khả dụng." },
+            { number: 3, guidance: "Đọc khu vực xác thực sản phẩm chính hãng." },
+          ],
         },
       },
       {
@@ -144,6 +170,11 @@ export const helpArticles: HelpArticle[] = [
           desktop: "/journey-visuals/b02-product-detail-desktop.png",
           mobile: "/journey-visuals/b02-product-detail-mobile.png",
           alt: "Màn hình chọn biến thể sản phẩm trên Desktop hoặc Mobile",
+          markers: [
+            { number: 1, guidance: "Xem hình ảnh và thông tin nhận diện sản phẩm." },
+            { number: 2, guidance: "Chọn biến thể phù hợp trước khi tiếp tục." },
+            { number: 3, guidance: "Đọc khu vực xác thực sản phẩm chính hãng." },
+          ],
         },
       },
     ],
@@ -215,6 +246,11 @@ export const helpArticles: HelpArticle[] = [
           desktop: "/journey-visuals/b09-live-discovery-desktop.png",
           mobile: "/journey-visuals/b09-live-discovery-mobile.png",
           alt: "Màn hình khám phá livestream công khai trên Desktop hoặc Mobile",
+          markers: [
+            { number: 1, guidance: "Mở khu vực Mua sắm trực tiếp để xem livestream." },
+            { number: 2, guidance: "Tìm phiên live theo tiêu đề hoặc tên Shop." },
+            { number: 3, guidance: "Chọn thẻ phiên live đang phát để xem chi tiết." },
+          ],
         },
       },
       { slug: "watch", title: "Xem phiên live", description: "Theo dõi nội dung và sản phẩm được ghim trong phiên." },
@@ -382,6 +418,11 @@ export const helpArticles: HelpArticle[] = [
           desktop: "/journey-visuals/affiliate-program-desktop.png",
           mobile: "/journey-visuals/affiliate-program-mobile.png",
           alt: "Màn hình chương trình Affiliate trên Desktop hoặc Mobile",
+          markers: [
+            { number: 1, guidance: "Mở tab Khám phá chương trình." },
+            { number: 2, guidance: "Đọc thông tin chương trình và mức hoa hồng." },
+            { number: 3, guidance: "Nhập mã giới thiệu nếu có, rồi chọn Tham gia khi đủ điều kiện." },
+          ],
         },
       },
       { slug: "conversion", title: "Theo dõi chuyển đổi", description: "Đối chiếu conversion và commission với trạng thái backend." },
@@ -423,6 +464,11 @@ export const helpArticles: HelpArticle[] = [
           desktop: "/journey-visuals/admin-dashboard-desktop.png",
           mobile: "/journey-visuals/admin-dashboard-mobile.png",
           alt: "Màn hình Dashboard quản trị AntiFake trên Desktop hoặc Mobile",
+          markers: [
+            { number: 1, guidance: "Xác nhận mục Dashboard đang được chọn trong thanh điều hướng Admin." },
+            { number: 2, guidance: "Đọc khu vực điều phối chính của Admin Dashboard." },
+            { number: 3, guidance: "Kiểm tra các control trên header và danh tính tài khoản Admin." },
+          ],
         },
       },
       { slug: "read", title: "Đọc chỉ số", description: "Đối chiếu số liệu với backend và revision đang chạy trước khi đưa ra quyết định." },
@@ -492,6 +538,11 @@ export const helpArticles: HelpArticle[] = [
           desktop: "/journey-visuals/admin-product-review-desktop.png",
           mobile: "/journey-visuals/admin-product-review-mobile.png",
           alt: "Màn hình duyệt sản phẩm AntiFake trên Desktop hoặc Mobile",
+          markers: [
+            { number: 1, guidance: "Mở khu vực đăng ký sản phẩm trong thanh điều hướng Admin." },
+            { number: 2, guidance: "Đọc tiêu đề và bộ lọc của hàng đợi sản phẩm." },
+            { number: 3, guidance: "Kiểm tra danh sách hoặc trạng thái trống do hệ thống trả về." },
+          ],
         },
       },
       { slug: "decision", title: "Ghi kết quả duyệt", description: "Đối chiếu lý do và trạng thái sau khi backend xác nhận." },
@@ -561,6 +612,11 @@ export const helpArticles: HelpArticle[] = [
           desktop: "/journey-visuals/admin-promotions-desktop.png",
           mobile: "/journey-visuals/admin-promotions-mobile.png",
           alt: "Màn hình voucher hệ thống AntiFake trên Desktop hoặc Mobile",
+          markers: [
+            { number: 1, guidance: "Mở khu vực mã giảm giá trong thanh điều hướng Admin." },
+            { number: 2, guidance: "Đọc các chỉ số và trạng thái voucher hiện có." },
+            { number: 3, guidance: "Kiểm tra biểu mẫu tạo voucher và phần xem trước trước khi thao tác." },
+          ],
         },
       },
       { slug: "change", title: "Cập nhật status", description: "Chỉ thay đổi khi có fixture và quyền Admin được phê duyệt." },
@@ -623,15 +679,33 @@ export const helpRoleLabels: Record<HelpRole | "all", string> = {
   qr: "Xác thực QR",
 };
 
-export function getArticleUrl(article: HelpArticle, stepSlug?: string) {
-  return `/help/${article.role}/${article.slug}${stepSlug ? `/${stepSlug}` : ""}`;
+export function getVisibleHelpArticles(audience: HelpAudience) {
+  return helpArticles.filter((article) =>
+    audience === "admin" ? article.role === "admin" : article.role !== "admin",
+  );
 }
 
-export function getArticleForPath(pathname: string) {
-  const parts = pathname.replace(/^\/help\/?/, "").split("/").filter(Boolean);
+export function getArticleUrl(
+  article: HelpArticle,
+  stepSlug?: string,
+  audience: HelpAudience = article.role === "admin" ? "admin" : "public",
+) {
+  const basePath = audience === "admin" ? "/admin/help" : "/help";
+  return `${basePath}/${article.role}/${article.slug}${stepSlug ? `/${stepSlug}` : ""}`;
+}
+
+export function getArticleForPath(
+  pathname: string,
+  audience: HelpAudience = "public",
+) {
+  const basePath = audience === "admin" ? "/admin/help" : "/help";
+  const parts = pathname
+    .replace(new RegExp(`^${basePath}/?`), "")
+    .split("/")
+    .filter(Boolean);
   if (parts.length < 2) return { article: undefined, stepSlug: undefined };
 
-  const article = helpArticles.find(
+  const article = getVisibleHelpArticles(audience).find(
     (candidate) => candidate.role === parts[0] && candidate.slug === parts[1],
   );
 
