@@ -365,7 +365,28 @@ export const helpArticles: HelpArticle[] = [
       "docs/UAT_ISSUES.md#AF-Q-001",
     ],
     steps: [
-      { slug: "open", title: "Mở xác thực QR", description: "Mở trang Xác thực QR từ menu công khai." },
+      {
+        slug: "open",
+        title: "Mở xác thực QR",
+        description: "Mở trang Xác thực QR từ menu công khai.",
+        visual: {
+          desktop: "/journey-visuals/b03-open-desktop.png",
+          mobile: "/journey-visuals/b03-open-mobile.png",
+          alt: "Màn hình mở trình xác thực QR trên Desktop hoặc Mobile",
+          markers: {
+            desktop: [
+              { number: 1, guidance: "Thanh chọn phương thức kiểm tra, với QR Code đang được chọn." },
+              { number: 2, guidance: "Khu vực tải ảnh QR Code để bắt đầu kiểm tra." },
+              { number: 3, guidance: "Nút Kiểm tra ngay để gửi dữ liệu xác thực sau khi nhập." },
+            ],
+            mobile: [
+              { number: 1, guidance: "Thanh chọn phương thức kiểm tra, với QR Code đang được chọn." },
+              { number: 2, guidance: "Khu vực tải ảnh QR Code để bắt đầu kiểm tra." },
+              { number: 3, guidance: "Nút Kiểm tra ngay để gửi dữ liệu xác thực sau khi nhập." },
+            ],
+          },
+        },
+      },
       { slug: "enter-code", title: "Nhập thông tin kiểm tra", description: "Tải ảnh PNG, JPEG hoặc WebP có mã QR dưới 5 MB, hoặc dán liên kết HTTP(S)/nhập mã xác thực được cấp." },
       { slug: "result", title: "Đọc kết quả", description: "Đọc trạng thái và dữ liệu nguồn gốc do máy chủ trả về; nếu ảnh không đọc được, hãy thử ảnh rõ hơn hoặc dùng liên kết/mã." },
     ],
