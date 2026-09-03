@@ -68,6 +68,7 @@ test("annotated Help visuals define a written explanation for every marker", () 
     ["B02/detail", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
     ["B02/choose", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
     ["B09/discover", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
+    ["B09/shop", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
     ["A01/open", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
     ["A05/pending", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
     ["A09/list", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
@@ -168,6 +169,7 @@ test("registered journey steps expose platform-specific visuals", () => {
     ["B02", "search", "/journey-visuals/b02-discovery-desktop.png", "/journey-visuals/b02-discovery-mobile.png"],
     ["B02", "detail", "/journey-visuals/b02-product-detail-desktop.png", "/journey-visuals/b02-product-detail-mobile.png"],
     ["B09", "discover", "/journey-visuals/b09-live-discovery-desktop.png", "/journey-visuals/b09-live-discovery-mobile.png"],
+    ["B09", "shop", "/journey-visuals/b02-product-detail-desktop.png", "/journey-visuals/b02-product-detail-mobile.png"],
     ["A01", "open", "/journey-visuals/admin-dashboard-desktop.png", "/journey-visuals/admin-dashboard-mobile.png"],
     ["A05", "pending", "/journey-visuals/admin-product-review-desktop.png", "/journey-visuals/admin-product-review-mobile.png"],
     ["A09", "list", "/journey-visuals/admin-promotions-desktop.png", "/journey-visuals/admin-promotions-mobile.png"],
@@ -211,6 +213,17 @@ test("B04 reuses accepted B02 visuals for equivalent public states", () => {
   assert.ok(b04Detail?.visual);
   assert.deepEqual(b04Discover.visual, b02Search.visual);
   assert.deepEqual(b04Detail.visual, b02Detail.visual);
+});
+
+test("B09 shop reuses the accepted B02 product-detail visual", () => {
+  const b02 = helpArticles.find((article) => article.journey === "B02");
+  const b09 = helpArticles.find((article) => article.journey === "B09");
+  const b02Detail = b02?.steps.find((step) => step.slug === "detail");
+  const b09Shop = b09?.steps.find((step) => step.slug === "shop");
+
+  assert.ok(b02Detail?.visual);
+  assert.ok(b09Shop?.visual);
+  assert.deepEqual(b09Shop.visual, b02Detail.visual);
 });
 
 test("Admin overview journeys reuse accepted role-matched visuals", () => {

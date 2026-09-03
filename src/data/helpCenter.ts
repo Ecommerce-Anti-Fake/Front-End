@@ -342,7 +342,28 @@ export const helpArticles: HelpArticle[] = [
         },
       },
       { slug: "watch", title: "Xem phiên live", description: "Theo dõi nội dung và sản phẩm được ghim trong phiên." },
-      { slug: "shop", title: "Mở sản phẩm", description: "Mở sản phẩm từ phiên live; provider và mutation cần trạng thái runtime tương ứng." },
+      {
+        slug: "shop",
+        title: "Mở sản phẩm",
+        description: "Mở sản phẩm từ phiên live; provider và mutation cần trạng thái runtime tương ứng.",
+        visual: {
+          desktop: "/journey-visuals/b02-product-detail-desktop.png",
+          mobile: "/journey-visuals/b02-product-detail-mobile.png",
+          alt: "Màn hình chi tiết sản phẩm và biến thể trên Desktop hoặc Mobile",
+          markers: {
+            desktop: [
+              { number: 1, guidance: "Xem hình ảnh và thông tin nhận diện sản phẩm." },
+              { number: 2, guidance: "Chọn biến thể và số lượng còn khả dụng." },
+              { number: 3, guidance: "Đọc khu vực xác thực sản phẩm chính hãng." },
+            ],
+            mobile: [
+              { number: 1, guidance: "Xem hình ảnh sản phẩm để nhận diện mặt hàng." },
+              { number: 2, guidance: "Đối chiếu tên và giá sản phẩm." },
+              { number: 3, guidance: "Chọn dung tích hoặc biến thể phù hợp." },
+            ],
+          },
+        },
+      },
     ],
   },
   {
