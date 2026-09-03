@@ -63,6 +63,7 @@ test("annotated Help visuals define a written explanation for every marker", () 
     ["B04/product-detail", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
     ["B04/cart", { desktop: [1, 2], mobile: [1, 2] }],
     ["B03/open", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
+    ["B03/enter-code", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
     ["B02/search", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
     ["B02/detail", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
     ["B02/choose", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
@@ -163,6 +164,7 @@ test("registered journey steps expose platform-specific visuals", () => {
     ["B01", "register", "/journey-visuals/b01-registration-desktop.png", "/journey-visuals/b01-registration-mobile.png"],
     ["B04", "cart", "/journey-visuals/b04-cart-desktop.png", "/journey-visuals/b04-cart-mobile.png"],
     ["B03", "open", "/journey-visuals/b03-open-desktop.png", "/journey-visuals/b03-open-mobile.png"],
+    ["B03", "enter-code", "/journey-visuals/b03-enter-code-desktop.png", "/journey-visuals/b03-enter-code-mobile.png"],
     ["B02", "search", "/journey-visuals/b02-discovery-desktop.png", "/journey-visuals/b02-discovery-mobile.png"],
     ["B02", "detail", "/journey-visuals/b02-product-detail-desktop.png", "/journey-visuals/b02-product-detail-mobile.png"],
     ["B09", "discover", "/journey-visuals/b09-live-discovery-desktop.png", "/journey-visuals/b09-live-discovery-mobile.png"],
@@ -396,6 +398,14 @@ test("served Journey visuals are exact annotated evidence copies", () => {
     "/journey-visuals/b03-open-mobile.png": [
       "docs/images/qr/b03-open-mobile-production-78646d7.png",
       "docs/images/qr/b03-open-mobile-production-78646d7-annotated.png",
+    ],
+    "/journey-visuals/b03-enter-code-desktop.png": [
+      "docs/images/qr/b03-enter-code-desktop-production-303d816.png",
+      "docs/images/qr/b03-enter-code-desktop-production-303d816-annotated.png",
+    ],
+    "/journey-visuals/b03-enter-code-mobile.png": [
+      "docs/images/qr/b03-enter-code-mobile-production-303d816.png",
+      "docs/images/qr/b03-enter-code-mobile-production-303d816-annotated.png",
     ],
     "/journey-visuals/b09-live-discovery-desktop.png": [
       "docs/images/buyer/live-discovery-desktop-production-6b24be3.png",

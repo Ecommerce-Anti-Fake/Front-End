@@ -387,7 +387,28 @@ export const helpArticles: HelpArticle[] = [
           },
         },
       },
-      { slug: "enter-code", title: "Nhập thông tin kiểm tra", description: "Tải ảnh PNG, JPEG hoặc WebP có mã QR dưới 5 MB, hoặc dán liên kết HTTP(S)/nhập mã xác thực được cấp." },
+      {
+        slug: "enter-code",
+        title: "Nhập thông tin kiểm tra",
+        description: "Chọn Mã xác thực, nhập mã được cấp và nhấn Kiểm tra ngay; ảnh PNG, JPEG hoặc WebP và liên kết dùng các phương thức tương ứng.",
+        visual: {
+          desktop: "/journey-visuals/b03-enter-code-desktop.png",
+          mobile: "/journey-visuals/b03-enter-code-mobile.png",
+          alt: "Màn hình nhập mã xác thực trên Desktop hoặc Mobile",
+          markers: {
+            desktop: [
+              { number: 1, guidance: "Tab Mã xác thực đang được chọn." },
+              { number: 2, guidance: "Trường nhập mã xác thực." },
+              { number: 3, guidance: "Nút Kiểm tra ngay để gửi mã sau khi nhập." },
+            ],
+            mobile: [
+              { number: 1, guidance: "Tab Mã xác thực đang được chọn." },
+              { number: 2, guidance: "Trường nhập mã xác thực." },
+              { number: 3, guidance: "Nút Kiểm tra ngay để gửi mã sau khi nhập." },
+            ],
+          },
+        },
+      },
       { slug: "result", title: "Đọc kết quả", description: "Đọc trạng thái và dữ liệu nguồn gốc do máy chủ trả về; nếu ảnh không đọc được, hãy thử ảnh rõ hơn hoặc dùng liên kết/mã." },
     ],
   },
