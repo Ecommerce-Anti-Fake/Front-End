@@ -57,16 +57,16 @@ test("public and Admin Help audiences cannot see each other's articles", () => {
 
 test("annotated Help visuals define a written explanation for every marker", () => {
   const expectedMarkers = new Map([
-    ["B01/register", [1, 2, 3]],
-    ["B04/cart", [1, 2]],
-    ["B02/search", [1, 2, 3]],
-    ["B02/detail", [1, 2, 3]],
-    ["B02/choose", [1, 2, 3]],
-    ["B09/discover", [1, 2, 3]],
-    ["A01/open", [1, 2, 3]],
-    ["A05/pending", [1, 2, 3]],
-    ["A09/list", [1, 2, 3]],
-    ["S07/program", [1, 2, 3]],
+    ["B01/register", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
+    ["B04/cart", { desktop: [1, 2], mobile: [1, 2] }],
+    ["B02/search", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
+    ["B02/detail", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
+    ["B02/choose", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
+    ["B09/discover", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
+    ["A01/open", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
+    ["A05/pending", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
+    ["A09/list", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
+    ["S07/program", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
   ]);
   const visualSteps = helpArticles.flatMap((article) =>
     article.steps
@@ -76,22 +76,47 @@ test("annotated Help visuals define a written explanation for every marker", () 
 
   assert.equal(visualSteps.length, expectedMarkers.size);
 
-  for (const [key, numbers] of expectedMarkers) {
+  for (const [key, platformMarkers] of expectedMarkers) {
     const [journey, stepSlug] = key.split("/");
     const step = helpArticles
       .find((article) => article.journey === journey)
       ?.steps.find((candidate) => candidate.slug === stepSlug);
 
     assert.ok(step?.visual, `missing visual for ${key}`);
-    assert.deepEqual(step.visual.markers.map((marker) => marker.number), numbers);
-    assert.equal(new Set(numbers).size, numbers.length, `duplicate marker for ${key}`);
-    assert.deepEqual(numbers, numbers.map((_, index) => index + 1));
-    assert.equal(
-      step.visual.markers.every((marker) => marker.guidance.trim().length > 0),
-      true,
-      `missing written guidance for ${key}`,
-    );
+    for (const [platform, numbers] of Object.entries(platformMarkers)) {
+      const markers = step.visual.markers[platform];
+      assert.deepEqual(markers.map((marker) => marker.number), numbers);
+      assert.equal(new Set(numbers).size, numbers.length, `duplicate marker for ${key}/${platform}`);
+      assert.deepEqual(numbers, numbers.map((_, index) => index + 1));
+      assert.equal(
+        markers.every((marker) => marker.guidance.trim().length > 0),
+        true,
+        `missing written guidance for ${key}/${platform}`,
+      );
+    }
   }
+});
+
+test("B02 product detail explains the platform-specific marker targets", () => {
+  const article = helpArticles.find((candidate) => candidate.journey === "B02");
+  const detail = article?.steps.find((step) => step.slug === "detail");
+  const choose = article?.steps.find((step) => step.slug === "choose");
+
+  assert.deepEqual(detail?.visual?.markers.desktop, [
+    { number: 1, guidance: "Xem hình ảnh và thông tin nhận diện sản phẩm." },
+    { number: 2, guidance: "Chọn biến thể và số lượng còn khả dụng." },
+    { number: 3, guidance: "Đọc khu vực xác thực sản phẩm chính hãng." },
+  ]);
+  assert.deepEqual(detail?.visual?.markers.mobile, [
+    { number: 1, guidance: "Xem hình ảnh sản phẩm để nhận diện mặt hàng." },
+    { number: 2, guidance: "Đối chiếu tên và giá sản phẩm." },
+    { number: 3, guidance: "Chọn dung tích hoặc biến thể phù hợp." },
+  ]);
+  assert.deepEqual(choose?.visual?.markers.mobile, [
+    { number: 1, guidance: "Xem hình ảnh sản phẩm để nhận diện mặt hàng." },
+    { number: 2, guidance: "Đối chiếu tên và giá sản phẩm trước khi chọn." },
+    { number: 3, guidance: "Chọn dung tích hoặc biến thể phù hợp." },
+  ]);
 });
 
 test("Help quality report records step-level coverage and remaining blockers", () => {

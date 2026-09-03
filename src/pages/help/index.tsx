@@ -123,6 +123,7 @@ function JourneyView({ article, stepSlug, platform, audience, onPlatformChange }
   const nextStep = currentStep ? article.steps[currentIndex + 1] : undefined;
   const firstStep = article.steps[0];
   const visual = currentStep?.visual;
+  const markers = visual?.markers[platform] ?? [];
 
   return (
     <article className="help-journey" aria-labelledby="help-journey-title">
@@ -203,11 +204,11 @@ function JourneyView({ article, stepSlug, platform, audience, onPlatformChange }
             </div>
           ) : (
             <>
-              {visual?.markers.length ? (
+              {markers.length ? (
                 <div className="help-marker-guide" aria-label="Giải thích vị trí được đánh dấu">
                   <strong>Vị trí cần chú ý trên ảnh</strong>
                   <ol>
-                    {visual.markers.map((marker) => (
+                    {markers.map((marker) => (
                       <li key={marker.number}>
                         <span>{marker.number}</span>
                         <p>{marker.guidance}</p>
