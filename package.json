@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test:e2e": "playwright test",
+    "test:e2e:uat": "playwright test --config=playwright.uat.config.ts e2e/uat-fixture-smoke.spec.ts",
     "test:help": "node --test --experimental-strip-types test/help-content.test.mjs",
     "test:auth": "node --test --experimental-strip-types test/google-auth-error.test.mjs",
     "test:live": "node --test --experimental-strip-types test/live-rtc.test.mjs",

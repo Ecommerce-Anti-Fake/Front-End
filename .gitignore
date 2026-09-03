@@ -29,3 +29,7 @@ test-results
 .env.*
 .env.production
 !.env.example
+!.env.uat.example
+
+# Isolated UAT browser/runtime output
+.uat-runtime/

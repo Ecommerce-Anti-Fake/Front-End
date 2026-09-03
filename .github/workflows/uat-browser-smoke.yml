@@ -1,0 +1,39 @@
+name: UAT browser fixture smoke
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: antifake-uat-browser-smoke
+  cancel-in-progress: false
+
+jobs:
+  browser-smoke:
+    name: Verify UAT fixtures in isolated browsers
+    runs-on: ubuntu-latest
+    environment: uat
+    env:
+      UAT_BASE_URL: ${{ vars.UAT_BASE_URL }}
+      UAT_FIXTURE_SMOKE: "true"
+      UAT_USER_EMAIL: ${{ secrets.UAT_USER_EMAIL }}
+      UAT_SELLER_EMAIL: ${{ secrets.UAT_SELLER_EMAIL }}
+      UAT_ADMIN_EMAIL: ${{ secrets.UAT_ADMIN_EMAIL }}
+      UAT_TEST_PASSWORD: ${{ secrets.UAT_TEST_PASSWORD }}
+      UAT_QR_CODE: ${{ secrets.UAT_QR_CODE }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run UAT fixture smoke
+        run: npx playwright test --config=playwright.uat.config.ts e2e/uat-fixture-smoke.spec.ts --project=desktop --project=mobile
