@@ -59,8 +59,50 @@ export const helpArticles: HelpArticle[] = [
     status: "PARTIAL",
     sourceRefs: ["Front-End/src/App.tsx", "docs/UAT_TEST_MATRIX.md#AF-B-003"],
     steps: [
-      { slug: "discover", title: "Tìm sản phẩm", description: "Mở catalog hoặc tìm kiếm để chọn sản phẩm công khai phù hợp." },
-      { slug: "product-detail", title: "Xem chi tiết", description: "Kiểm tra thông tin sản phẩm, shop, giá, tồn kho và biến thể." },
+      {
+        slug: "discover",
+        title: "Tìm sản phẩm",
+        description: "Mở catalog hoặc tìm kiếm để chọn sản phẩm công khai phù hợp.",
+        visual: {
+          desktop: "/journey-visuals/b02-discovery-desktop.png",
+          mobile: "/journey-visuals/b02-discovery-mobile.png",
+          alt: "Màn hình khám phá catalog sản phẩm trên Desktop hoặc Mobile",
+          markers: {
+            desktop: [
+              { number: 1, guidance: "Chọn danh mục phù hợp với sản phẩm cần tìm." },
+              { number: 2, guidance: "Xem khu vực giới thiệu và khám phá sản phẩm." },
+              { number: 3, guidance: "Mở khu vực Flash Sale để xem sản phẩm đang giảm giá." },
+            ],
+            mobile: [
+              { number: 1, guidance: "Chọn danh mục phù hợp với sản phẩm cần tìm." },
+              { number: 2, guidance: "Xem khu vực giới thiệu và khám phá sản phẩm." },
+              { number: 3, guidance: "Mở khu vực Flash Sale để xem sản phẩm đang giảm giá." },
+            ],
+          },
+        },
+      },
+      {
+        slug: "product-detail",
+        title: "Xem chi tiết",
+        description: "Kiểm tra thông tin sản phẩm, shop, giá, tồn kho và biến thể.",
+        visual: {
+          desktop: "/journey-visuals/b02-product-detail-desktop.png",
+          mobile: "/journey-visuals/b02-product-detail-mobile.png",
+          alt: "Màn hình chi tiết sản phẩm và biến thể trên Desktop hoặc Mobile",
+          markers: {
+            desktop: [
+              { number: 1, guidance: "Xem hình ảnh và thông tin nhận diện sản phẩm." },
+              { number: 2, guidance: "Chọn biến thể và số lượng còn khả dụng." },
+              { number: 3, guidance: "Đọc khu vực xác thực sản phẩm chính hãng." },
+            ],
+            mobile: [
+              { number: 1, guidance: "Xem hình ảnh sản phẩm để nhận diện mặt hàng." },
+              { number: 2, guidance: "Đối chiếu tên và giá sản phẩm." },
+              { number: 3, guidance: "Chọn dung tích hoặc biến thể phù hợp." },
+            ],
+          },
+        },
+      },
       { slug: "add-to-cart", title: "Thêm vào giỏ", description: "Chọn biến thể và số lượng, sau đó thêm sản phẩm vào giỏ hàng." },
       {
         slug: "cart",
@@ -722,9 +764,51 @@ export const helpArticles: HelpArticle[] = [
     status: "PARTIAL",
     sourceRefs: ["Front-End/src/App.tsx", "back-end/apps/api-gateway/src/modules/admin/admin.controller.ts", "docs/UAT_TEST_MATRIX.md#AF-AD-001"],
     steps: [
-      { slug: "dashboard", title: "Mở Admin Dashboard", description: "Cần tài khoản Admin active và session hợp lệ để truy cập." },
+      {
+        slug: "dashboard",
+        title: "Mở Admin Dashboard",
+        description: "Cần tài khoản Admin active và session hợp lệ để truy cập.",
+        visual: {
+          desktop: "/journey-visuals/admin-dashboard-desktop.png",
+          mobile: "/journey-visuals/admin-dashboard-mobile.png",
+          alt: "Màn hình Dashboard quản trị AntiFake trên Desktop hoặc Mobile",
+          markers: {
+            desktop: [
+              { number: 1, guidance: "Xác nhận mục Dashboard đang được chọn trong thanh điều hướng Admin." },
+              { number: 2, guidance: "Đọc khu vực điều phối chính của Admin Dashboard." },
+              { number: 3, guidance: "Kiểm tra các control trên header và danh tính tài khoản Admin." },
+            ],
+            mobile: [
+              { number: 1, guidance: "Xác nhận mục Dashboard đang được chọn trong thanh điều hướng Admin." },
+              { number: 2, guidance: "Đọc khu vực điều phối chính của Admin Dashboard." },
+              { number: 3, guidance: "Kiểm tra các control trên header và danh tính tài khoản Admin." },
+            ],
+          },
+        },
+      },
       { slug: "shop-review", title: "Xem hồ sơ Shop", description: "Kiểm tra hồ sơ và chỉ dùng các hành động được backend cho phép." },
-      { slug: "product-review", title: "Xem sản phẩm chờ duyệt", description: "Đối chiếu thông tin trước khi approve hoặc reject." },
+      {
+        slug: "product-review",
+        title: "Xem sản phẩm chờ duyệt",
+        description: "Đối chiếu thông tin trước khi approve hoặc reject.",
+        visual: {
+          desktop: "/journey-visuals/admin-product-review-desktop.png",
+          mobile: "/journey-visuals/admin-product-review-mobile.png",
+          alt: "Màn hình duyệt sản phẩm AntiFake trên Desktop hoặc Mobile",
+          markers: {
+            desktop: [
+              { number: 1, guidance: "Mở khu vực đăng ký sản phẩm trong thanh điều hướng Admin." },
+              { number: 2, guidance: "Đọc tiêu đề và bộ lọc của hàng đợi sản phẩm." },
+              { number: 3, guidance: "Kiểm tra danh sách hoặc trạng thái trống do hệ thống trả về." },
+            ],
+            mobile: [
+              { number: 1, guidance: "Mở khu vực đăng ký sản phẩm trong thanh điều hướng Admin." },
+              { number: 2, guidance: "Đọc tiêu đề và bộ lọc của hàng đợi sản phẩm." },
+              { number: 3, guidance: "Kiểm tra danh sách hoặc trạng thái trống do hệ thống trả về." },
+            ],
+          },
+        },
+      },
     ],
   },
   {
@@ -738,7 +822,28 @@ export const helpArticles: HelpArticle[] = [
     status: "PARTIAL",
     sourceRefs: ["Front-End/src/App.tsx", "back-end/apps/api-gateway/src/modules/admin/admin.controller.ts", "docs/UAT_TEST_MATRIX.md#AF-AD-001"],
     steps: [
-      { slug: "dashboard", title: "Mở Admin Dashboard", description: "Cần tài khoản Admin active và session hợp lệ." },
+      {
+        slug: "dashboard",
+        title: "Mở Admin Dashboard",
+        description: "Cần tài khoản Admin active và session hợp lệ.",
+        visual: {
+          desktop: "/journey-visuals/admin-dashboard-desktop.png",
+          mobile: "/journey-visuals/admin-dashboard-mobile.png",
+          alt: "Màn hình Dashboard quản trị AntiFake trên Desktop hoặc Mobile",
+          markers: {
+            desktop: [
+              { number: 1, guidance: "Xác nhận mục Dashboard đang được chọn trong thanh điều hướng Admin." },
+              { number: 2, guidance: "Đọc khu vực điều phối chính của Admin Dashboard." },
+              { number: 3, guidance: "Kiểm tra các control trên header và danh tính tài khoản Admin." },
+            ],
+            mobile: [
+              { number: 1, guidance: "Xác nhận mục Dashboard đang được chọn trong thanh điều hướng Admin." },
+              { number: 2, guidance: "Đọc khu vực điều phối chính của Admin Dashboard." },
+              { number: 3, guidance: "Kiểm tra các control trên header và danh tính tài khoản Admin." },
+            ],
+          },
+        },
+      },
       { slug: "review", title: "Chọn khu vực vận hành", description: "Mở Users, KYC, Shop, sản phẩm, voucher hoặc wallet theo quyền được cấp." },
       { slug: "audit", title: "Đối chiếu trạng thái", description: "Mọi quyết định và dữ liệu nhạy cảm phải được kiểm tra trong môi trường được phê duyệt." },
     ],

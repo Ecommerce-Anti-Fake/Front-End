@@ -80,6 +80,31 @@ test.describe("Help Center and Journey Center", () => {
     );
   });
 
+  test("renders the local B04 and Admin reuse bindings", async ({ page }, testInfo) => {
+    const platform = testInfo.project.name === "mobile" ? "mobile" : "desktop";
+    const publicBindings = [
+      ["/help/buyer/first-purchase/discover", `b02-discovery-${platform}.png`],
+      ["/help/buyer/first-purchase/product-detail", `b02-product-detail-${platform}.png`],
+    ] as const;
+
+    for (const [route, asset] of publicBindings) {
+      await page.goto(route);
+      await expect(page.locator('[data-testid="help-visual"] img')).toHaveAttribute("src", new RegExp(`${asset}$`));
+    }
+
+    await seedRole(page, "admin");
+    const adminBindings = [
+      ["/admin/help/admin/admin-review/dashboard", `admin-dashboard-${platform}.png`],
+      ["/admin/help/admin/admin-review/product-review", `admin-product-review-${platform}.png`],
+      ["/admin/help/admin/operations/dashboard", `admin-dashboard-${platform}.png`],
+    ] as const;
+
+    for (const [route, asset] of adminBindings) {
+      await page.goto(route);
+      await expect(page.locator('[data-testid="help-visual"] img')).toHaveAttribute("src", new RegExp(`${asset}$`));
+    }
+  });
+
   test("renders the accepted Admin visuals for the selected platform", async ({ page }, testInfo) => {
     const platform = testInfo.project.name === "mobile" ? "mobile" : "desktop";
     await seedRole(page, "admin");

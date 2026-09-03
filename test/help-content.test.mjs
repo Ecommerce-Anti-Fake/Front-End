@@ -58,6 +58,8 @@ test("public and Admin Help audiences cannot see each other's articles", () => {
 test("annotated Help visuals define a written explanation for every marker", () => {
   const expectedMarkers = new Map([
     ["B01/register", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
+    ["B04/discover", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
+    ["B04/product-detail", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
     ["B04/cart", { desktop: [1, 2], mobile: [1, 2] }],
     ["B02/search", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
     ["B02/detail", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
@@ -66,6 +68,9 @@ test("annotated Help visuals define a written explanation for every marker", () 
     ["A01/open", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
     ["A05/pending", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
     ["A09/list", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
+    ["ADMIN-REVIEW/dashboard", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
+    ["ADMIN-REVIEW/product-review", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
+    ["ADMIN-OPERATIONS/dashboard", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
     ["S07/program", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
   ]);
   const visualSteps = helpArticles.flatMap((article) =>
@@ -151,7 +156,7 @@ test("support journeys retain an evidence status and at least one step", () => {
   assert.equal(supportArticles.every((article) => article.status && article.steps.length > 0), true);
 });
 
-test("accepted journey steps expose platform-specific visuals", () => {
+test("registered journey steps expose platform-specific visuals", () => {
   const expected = [
     ["B01", "register", "/journey-visuals/b01-registration-desktop.png", "/journey-visuals/b01-registration-mobile.png"],
     ["B04", "cart", "/journey-visuals/b04-cart-desktop.png", "/journey-visuals/b04-cart-mobile.png"],
@@ -161,6 +166,9 @@ test("accepted journey steps expose platform-specific visuals", () => {
     ["A01", "open", "/journey-visuals/admin-dashboard-desktop.png", "/journey-visuals/admin-dashboard-mobile.png"],
     ["A05", "pending", "/journey-visuals/admin-product-review-desktop.png", "/journey-visuals/admin-product-review-mobile.png"],
     ["A09", "list", "/journey-visuals/admin-promotions-desktop.png", "/journey-visuals/admin-promotions-mobile.png"],
+    ["ADMIN-REVIEW", "dashboard", "/journey-visuals/admin-dashboard-desktop.png", "/journey-visuals/admin-dashboard-mobile.png"],
+    ["ADMIN-REVIEW", "product-review", "/journey-visuals/admin-product-review-desktop.png", "/journey-visuals/admin-product-review-mobile.png"],
+    ["ADMIN-OPERATIONS", "dashboard", "/journey-visuals/admin-dashboard-desktop.png", "/journey-visuals/admin-dashboard-mobile.png"],
     ["S07", "program", "/journey-visuals/affiliate-program-desktop.png", "/journey-visuals/affiliate-program-mobile.png"],
   ];
 
@@ -182,6 +190,43 @@ test("accepted journey steps expose platform-specific visuals", () => {
       );
     }
   }
+});
+
+test("B04 reuses accepted B02 visuals for equivalent public states", () => {
+  const b02 = helpArticles.find((article) => article.journey === "B02");
+  const b04 = helpArticles.find((article) => article.journey === "B04");
+  const b02Search = b02?.steps.find((step) => step.slug === "search");
+  const b02Detail = b02?.steps.find((step) => step.slug === "detail");
+  const b04Discover = b04?.steps.find((step) => step.slug === "discover");
+  const b04Detail = b04?.steps.find((step) => step.slug === "product-detail");
+
+  assert.ok(b02Search?.visual);
+  assert.ok(b02Detail?.visual);
+  assert.ok(b04Discover?.visual);
+  assert.ok(b04Detail?.visual);
+  assert.deepEqual(b04Discover.visual, b02Search.visual);
+  assert.deepEqual(b04Detail.visual, b02Detail.visual);
+});
+
+test("Admin overview journeys reuse accepted role-matched visuals", () => {
+  const a01 = helpArticles.find((article) => article.journey === "A01");
+  const a05 = helpArticles.find((article) => article.journey === "A05");
+  const review = helpArticles.find((article) => article.journey === "ADMIN-REVIEW");
+  const operations = helpArticles.find((article) => article.journey === "ADMIN-OPERATIONS");
+  const a01Open = a01?.steps.find((step) => step.slug === "open");
+  const a05Pending = a05?.steps.find((step) => step.slug === "pending");
+  const reviewDashboard = review?.steps.find((step) => step.slug === "dashboard");
+  const reviewProduct = review?.steps.find((step) => step.slug === "product-review");
+  const operationsDashboard = operations?.steps.find((step) => step.slug === "dashboard");
+
+  assert.ok(a01Open?.visual);
+  assert.ok(a05Pending?.visual);
+  assert.ok(reviewDashboard?.visual);
+  assert.ok(reviewProduct?.visual);
+  assert.ok(operationsDashboard?.visual);
+  assert.deepEqual(reviewDashboard.visual, a01Open.visual);
+  assert.deepEqual(reviewProduct.visual, a05Pending.visual);
+  assert.deepEqual(operationsDashboard.visual, a01Open.visual);
 });
 
 test("QR Help describes the supported image path and fallback", () => {
