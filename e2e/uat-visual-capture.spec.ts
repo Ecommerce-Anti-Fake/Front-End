@@ -229,6 +229,50 @@ test("positive QR fixture produces raw and annotated pairs", async ({
   ]);
 });
 
+test("scheduled live fixture produces a non-provider room shell pair", async ({
+  page,
+}, testInfo) => {
+  test.skip(
+    !canRunPublicFixtureCapture,
+    "Set UAT_FIXTURE_SMOKE for public UAT fixture capture",
+  );
+
+  const providerRequests: string[] = [];
+  const onRequest = (request: { url: () => string }) => {
+    const url = request.url();
+    if (/agora|\/live\/sessions\/[^/]+\/join/i.test(url)) {
+      providerRequests.push(url);
+    }
+  };
+  page.on("request", onRequest);
+
+  try {
+    await visitFixtureRoute(page, "/live");
+    await page.locator(".live-filter-tabs button").nth(1).click();
+    const fixtureCard = page
+      .locator('.live-discovery-card:has-text("DOCS_UAT")')
+      .first();
+    await expect(fixtureCard).toBeVisible();
+
+    await fixtureCard.locator("h2").click();
+    await expect(page.locator(".live-room-page")).toBeVisible();
+    await expect(page.locator(".live-player-placeholder")).toBeVisible();
+    await expect(page.locator(".live-chat")).toBeVisible();
+    await expect(
+      page.locator(".live-chat .chat-message").first(),
+    ).toBeVisible();
+
+    await capturePair(page, testInfo, "live-scheduled-shell", [
+      { number: 1, selector: ".live-player" },
+      { number: 2, selector: ".live-session-summary" },
+      { number: 3, selector: ".live-chat" },
+    ]);
+    expect(providerRequests).toEqual([]);
+  } finally {
+    page.off("request", onRequest);
+  }
+});
+
 test.describe("approved UAT demo visual capture scaffold", () => {
   test("buyer fixture pack produces raw and annotated pairs", async ({
     page,
