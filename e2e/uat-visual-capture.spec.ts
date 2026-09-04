@@ -128,8 +128,11 @@ async function capturePair(
     const layer = document.createElement("div");
     layer.dataset.uatCaptureMarkers = "true";
     Object.assign(layer.style, {
-      position: "fixed",
-      inset: "0",
+      position: "absolute",
+      top: "0",
+      left: "0",
+      width: "100%",
+      height: "100%",
       zIndex: "2147483647",
       pointerEvents: "none",
     });
@@ -138,9 +141,9 @@ async function capturePair(
       const marker = document.createElement("span");
       marker.textContent = String(item.number);
       Object.assign(marker.style, {
-        position: "fixed",
-        left: `${Math.max(6, Math.min(window.innerWidth - 34, item.x + 4))}px`,
-        top: `${Math.max(6, Math.min(window.innerHeight - 34, item.y + 4))}px`,
+        position: "absolute",
+        left: `${item.x + window.scrollX + 4}px`,
+        top: `${item.y + window.scrollY + 4}px`,
         width: "28px",
         height: "28px",
         display: "grid",
