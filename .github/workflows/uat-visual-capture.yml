@@ -45,6 +45,9 @@ jobs:
         run: |
           set -Eeuo pipefail
 
+          mkdir -p .uat-runtime
+          preflight_status=.uat-runtime/capture-preflight-status
+
           required_secrets=(
             UAT_USER_EMAIL
             UAT_SELLER_EMAIL
@@ -60,38 +63,57 @@ jobs:
           done
 
           if [ "${#missing_secrets[@]}" -gt 0 ]; then
-            echo "::error::Required UAT capture secret names are missing: ${missing_secrets[*]}"
-            exit 1
+            echo "::warning::Authenticated capture inputs are incomplete; public and independently configured role captures will still run. Missing names: ${missing_secrets[*]}"
+            echo incomplete > "$preflight_status"
+          else
+            echo complete > "$preflight_status"
           fi
 
-          case "${UAT_USER_EMAIL,,}" in
-            *@antifake.local) ;;
-            *) echo "::error::UAT_USER_EMAIL must use the approved synthetic domain"; exit 1 ;;
-          esac
-          case "${UAT_SELLER_EMAIL,,}" in
-            *@antifake.local) ;;
-            *) echo "::error::UAT_SELLER_EMAIL must use the approved synthetic domain"; exit 1 ;;
-          esac
-          case "${UAT_ADMIN_EMAIL,,}" in
-            admin@antifake.io.vn|*@antifake.local) ;;
-            *) echo "::error::UAT_ADMIN_EMAIL is not an approved UAT alias"; exit 1 ;;
-          esac
-          if ! [[ "${UAT_QR_CODE^^}" =~ ^UAT[-_][A-Z0-9_-]+$ ]]; then
+          if [ -n "${UAT_USER_EMAIL:-}" ]; then
+            case "${UAT_USER_EMAIL,,}" in
+              *@antifake.local) ;;
+              *) echo "::error::UAT_USER_EMAIL must use the approved synthetic domain"; exit 1 ;;
+            esac
+          fi
+          if [ -n "${UAT_SELLER_EMAIL:-}" ]; then
+            case "${UAT_SELLER_EMAIL,,}" in
+              *@antifake.local) ;;
+              *) echo "::error::UAT_SELLER_EMAIL must use the approved synthetic domain"; exit 1 ;;
+            esac
+          fi
+          if [ -n "${UAT_ADMIN_EMAIL:-}" ]; then
+            case "${UAT_ADMIN_EMAIL,,}" in
+              admin@antifake.io.vn|*@antifake.local) ;;
+              *) echo "::error::UAT_ADMIN_EMAIL is not an approved UAT alias"; exit 1 ;;
+            esac
+          fi
+          if [ -n "${UAT_QR_CODE:-}" ] && ! [[ "${UAT_QR_CODE^^}" =~ ^UAT[-_][A-Z0-9_-]+$ ]]; then
             echo "::error::UAT_QR_CODE must use the synthetic UAT namespace"
             exit 1
           fi
-          case "${UAT_TEST_PASSWORD,,}" in
-            changeme|change-me|password|example|test)
-              echo "::error::UAT_TEST_PASSWORD is still a placeholder"
-              exit 1
-              ;;
-          esac
+          if [ -n "${UAT_TEST_PASSWORD:-}" ]; then
+            case "${UAT_TEST_PASSWORD,,}" in
+              changeme|change-me|password|example|test)
+                echo "::error::UAT_TEST_PASSWORD is still a placeholder"
+                exit 1
+                ;;
+            esac
+          fi
 
-          echo "UAT capture secret preflight passed without printing secret values."
+          echo "UAT capture input preflight completed without printing secret values."
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
       - name: Capture raw and temporary annotated pairs
         run: npm run test:e2e:uat:visual
+      - name: Require complete authenticated capture inputs
+        if: always()
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          if [ "$(cat .uat-runtime/capture-preflight-status 2>/dev/null || echo incomplete)" != "complete" ]; then
+            echo "::error::Authenticated UAT capture remains incomplete; configure the missing GitHub environment secrets and rerun. Secret values are not printed."
+            exit 1
+          fi
       - name: Upload capture artifacts for privacy review
         if: always()
         uses: actions/upload-artifact@v4

@@ -20,11 +20,17 @@ const isApprovedAdminIdentifier = (value: string | undefined) =>
     (/@antifake\.local$/i.test(value) ||
       value.toLowerCase() === "admin@antifake.io.vn"),
   );
-const canRun =
+const canRunBuyer =
   process.env.UAT_FIXTURE_SMOKE === "true" &&
-  Boolean(password && qrCode) &&
-  isSyntheticIdentifier(buyerEmail) &&
-  isSyntheticIdentifier(sellerEmail) &&
+  Boolean(password) &&
+  isSyntheticIdentifier(buyerEmail);
+const canRunSeller =
+  process.env.UAT_FIXTURE_SMOKE === "true" &&
+  Boolean(password) &&
+  isSyntheticIdentifier(sellerEmail);
+const canRunAdmin =
+  process.env.UAT_FIXTURE_SMOKE === "true" &&
+  Boolean(password) &&
   isApprovedAdminIdentifier(adminEmail);
 const canRunPublicFixtureCapture = process.env.UAT_FIXTURE_SMOKE === "true";
 const canRunQrFixtureCapture =
@@ -224,14 +230,13 @@ test("positive QR fixture produces raw and annotated pairs", async ({
 });
 
 test.describe("approved UAT demo visual capture scaffold", () => {
-  test.skip(
-    !canRun,
-    "Set UAT_FIXTURE_SMOKE and inject approved UAT account/password/QR variables",
-  );
-
   test("buyer fixture pack produces raw and annotated pairs", async ({
     page,
   }, testInfo) => {
+    test.skip(
+      !canRunBuyer,
+      "Set UAT_USER_EMAIL and UAT_TEST_PASSWORD for Buyer capture",
+    );
     await loginAs(page, buyerEmail!, password!);
 
     await visitFixtureRoute(page, "/profile");
@@ -301,6 +306,10 @@ test.describe("approved UAT demo visual capture scaffold", () => {
   test("seller fixture pack produces raw and annotated pairs", async ({
     page,
   }, testInfo) => {
+    test.skip(
+      !canRunSeller,
+      "Set UAT_SELLER_EMAIL and UAT_TEST_PASSWORD for Seller capture",
+    );
     await loginAs(page, sellerEmail!, password!);
 
     await visitFixtureRoute(page, "/seller/shop-info");
@@ -374,6 +383,10 @@ test.describe("approved UAT demo visual capture scaffold", () => {
   test("Admin review pack produces raw and annotated pairs", async ({
     page,
   }, testInfo) => {
+    test.skip(
+      !canRunAdmin,
+      "Set UAT_ADMIN_EMAIL and UAT_TEST_PASSWORD for Admin capture",
+    );
     await loginAs(page, adminEmail!, password!);
 
     const captures: Array<{ id: string; route: string; markers: Marker[] }> = [
