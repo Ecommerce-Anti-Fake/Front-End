@@ -267,14 +267,31 @@ test("scheduled live fixture produces a non-provider room shell pair", async ({
     );
     await expect(liveChat.locator(".chat-message").first()).toBeVisible();
 
-    await capturePair(page, testInfo, "live-scheduled-shell", [
-      { number: 1, selector: ".live-player" },
-      { number: 2, selector: ".live-session-summary" },
-      {
-        number: 3,
-        selector: ".live-chat-right .live-chat, .live-chat-bottom .live-chat",
-      },
-    ]);
+    const viewport = page.viewportSize();
+    await capturePair(
+      page,
+      testInfo,
+      "live-scheduled-shell",
+      viewport && viewport.width <= 390
+        ? [
+            { number: 1, selector: ".live-session-summary" },
+            { number: 2, selector: ".live-session-summary h1" },
+            {
+              number: 3,
+              selector:
+                ".live-chat-right .live-chat, .live-chat-bottom .live-chat",
+            },
+          ]
+        : [
+            { number: 1, selector: ".live-player" },
+            { number: 2, selector: ".live-session-summary" },
+            {
+              number: 3,
+              selector:
+                ".live-chat-right .live-chat, .live-chat-bottom .live-chat",
+            },
+          ],
+    );
     expect(providerRequests).toEqual([]);
   } finally {
     page.off("request", onRequest);
