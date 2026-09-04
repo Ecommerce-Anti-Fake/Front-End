@@ -16,16 +16,27 @@ const productionHosts = new Set([
   "api.antifake.io.vn",
 ]);
 const localHosts = new Set(["127.0.0.1", "localhost", "::1"]);
+const approvedDemoHosts = new Set(
+  (process.env.UAT_APPROVED_PUBLIC_HOSTS ?? "")
+    .split(",")
+    .map((host) => host.trim().toLowerCase())
+    .filter(Boolean),
+);
+const isApprovedDemoHost =
+  process.env.ANTIFAKE_CURRENT_ENVIRONMENT?.trim() === "UAT_DEMO" &&
+  approvedDemoHosts.has(hostname);
 
 if (
   !["http:", "https:"].includes(parsedURL.protocol) ||
   parsedURL.username ||
   parsedURL.password ||
-  productionHosts.has(hostname) ||
-  (!localHosts.has(hostname) && !/(uat|staging|test)/i.test(hostname))
+  (productionHosts.has(hostname) && !isApprovedDemoHost) ||
+  (!localHosts.has(hostname) &&
+    !/(uat|staging|test)/i.test(hostname) &&
+    !isApprovedDemoHost)
 ) {
   throw new Error(
-    "UAT_BASE_URL must be a credential-free local or explicitly non-production URL",
+    "UAT_BASE_URL must be a credential-free local, explicitly non-production, or approved UAT_DEMO URL",
   );
 }
 

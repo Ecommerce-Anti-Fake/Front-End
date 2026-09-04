@@ -8,10 +8,18 @@ const adminEmail = process.env.UAT_ADMIN_EMAIL;
 const qrCode = process.env.UAT_QR_CODE;
 const isSyntheticIdentifier = (value: string | undefined) =>
   Boolean(value && /@antifake\.local$/i.test(value));
+const isApprovedAdminIdentifier = (value: string | undefined) =>
+  Boolean(
+    value &&
+    (/@antifake\.local$/i.test(value) ||
+      value.toLowerCase() === "admin@antifake.io.vn"),
+  );
 const canRun =
   process.env.UAT_FIXTURE_SMOKE === "true" &&
   Boolean(password && qrCode) &&
-  [buyerEmail, sellerEmail, adminEmail].every(isSyntheticIdentifier);
+  isSyntheticIdentifier(buyerEmail) &&
+  isSyntheticIdentifier(sellerEmail) &&
+  isApprovedAdminIdentifier(adminEmail);
 
 async function visitFixtureRoute(page: Page, route: string) {
   const errors: string[] = [];
@@ -32,19 +40,22 @@ async function visitFixtureRoute(page: Page, route: string) {
   page.off("response", onResponse);
 }
 
-test.describe("isolated UAT fixture smoke", () => {
+test.describe("approved UAT demo fixture smoke", () => {
   test.skip(
     !canRun,
     "Set UAT_FIXTURE_SMOKE and injected UAT account/QR variables",
   );
 
-  test("buyer profile, address, orders, chat and community are backed by UAT fixtures", async ({
+  test("buyer profile, address, cart, orders, affiliate, chat and community are backed by UAT fixtures", async ({
     page,
   }) => {
     await loginAs(page, buyerEmail!, password!);
     await visitFixtureRoute(page, "/profile");
     await visitFixtureRoute(page, "/profile/address");
+    await visitFixtureRoute(page, "/profile/wallet");
     await visitFixtureRoute(page, "/profile/orders");
+    await visitFixtureRoute(page, "/affiliate");
+    await visitFixtureRoute(page, "/cart");
     await visitFixtureRoute(page, "/chat");
     await visitFixtureRoute(page, "/community");
   });
@@ -62,13 +73,16 @@ test.describe("isolated UAT fixture smoke", () => {
     );
   });
 
-  test("seller shop, product, order and chat surfaces load from the shared graph", async ({
+  test("seller shop, product, order, voucher, wallet, affiliate and chat surfaces load from the shared graph", async ({
     page,
   }) => {
     await loginAs(page, sellerEmail!, password!);
     await visitFixtureRoute(page, "/seller/shop-info");
     await visitFixtureRoute(page, "/seller/products");
     await visitFixtureRoute(page, "/seller/orders");
+    await visitFixtureRoute(page, "/seller/vouchers");
+    await visitFixtureRoute(page, "/seller/wallet");
+    await visitFixtureRoute(page, "/seller/affiliate");
     await visitFixtureRoute(page, "/seller/chat");
   });
 
@@ -79,6 +93,7 @@ test.describe("isolated UAT fixture smoke", () => {
     await visitFixtureRoute(page, "/admin/shop-registrations");
     await visitFixtureRoute(page, "/admin/product-registrations");
     await visitFixtureRoute(page, "/admin/vouchers");
+    await visitFixtureRoute(page, "/admin/wallet");
     await visitFixtureRoute(page, "/admin/withdraw-requests");
   });
 });

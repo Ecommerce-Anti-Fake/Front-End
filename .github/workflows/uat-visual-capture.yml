@@ -1,4 +1,4 @@
-name: UAT browser fixture smoke
+name: UAT demo visual capture
 
 on:
   workflow_dispatch:
@@ -7,12 +7,12 @@ permissions:
   contents: read
 
 concurrency:
-  group: antifake-uat-browser-smoke
+  group: antifake-uat-visual-capture
   cancel-in-progress: false
 
 jobs:
-  browser-smoke:
-    name: Verify UAT demo fixtures in isolated browsers
+  capture:
+    name: Capture UAT demo fixture evidence
     runs-on: ubuntu-latest
     environment: uat
     env:
@@ -25,6 +25,7 @@ jobs:
       UAT_ADMIN_EMAIL: ${{ secrets.UAT_ADMIN_EMAIL }}
       UAT_TEST_PASSWORD: ${{ secrets.UAT_TEST_PASSWORD }}
       UAT_QR_CODE: ${{ secrets.UAT_QR_CODE }}
+      UAT_VIDEO: "false"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -37,5 +38,13 @@ jobs:
         run: npm ci
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
-      - name: Run UAT fixture smoke
-        run: npx playwright test --config=playwright.uat.config.ts e2e/uat-fixture-smoke.spec.ts --project=desktop --project=mobile
+      - name: Capture raw and temporary annotated pairs
+        run: npm run test:e2e:uat:visual
+      - name: Upload capture artifacts for privacy review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: antifake-uat-visual-captures
+          path: .uat-runtime/test-results
+          if-no-files-found: warn
+          retention-days: 7
