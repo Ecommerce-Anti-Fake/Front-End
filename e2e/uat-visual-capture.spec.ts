@@ -123,21 +123,28 @@ async function capturePair(
       const targetRect = target.getBoundingClientRect();
       const markerSize = 28;
       const markerInset = 4;
+      const viewport = window.visualViewport;
+      const viewportOffsetLeft = viewport?.offsetLeft ?? 0;
+      const viewportOffsetTop = viewport?.offsetTop ?? 0;
+      const viewportWidth = viewport?.width ?? innerWidth;
+      const viewportHeight = viewport?.height ?? innerHeight;
+      const minLeft = viewportOffsetLeft + markerInset;
+      const minTop = viewportOffsetTop + markerInset;
       const maxLeft = Math.max(
-        markerInset,
-        innerWidth - markerSize - markerInset,
+        minLeft,
+        viewportOffsetLeft + viewportWidth - markerSize - markerInset,
       );
       const maxTop = Math.max(
-        markerInset,
-        innerHeight - markerSize - markerInset,
+        minTop,
+        viewportOffsetTop + viewportHeight - markerSize - markerInset,
       );
       const left = Math.min(
         maxLeft,
-        Math.max(markerInset, targetRect.left + markerInset),
+        Math.max(minLeft, targetRect.left + markerInset),
       );
       const top = Math.min(
         maxTop,
-        Math.max(markerInset, targetRect.top + markerInset),
+        Math.max(minTop, targetRect.top + markerInset),
       );
 
       const marker = document.createElement("span");
@@ -167,11 +174,11 @@ async function capturePair(
 
       const renderedMarkerRect = marker.getBoundingClientRect();
       let correctedLeft = left;
-      if (renderedMarkerRect.left < markerInset) {
-        correctedLeft += markerInset - renderedMarkerRect.left;
+      if (renderedMarkerRect.left < minLeft) {
+        correctedLeft += minLeft - renderedMarkerRect.left;
       }
-      if (renderedMarkerRect.right > innerWidth - markerInset) {
-        correctedLeft -= renderedMarkerRect.right - (innerWidth - markerInset);
+      if (renderedMarkerRect.right > maxLeft + markerSize) {
+        correctedLeft -= renderedMarkerRect.right - (maxLeft + markerSize);
       }
       if (correctedLeft !== left) {
         marker.style.left = `${correctedLeft}px`;
