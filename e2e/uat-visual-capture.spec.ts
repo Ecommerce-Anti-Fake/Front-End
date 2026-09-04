@@ -41,11 +41,6 @@ type Marker = {
   selector: string;
 };
 
-type MarkerBox = Marker & {
-  x: number;
-  y: number;
-};
-
 async function findVisibleMarkerTarget(
   page: Page,
   selector: string,
@@ -92,7 +87,7 @@ async function capturePair(
   fixtureId: string,
   markers: Marker[],
 ) {
-  const markerBoxes: MarkerBox[] = [];
+  const markerTargets: Marker[] = [];
   for (const marker of markers) {
     const locator = await findVisibleMarkerTarget(page, marker.selector).catch(
       () => {
@@ -105,26 +100,10 @@ async function capturePair(
       locator,
       `marker ${marker.number} target ${marker.selector} is required for ${fixtureId}`,
     ).toBeVisible();
-    const box = await locator.evaluate((element) => {
-      const rect = element.getBoundingClientRect();
-      return {
-        x: rect.x,
-        y: rect.y,
-        width: rect.width,
-        height: rect.height,
-      };
-    });
-    if (!box) {
-      throw new Error(
-        `Marker ${marker.number} has no visible bounds: ${fixtureId}`,
-      );
-    }
-    markerBoxes.push({
-      number: marker.number,
-      selector: marker.selector,
-      x: box.x,
-      y: box.y,
-    });
+    await locator.evaluate((element, number) => {
+      element.setAttribute("data-uat-marker-target", String(number));
+    }, marker.number);
+    markerTargets.push(marker);
   }
 
   const stem = `uat-${fixtureId}-${testInfo.project.name}`;
@@ -132,54 +111,65 @@ async function capturePair(
   const annotatedPath = testInfo.outputPath(`${stem}.annotated.png`);
   await page.screenshot({ path: rawPath, animations: "disabled" });
 
-  await page.evaluate(
-    ({ items, mobile }: { items: MarkerBox[]; mobile: boolean }) => {
-      const layer = document.createElement("div");
-      layer.dataset.uatCaptureMarkers = "true";
-      Object.assign(layer.style, {
-        position: "fixed",
-        inset: "0",
+  await page.evaluate((items: Marker[]) => {
+    for (const item of items) {
+      const target = document.querySelector<HTMLElement>(
+        `[data-uat-marker-target="${item.number}"]`,
+      );
+      if (!target) {
+        throw new Error(`Marker target disappeared: ${item.number}`);
+      }
+
+      target.setAttribute(
+        "data-uat-marker-previous-position",
+        target.style.position,
+      );
+      if (getComputedStyle(target).position === "static") {
+        target.style.position = "relative";
+      }
+
+      const marker = document.createElement("span");
+      marker.dataset.uatCaptureMarkers = "true";
+      marker.textContent = String(item.number);
+      Object.assign(marker.style, {
+        position: "absolute",
+        top: "4px",
+        left: "4px",
+        width: "28px",
+        height: "28px",
+        display: "grid",
+        placeItems: "center",
+        border: "3px solid #b91c1c",
+        borderRadius: "50%",
+        background: "#fff7f6",
+        color: "#7f0018",
+        font: "800 15px Arial, sans-serif",
+        boxShadow: "0 1px 4px rgba(0, 0, 0, .28)",
         zIndex: "2147483647",
         pointerEvents: "none",
       });
-
-      for (const item of items) {
-        const marker = document.createElement("span");
-        marker.textContent = String(item.number);
-        const left = mobile
-          ? 24
-          : Math.max(6, Math.min(window.innerWidth - 34, item.x + 4));
-        Object.assign(marker.style, {
-          position: "fixed",
-          left: `${left}px`,
-          top: `${Math.max(6, Math.min(window.innerHeight - 34, item.y + 4))}px`,
-          width: "28px",
-          height: "28px",
-          display: "grid",
-          placeItems: "center",
-          border: "3px solid #b91c1c",
-          borderRadius: "50%",
-          background: "#fff7f6",
-          color: "#7f0018",
-          font: "800 15px Arial, sans-serif",
-          boxShadow: "0 1px 4px rgba(0, 0, 0, .28)",
-        });
-        layer.append(marker);
-      }
-
-      document.body.append(layer);
-    },
-    { items: markerBoxes, mobile: testInfo.project.name === "mobile" },
-  );
+      target.append(marker);
+    }
+  }, markerTargets);
 
   try {
-    await expect(
-      page.locator('[data-uat-capture-markers="true"] span'),
-    ).toHaveCount(markers.length);
+    await expect(page.locator('[data-uat-capture-markers="true"]')).toHaveCount(
+      markers.length,
+    );
     await page.screenshot({ path: annotatedPath, animations: "disabled" });
   } finally {
     await page.evaluate(() => {
-      document.querySelector('[data-uat-capture-markers="true"]')?.remove();
+      document
+        .querySelectorAll('[data-uat-capture-markers="true"]')
+        .forEach((marker) => marker.remove());
+      document
+        .querySelectorAll<HTMLElement>("[data-uat-marker-target]")
+        .forEach((target) => {
+          target.style.position =
+            target.getAttribute("data-uat-marker-previous-position") ?? "";
+          target.removeAttribute("data-uat-marker-target");
+          target.removeAttribute("data-uat-marker-previous-position");
+        });
     });
   }
 
@@ -192,7 +182,7 @@ async function capturePair(
       viewport,
       rawPath,
       annotatedPath,
-      markers: markerBoxes.map(({ number, selector }) => ({
+      markers: markerTargets.map(({ number, selector }) => ({
         number,
         selector,
       })),
