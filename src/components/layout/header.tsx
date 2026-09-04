@@ -77,6 +77,14 @@ export default function Header() {
       label: "Trợ giúp",
       path: "/help",
     },
+    ...(!isPwaInstalled
+      ? [
+          {
+            label: "Cài đặt",
+            path: "/install",
+          },
+        ]
+      : []),
   ];
 
   const mobileMenus = [
