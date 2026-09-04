@@ -271,7 +271,28 @@ export const helpArticles: HelpArticle[] = [
     status: "PARTIAL",
     sourceRefs: ["Front-End/src/pages/community/index.tsx", "Front-End/src/pages/community/liveFeed.tsx", "Front-End/src/App.tsx"],
     steps: [
-      { slug: "feed", title: "Mở Community", description: "Mở feed công khai và đọc nội dung được hệ thống trả về." },
+      {
+        slug: "feed",
+        title: "Mở Community",
+        description: "Mở feed công khai và đọc nội dung được hệ thống trả về.",
+        visual: {
+          desktop: "/journey-visuals/b08-community-feed-desktop.png",
+          mobile: "/journey-visuals/b08-community-feed-mobile.png",
+          alt: "Màn hình feed cộng đồng DOCS_UAT trên Desktop hoặc Mobile",
+          markers: {
+            desktop: [
+              { number: 1, guidance: "Khu vực feed cộng đồng hiển thị bài viết." },
+              { number: 2, guidance: "Tác giả demo DOCS_UAT của bài viết." },
+              { number: 3, guidance: "Các nút tương tác của bài viết." },
+            ],
+            mobile: [
+              { number: 1, guidance: "Khu vực feed cộng đồng hiển thị bài viết." },
+              { number: 2, guidance: "Tác giả demo DOCS_UAT của bài viết." },
+              { number: 3, guidance: "Các nút tương tác của bài viết." },
+            ],
+          },
+        },
+      },
       { slug: "interact", title: "Tương tác", description: "Chỉ dùng bình luận, reaction hoặc hành động khác khi control và quyền tương ứng hiển thị." },
       { slug: "report", title: "Báo cáo nội dung", description: "Ghi nhận nội dung cần xem xét theo luồng report hiện có; không suy đoán kết quả moderation." },
     ],
@@ -430,7 +451,28 @@ export const helpArticles: HelpArticle[] = [
           },
         },
       },
-      { slug: "result", title: "Đọc kết quả", description: "Đọc trạng thái và dữ liệu nguồn gốc do máy chủ trả về; nếu ảnh không đọc được, hãy thử ảnh rõ hơn hoặc dùng liên kết/mã." },
+      {
+        slug: "result",
+        title: "Đọc kết quả",
+        description: "Đọc trạng thái và dữ liệu nguồn gốc do máy chủ trả về; nếu ảnh không đọc được, hãy thử ảnh rõ hơn hoặc dùng liên kết/mã.",
+        visual: {
+          desktop: "/journey-visuals/b03-positive-result-desktop.png",
+          mobile: "/journey-visuals/b03-positive-result-mobile.png",
+          alt: "Màn hình hiển thị kết quả xác thực sản phẩm thành công trên Desktop hoặc Mobile",
+          markers: {
+            desktop: [
+              { number: 1, guidance: "Tiêu đề trang xác thực QR và trạng thái đang được kiểm tra." },
+              { number: 2, guidance: "Thông báo sản phẩm đã được xác minh từ kết quả máy chủ." },
+              { number: 3, guidance: "Các trường dữ liệu thương hiệu, sản phẩm, mẫu và mã lô trong kết quả nguồn gốc." },
+            ],
+            mobile: [
+              { number: 1, guidance: "Tiêu đề trang xác thực QR và trạng thái đang được kiểm tra." },
+              { number: 2, guidance: "Thông báo sản phẩm đã được xác minh từ kết quả máy chủ." },
+              { number: 3, guidance: "Các trường dữ liệu thương hiệu, sản phẩm, mẫu và mã lô trong kết quả nguồn gốc." },
+            ],
+          },
+        },
+      },
     ],
   },
   {

@@ -64,6 +64,8 @@ test("annotated Help visuals define a written explanation for every marker", () 
     ["B04/cart", { desktop: [1, 2], mobile: [1, 2] }],
     ["B03/open", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
     ["B03/enter-code", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
+    ["B03/result", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
+    ["B08/feed", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
     ["B02/search", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
     ["B02/detail", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
     ["B02/choose", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
@@ -166,6 +168,8 @@ test("registered journey steps expose platform-specific visuals", () => {
     ["B04", "cart", "/journey-visuals/b04-cart-desktop.png", "/journey-visuals/b04-cart-mobile.png"],
     ["B03", "open", "/journey-visuals/b03-open-desktop.png", "/journey-visuals/b03-open-mobile.png"],
     ["B03", "enter-code", "/journey-visuals/b03-enter-code-desktop.png", "/journey-visuals/b03-enter-code-mobile.png"],
+    ["B03", "result", "/journey-visuals/b03-positive-result-desktop.png", "/journey-visuals/b03-positive-result-mobile.png"],
+    ["B08", "feed", "/journey-visuals/b08-community-feed-desktop.png", "/journey-visuals/b08-community-feed-mobile.png"],
     ["B02", "search", "/journey-visuals/b02-discovery-desktop.png", "/journey-visuals/b02-discovery-mobile.png"],
     ["B02", "detail", "/journey-visuals/b02-product-detail-desktop.png", "/journey-visuals/b02-product-detail-mobile.png"],
     ["B09", "discover", "/journey-visuals/b09-live-discovery-desktop.png", "/journey-visuals/b09-live-discovery-mobile.png"],
@@ -420,6 +424,22 @@ test("served Journey visuals are exact annotated evidence copies", () => {
       "docs/images/qr/b03-enter-code-mobile-production-303d816.png",
       "docs/images/qr/b03-enter-code-mobile-production-303d816-annotated.png",
     ],
+    "/journey-visuals/b03-positive-result-desktop.png": [
+      "docs/images/qr/b03-positive-desktop-uat-20260904.png",
+      "docs/images/qr/b03-positive-desktop-uat-20260904-annotated.png",
+    ],
+    "/journey-visuals/b03-positive-result-mobile.png": [
+      "docs/images/qr/b03-positive-mobile-uat-20260904.png",
+      "docs/images/qr/b03-positive-mobile-uat-20260904-annotated.png",
+    ],
+    "/journey-visuals/b08-community-feed-desktop.png": [
+      "docs/images/community/b08-community-feed-desktop-uat-20260904.png",
+      "docs/images/community/b08-community-feed-desktop-uat-20260904-annotated.png",
+    ],
+    "/journey-visuals/b08-community-feed-mobile.png": [
+      "docs/images/community/b08-community-feed-mobile-uat-20260904.png",
+      "docs/images/community/b08-community-feed-mobile-uat-20260904-annotated.png",
+    ],
     "/journey-visuals/b09-live-discovery-desktop.png": [
       "docs/images/buyer/live-discovery-desktop-production-6b24be3.png",
       "docs/images/buyer/live-discovery-desktop-production-6b24be3-annotated.png",
@@ -469,7 +489,7 @@ test("visual manifest lists every canonical journey", () => {
       if (prefix === "A") {
         assert.match(row, /Pending (targeted Admin visual evidence|PII-reviewed Admin user list\/detail fixture|sanitized Shop application in review queue|approved withdrawal fixture with payout-provider sandbox)|No final annotated visual yet|annotated captures inspected/);
       } else if (journeyId === "B03") {
-        assert.match(row, /Do not publish as final/);
+        assert.match(row, /positive-result UAT fixture visual|Do not publish as final/);
       } else {
         assert.match(row, /Pending|BLOCKED_EXTERNAL/);
       }

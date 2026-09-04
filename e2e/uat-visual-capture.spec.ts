@@ -26,6 +26,9 @@ const canRun =
   isSyntheticIdentifier(buyerEmail) &&
   isSyntheticIdentifier(sellerEmail) &&
   isApprovedAdminIdentifier(adminEmail);
+const canRunPublicFixtureCapture = process.env.UAT_FIXTURE_SMOKE === "true";
+const canRunQrFixtureCapture =
+  process.env.UAT_FIXTURE_SMOKE === "true" && Boolean(qrCode);
 
 type Marker = {
   number: number;
@@ -174,6 +177,52 @@ async function capturePair(
   );
 }
 
+test("public Community fixture produces raw and annotated pairs", async ({
+  page,
+}, testInfo) => {
+  test.skip(
+    !canRunPublicFixtureCapture,
+    "Set UAT_FIXTURE_SMOKE for public UAT fixture capture",
+  );
+  await visitFixtureRoute(page, "/community");
+  await expect(
+    page.locator('.community-post:has-text("DOCS_UAT")').first(),
+  ).toBeVisible();
+  await capturePair(page, testInfo, "community-feed", [
+    { number: 1, selector: ".community-content" },
+    {
+      number: 2,
+      selector: '.community-post:has-text("DOCS_UAT") .post-header',
+    },
+    {
+      number: 3,
+      selector: '.community-post:has-text("DOCS_UAT") .post-actions',
+    },
+  ]);
+});
+
+test("positive QR fixture produces raw and annotated pairs", async ({
+  page,
+}, testInfo) => {
+  test.skip(
+    !canRunQrFixtureCapture,
+    "Set UAT_FIXTURE_SMOKE and inject the approved UAT QR code",
+  );
+  await visitFixtureRoute(page, "/qr");
+  await page.getByTestId("verification-tab-code").click();
+  await page.getByTestId("verification-code-input").fill(qrCode!);
+  await page.getByTestId("verification-submit").click();
+  await expect(page.getByTestId("verification-result")).toHaveAttribute(
+    "data-status",
+    "VERIFIED",
+  );
+  await capturePair(page, testInfo, "qr-positive", [
+    { number: 1, selector: ".qr-header" },
+    { number: 2, selector: '[data-testid="verification-result"]' },
+    { number: 3, selector: ".qr-result-details" },
+  ]);
+});
+
 test.describe("approved UAT demo visual capture scaffold", () => {
   test.skip(
     !canRun,
@@ -246,24 +295,6 @@ test.describe("approved UAT demo visual capture scaffold", () => {
       { number: 1, selector: ".community-content" },
       { number: 2, selector: ".community-page" },
       { number: 3, selector: ".community-content > *" },
-    ]);
-  });
-
-  test("positive QR fixture produces raw and annotated pairs", async ({
-    page,
-  }, testInfo) => {
-    await visitFixtureRoute(page, "/qr");
-    await page.getByTestId("verification-tab-code").click();
-    await page.getByTestId("verification-code-input").fill(qrCode!);
-    await page.getByTestId("verification-submit").click();
-    await expect(page.getByTestId("verification-result")).toHaveAttribute(
-      "data-status",
-      "VERIFIED",
-    );
-    await capturePair(page, testInfo, "qr-positive", [
-      { number: 1, selector: ".qr-header" },
-      { number: 2, selector: '[data-testid="verification-result"]' },
-      { number: 3, selector: ".qr-result-details" },
     ]);
   });
 

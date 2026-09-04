@@ -80,11 +80,12 @@ test.describe("Help Center and Journey Center", () => {
     );
   });
 
-  test("renders the QR entry and code-entry visuals for the selected platform", async ({ page }, testInfo) => {
+  test("renders the QR entry, code-entry and positive-result visuals for the selected platform", async ({ page }, testInfo) => {
     const platform = testInfo.project.name === "mobile" ? "mobile" : "desktop";
     const expected = [
       ["/help/qr/verify-product/open", `b03-open-${platform}.png`],
       ["/help/qr/verify-product/enter-code", `b03-enter-code-${platform}.png`],
+      ["/help/qr/verify-product/result", `b03-positive-result-${platform}.png`],
     ] as const;
 
     for (const [route, asset] of expected) {
@@ -92,6 +93,16 @@ test.describe("Help Center and Journey Center", () => {
       await expect(page.locator('[data-testid="help-visual"] img')).toHaveAttribute("src", new RegExp(`${asset}$`));
       await expect(page.getByText("Vị trí cần chú ý trên ảnh")).toBeVisible();
     }
+  });
+
+  test("renders the DOCS_UAT Community feed visual for the selected platform", async ({ page }, testInfo) => {
+    const platform = testInfo.project.name === "mobile" ? "mobile" : "desktop";
+    await page.goto("/help/buyer/community/feed");
+    await expect(page.locator('[data-testid="help-visual"] img')).toHaveAttribute(
+      "src",
+      new RegExp("b08-community-feed-" + platform + "\\.png$"),
+    );
+    await expect(page.getByText("Vị trí cần chú ý trên ảnh")).toBeVisible();
   });
 
   test("renders the local B04 and Admin reuse bindings", async ({ page }, testInfo) => {
