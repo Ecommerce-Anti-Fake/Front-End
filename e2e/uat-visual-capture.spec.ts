@@ -145,9 +145,13 @@ async function capturePair(
     for (const item of items) {
       const marker = document.createElement("span");
       marker.textContent = String(item.number);
+      const left =
+        window.innerWidth <= 390
+          ? 6
+          : Math.max(6, Math.min(window.innerWidth - 34, item.x + 4));
       Object.assign(marker.style, {
         position: "fixed",
-        left: `${Math.max(6, Math.min(window.innerWidth - 34, item.x + 4))}px`,
+        left: `${left}px`,
         top: `${Math.max(6, Math.min(window.innerHeight - 34, item.y + 4))}px`,
         width: "28px",
         height: "28px",
