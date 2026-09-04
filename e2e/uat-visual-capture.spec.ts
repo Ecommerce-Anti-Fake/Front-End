@@ -120,32 +120,32 @@ async function capturePair(
         throw new Error(`Marker target disappeared: ${item.number}`);
       }
 
-      target.setAttribute(
-        "data-uat-marker-previous-position",
-        target.style.position,
-      );
-      if (getComputedStyle(target).position === "static") {
-        target.style.position = "relative";
-      }
-
       const targetRect = target.getBoundingClientRect();
       const markerSize = 28;
       const markerInset = 4;
       const maxLeft = Math.max(
         markerInset,
-        targetRect.width - markerSize - markerInset,
+        innerWidth - markerSize - markerInset,
+      );
+      const maxTop = Math.max(
+        markerInset,
+        innerHeight - markerSize - markerInset,
       );
       const left = Math.min(
         maxLeft,
-        Math.max(markerInset, -targetRect.left + markerInset),
+        Math.max(markerInset, targetRect.left + markerInset),
+      );
+      const top = Math.min(
+        maxTop,
+        Math.max(markerInset, targetRect.top + markerInset),
       );
 
       const marker = document.createElement("span");
       marker.dataset.uatCaptureMarkers = "true";
       marker.textContent = String(item.number);
       Object.assign(marker.style, {
-        position: "absolute",
-        top: "4px",
+        position: "fixed",
+        top: `${top}px`,
         left: `${left}px`,
         width: `${markerSize}px`,
         height: `${markerSize}px`,
@@ -163,23 +163,7 @@ async function capturePair(
         zIndex: "2147483647",
         pointerEvents: "none",
       });
-      target.append(marker);
-
-      const markerRect = marker.getBoundingClientRect();
-      const viewportInset = markerInset;
-      const viewportWidth = document.documentElement.clientWidth;
-      const correctedLeft = Math.max(
-        markerInset,
-        Math.min(
-          maxLeft,
-          left +
-            Math.max(0, viewportInset - markerRect.left) -
-            Math.max(0, markerRect.right - (viewportWidth - viewportInset)),
-        ),
-      );
-      if (correctedLeft !== left) {
-        marker.style.left = `${correctedLeft}px`;
-      }
+      document.body.append(marker);
     }
   }, markerTargets);
 
@@ -196,10 +180,7 @@ async function capturePair(
       document
         .querySelectorAll<HTMLElement>("[data-uat-marker-target]")
         .forEach((target) => {
-          target.style.position =
-            target.getAttribute("data-uat-marker-previous-position") ?? "";
           target.removeAttribute("data-uat-marker-target");
-          target.removeAttribute("data-uat-marker-previous-position");
         });
     });
   }
