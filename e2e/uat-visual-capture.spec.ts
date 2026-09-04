@@ -132,43 +132,45 @@ async function capturePair(
   const annotatedPath = testInfo.outputPath(`${stem}.annotated.png`);
   await page.screenshot({ path: rawPath, animations: "disabled" });
 
-  await page.evaluate((items: MarkerBox[]) => {
-    const layer = document.createElement("div");
-    layer.dataset.uatCaptureMarkers = "true";
-    Object.assign(layer.style, {
-      position: "fixed",
-      inset: "0",
-      zIndex: "2147483647",
-      pointerEvents: "none",
-    });
+  await page.evaluate(
+    ({ items, mobile }: { items: MarkerBox[]; mobile: boolean }) => {
+      const layer = document.createElement("div");
+      layer.dataset.uatCaptureMarkers = "true";
+      Object.assign(layer.style, {
+        position: "fixed",
+        inset: "0",
+        zIndex: "2147483647",
+        pointerEvents: "none",
+      });
 
-    for (const item of items) {
-      const marker = document.createElement("span");
-      marker.textContent = String(item.number);
-      const left =
-        window.innerWidth <= 390
+      for (const item of items) {
+        const marker = document.createElement("span");
+        marker.textContent = String(item.number);
+        const left = mobile
           ? 24
           : Math.max(6, Math.min(window.innerWidth - 34, item.x + 4));
-      Object.assign(marker.style, {
-        position: "fixed",
-        left: `${left}px`,
-        top: `${Math.max(6, Math.min(window.innerHeight - 34, item.y + 4))}px`,
-        width: "28px",
-        height: "28px",
-        display: "grid",
-        placeItems: "center",
-        border: "3px solid #b91c1c",
-        borderRadius: "50%",
-        background: "#fff7f6",
-        color: "#7f0018",
-        font: "800 15px Arial, sans-serif",
-        boxShadow: "0 1px 4px rgba(0, 0, 0, .28)",
-      });
-      layer.append(marker);
-    }
+        Object.assign(marker.style, {
+          position: "fixed",
+          left: `${left}px`,
+          top: `${Math.max(6, Math.min(window.innerHeight - 34, item.y + 4))}px`,
+          width: "28px",
+          height: "28px",
+          display: "grid",
+          placeItems: "center",
+          border: "3px solid #b91c1c",
+          borderRadius: "50%",
+          background: "#fff7f6",
+          color: "#7f0018",
+          font: "800 15px Arial, sans-serif",
+          boxShadow: "0 1px 4px rgba(0, 0, 0, .28)",
+        });
+        layer.append(marker);
+      }
 
-    document.body.append(layer);
-  }, markerBoxes);
+      document.body.append(layer);
+    },
+    { items: markerBoxes, mobile: testInfo.project.name === "mobile" },
+  );
 
   try {
     await expect(
