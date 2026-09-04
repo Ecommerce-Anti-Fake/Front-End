@@ -257,10 +257,9 @@ test("scheduled live fixture produces a non-provider room shell pair", async ({
     await fixtureCard.locator("h2").click();
     await expect(page.locator(".live-room-page")).toBeVisible();
     await expect(page.locator(".live-player-placeholder")).toBeVisible();
-    await expect(page.locator(".live-chat")).toBeVisible();
-    await expect(
-      page.locator(".live-chat .chat-message").first(),
-    ).toBeVisible();
+    const liveChat = page.locator(".live-chat").first();
+    await expect(liveChat).toBeVisible();
+    await expect(liveChat.locator(".chat-message").first()).toBeVisible();
 
     await capturePair(page, testInfo, "live-scheduled-shell", [
       { number: 1, selector: ".live-player" },
