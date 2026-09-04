@@ -240,7 +240,11 @@ test("scheduled live fixture produces a non-provider room shell pair", async ({
   const providerRequests: string[] = [];
   const onRequest = (request: { url: () => string }) => {
     const url = request.url();
-    if (/agora|\/live\/sessions\/[^/]+\/join/i.test(url)) {
+    const parsedUrl = new URL(url);
+    if (
+      /(?:\/api)?\/live\/sessions\/[^/]+\/join/i.test(parsedUrl.pathname) ||
+      parsedUrl.hostname.endsWith("agora.io")
+    ) {
       providerRequests.push(url);
     }
   };
@@ -257,14 +261,19 @@ test("scheduled live fixture produces a non-provider room shell pair", async ({
     await fixtureCard.locator("h2").click();
     await expect(page.locator(".live-room-page")).toBeVisible();
     await expect(page.locator(".live-player-placeholder")).toBeVisible();
-    const liveChat = page.locator(".live-chat").first();
-    await expect(liveChat).toBeVisible();
+    const liveChat = await findVisibleMarkerTarget(
+      page,
+      ".live-chat-right .live-chat, .live-chat-bottom .live-chat",
+    );
     await expect(liveChat.locator(".chat-message").first()).toBeVisible();
 
     await capturePair(page, testInfo, "live-scheduled-shell", [
       { number: 1, selector: ".live-player" },
       { number: 2, selector: ".live-session-summary" },
-      { number: 3, selector: ".live-chat" },
+      {
+        number: 3,
+        selector: ".live-chat-right .live-chat, .live-chat-bottom .live-chat",
+      },
     ]);
     expect(providerRequests).toEqual([]);
   } finally {
