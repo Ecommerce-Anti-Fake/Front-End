@@ -147,7 +147,7 @@ async function capturePair(
       marker.textContent = String(item.number);
       const left =
         window.innerWidth <= 390
-          ? 6
+          ? 24
           : Math.max(6, Math.min(window.innerWidth - 34, item.x + 4));
       Object.assign(marker.style, {
         position: "fixed",
