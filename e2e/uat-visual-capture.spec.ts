@@ -150,6 +150,8 @@ async function capturePair(
         width: `${markerSize}px`,
         height: `${markerSize}px`,
         boxSizing: "border-box",
+        margin: "0",
+        transform: "none",
         display: "grid",
         placeItems: "center",
         border: "3px solid #b91c1c",
@@ -162,6 +164,22 @@ async function capturePair(
         pointerEvents: "none",
       });
       target.append(marker);
+
+      const markerRect = marker.getBoundingClientRect();
+      const viewportInset = markerInset;
+      const viewportWidth = document.documentElement.clientWidth;
+      const correctedLeft = Math.max(
+        markerInset,
+        Math.min(
+          maxLeft,
+          left +
+            Math.max(0, viewportInset - markerRect.left) -
+            Math.max(0, markerRect.right - (viewportWidth - viewportInset)),
+        ),
+      );
+      if (correctedLeft !== left) {
+        marker.style.left = `${correctedLeft}px`;
+      }
     }
   }, markerTargets);
 
