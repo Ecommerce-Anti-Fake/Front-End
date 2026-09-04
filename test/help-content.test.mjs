@@ -42,6 +42,18 @@ test("every Help article and step has user-facing text", () => {
   }
 });
 
+test("B08 report stays truthful when the Community surface is absent", () => {
+  const article = helpArticles.find((candidate) => candidate.journey === "B08");
+  const report = article?.steps.find((step) => step.slug === "report");
+
+  assert.ok(report);
+  assert.equal(report.visual, undefined);
+  assert.match(
+    report.description,
+    /^\u0048i\u1ec7n ch\u01b0a c\u00f3 b\u1ec1 m\u1eb7t b\u00e1o c\u00e1o trong Community/,
+  );
+});
+
 test("public and Admin Help audiences cannot see each other's articles", () => {
   const publicArticles = getVisibleHelpArticles("public");
   const adminArticles = getVisibleHelpArticles("admin");

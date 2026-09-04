@@ -294,7 +294,7 @@ export const helpArticles: HelpArticle[] = [
         },
       },
       { slug: "interact", title: "Tương tác", description: "Chỉ dùng bình luận, reaction hoặc hành động khác khi control và quyền tương ứng hiển thị." },
-      { slug: "report", title: "Báo cáo nội dung", description: "Ghi nhận nội dung cần xem xét theo luồng report hiện có; không suy đoán kết quả moderation." },
+      { slug: "report", title: "Báo cáo nội dung", description: "Hiện chưa có bề mặt báo cáo trong Community; không thực hiện thao tác gửi báo cáo." },
     ],
   },
   {
