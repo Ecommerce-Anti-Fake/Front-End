@@ -2,6 +2,9 @@ name: UAT demo visual capture
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - uat-capture
 
 permissions:
   contents: read
@@ -14,6 +17,7 @@ jobs:
   capture:
     name: Capture UAT demo fixture evidence
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     environment: uat
     env:
       ANTIFAKE_CURRENT_ENVIRONMENT: UAT_DEMO
@@ -36,6 +40,54 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
+      - name: Verify required UAT capture secrets
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          required_secrets=(
+            UAT_USER_EMAIL
+            UAT_SELLER_EMAIL
+            UAT_ADMIN_EMAIL
+            UAT_TEST_PASSWORD
+            UAT_QR_CODE
+          )
+          missing_secrets=()
+          for secret_name in "${required_secrets[@]}"; do
+            if [ -z "${!secret_name:-}" ]; then
+              missing_secrets+=("$secret_name")
+            fi
+          done
+
+          if [ "${#missing_secrets[@]}" -gt 0 ]; then
+            echo "::error::Required UAT capture secret names are missing: ${missing_secrets[*]}"
+            exit 1
+          fi
+
+          case "${UAT_USER_EMAIL,,}" in
+            *@antifake.local) ;;
+            *) echo "::error::UAT_USER_EMAIL must use the approved synthetic domain"; exit 1 ;;
+          esac
+          case "${UAT_SELLER_EMAIL,,}" in
+            *@antifake.local) ;;
+            *) echo "::error::UAT_SELLER_EMAIL must use the approved synthetic domain"; exit 1 ;;
+          esac
+          case "${UAT_ADMIN_EMAIL,,}" in
+            admin@antifake.io.vn|*@antifake.local) ;;
+            *) echo "::error::UAT_ADMIN_EMAIL is not an approved UAT alias"; exit 1 ;;
+          esac
+          if ! [[ "${UAT_QR_CODE^^}" =~ ^UAT[-_][A-Z0-9_-]+$ ]]; then
+            echo "::error::UAT_QR_CODE must use the synthetic UAT namespace"
+            exit 1
+          fi
+          case "${UAT_TEST_PASSWORD,,}" in
+            changeme|change-me|password|example|test)
+              echo "::error::UAT_TEST_PASSWORD is still a placeholder"
+              exit 1
+              ;;
+          esac
+
+          echo "UAT capture secret preflight passed without printing secret values."
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
       - name: Capture raw and temporary annotated pairs
