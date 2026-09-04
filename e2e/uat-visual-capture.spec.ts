@@ -164,6 +164,18 @@ async function capturePair(
         pointerEvents: "none",
       });
       document.body.append(marker);
+
+      const renderedMarkerRect = marker.getBoundingClientRect();
+      let correctedLeft = left;
+      if (renderedMarkerRect.left < markerInset) {
+        correctedLeft += markerInset - renderedMarkerRect.left;
+      }
+      if (renderedMarkerRect.right > innerWidth - markerInset) {
+        correctedLeft -= renderedMarkerRect.right - (innerWidth - markerInset);
+      }
+      if (correctedLeft !== left) {
+        marker.style.left = `${correctedLeft}px`;
+      }
     }
   }, markerTargets);
 
