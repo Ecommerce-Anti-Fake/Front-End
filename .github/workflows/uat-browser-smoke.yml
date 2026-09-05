@@ -37,7 +37,62 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
+      - name: Report available UAT smoke inputs
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          mkdir -p .uat-runtime
+
+          credential_available() {
+            local email_name="$1"
+            local password_name="$2"
+            if [ -n "${!email_name:-}" ] && [ -n "${!password_name:-}" ]; then
+              echo true
+            else
+              echo false
+            fi
+          }
+
+          buyer_available="$(credential_available ANTIFAKE_UAT_BUYER_EMAIL ANTIFAKE_UAT_BUYER_PASSWORD)"
+          seller_available="$(credential_available ANTIFAKE_UAT_SELLER_EMAIL ANTIFAKE_UAT_SELLER_PASSWORD)"
+          admin_available="$(credential_available ANTIFAKE_UAT_ADMIN_EMAIL ANTIFAKE_UAT_ADMIN_PASSWORD)"
+          qr_available=false
+          if [ -n "${UAT_QR_CODE:-}" ]; then
+            qr_available=true
+          fi
+
+          echo "BUYER_CREDENTIAL_AVAILABLE=$buyer_available"
+          echo "SELLER_CREDENTIAL_AVAILABLE=$seller_available"
+          echo "ADMIN_CREDENTIAL_AVAILABLE=$admin_available"
+          echo "UAT_QR_INPUT_AVAILABLE=$qr_available"
+
+          if [ "$buyer_available" = true ] &&
+            [ "$seller_available" = true ] &&
+            [ "$admin_available" = true ] &&
+            [ "$qr_available" = true ]; then
+            status=complete
+          elif [ "$buyer_available" = true ] ||
+            [ "$seller_available" = true ] ||
+            [ "$admin_available" = true ] ||
+            [ "$qr_available" = true ]; then
+            status=partial
+          else
+            status=unavailable
+          fi
+
+          echo "$status" > .uat-runtime/browser-smoke-input-status
+          echo "UAT_BROWSER_SMOKE_INPUT_STATUS=$status"
+          echo "UAT smoke preflight completed without printing secret values."
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
       - name: Run UAT fixture smoke
         run: npx playwright test --config=playwright.uat.config.ts e2e/uat-fixture-smoke.spec.ts e2e/uat-auth-storage-state.spec.ts --project=desktop --project=mobile
+      - name: Report UAT smoke result
+        if: always()
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          status="$(cat .uat-runtime/browser-smoke-input-status 2>/dev/null || echo unavailable)"
+          echo "UAT_BROWSER_SMOKE_INPUT_STATUS=$status"
+          echo "UAT browser smoke status reported without printing secret values."
