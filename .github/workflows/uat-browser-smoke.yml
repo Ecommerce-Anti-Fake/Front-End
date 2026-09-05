@@ -87,6 +87,7 @@ jobs:
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
       - name: Run UAT fixture smoke
+        id: fixture_smoke
         run: npx playwright test --config=playwright.uat.config.ts e2e/uat-fixture-smoke.spec.ts e2e/uat-auth-storage-state.spec.ts --project=desktop --project=mobile
       - name: Report UAT smoke result
         if: always()
@@ -96,3 +97,11 @@ jobs:
           status="$(cat .uat-runtime/browser-smoke-input-status 2>/dev/null || echo unavailable)"
           echo "UAT_BROWSER_SMOKE_INPUT_STATUS=$status"
           echo "UAT browser smoke status reported without printing secret values."
+          if [ "${{ steps.fixture_smoke.outcome }}" != "success" ]; then
+            echo "UAT browser fixture smoke did not complete successfully."
+            exit 1
+          fi
+          if [ "$status" = unavailable ]; then
+            echo "No UAT role or QR input was available; no fixture smoke check executed."
+            exit 1
+          fi
