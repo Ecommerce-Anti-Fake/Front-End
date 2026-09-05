@@ -79,6 +79,14 @@ const captureViewport = (testInfo: TestInfo) =>
     ? { width: 390, height: 844 }
     : { width: 1440, height: 900 };
 
+const captureBaseURL = (testInfo: TestInfo) => {
+  const baseURL = testInfo.project.use.baseURL;
+  if (typeof baseURL !== "string" || !baseURL.trim()) {
+    throw new Error("UAT base URL is unavailable for authenticated capture");
+  }
+  return baseURL;
+};
+
 export function getUatStorageStatePath(
   role: UatAuthRole,
   projectName: string,
@@ -112,11 +120,13 @@ export async function createAuthenticatedPage(
   assertUatCredentialNamespace(role, credentials.email);
 
   const viewport = captureViewport(testInfo);
+  const baseURL = captureBaseURL(testInfo);
   const authDirectory = path.resolve(".uat-runtime", "auth");
   const storageStatePath = getUatStorageStatePath(role, testInfo.project.name);
   await mkdir(authDirectory, { recursive: true });
 
   const loginContext = await browser.newContext({
+    baseURL,
     viewport,
     isMobile: testInfo.project.name === "mobile",
     hasTouch: testInfo.project.name === "mobile",
@@ -141,6 +151,7 @@ export async function createAuthenticatedPage(
   let context: BrowserContext | undefined;
   try {
     context = await browser.newContext({
+      baseURL,
       storageState: storageStatePath,
       viewport,
       isMobile: testInfo.project.name === "mobile",
