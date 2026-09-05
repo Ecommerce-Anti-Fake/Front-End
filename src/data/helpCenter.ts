@@ -125,7 +125,28 @@ export const helpArticles: HelpArticle[] = [
         },
       },
       { slug: "checkout", title: "Chuẩn bị thanh toán", description: "Chọn địa chỉ và phương thức vận chuyển. Tổng tiền phải đến từ báo giá server." },
-      { slug: "order", title: "Theo dõi đơn hàng", description: "Sau khi đặt hàng thành công, mở đơn hàng để theo dõi trạng thái và các bước tiếp theo." },
+      {
+        slug: "order",
+        title: "Theo dõi đơn hàng",
+        description: "Sau khi đặt hàng thành công, mở đơn hàng để theo dõi trạng thái và các bước tiếp theo.",
+        visual: {
+          desktop: "/journey-visuals/b05-order-detail-desktop.png",
+          mobile: "/journey-visuals/b05-order-detail-mobile.png",
+          alt: "Chi tiết đơn hàng Buyer với thông tin tổng hợp DOCS_UAT trên Desktop hoặc Mobile",
+          markers: {
+            desktop: [
+              { number: 1, guidance: "Tiêu đề và trạng thái của đơn hàng DOCS_UAT." },
+              { number: 2, guidance: "Thông tin sản phẩm, người nhận và vận chuyển tổng hợp." },
+              { number: 3, guidance: "Tóm tắt thanh toán của đơn hàng UAT." },
+            ],
+            mobile: [
+              { number: 1, guidance: "Tiêu đề và trạng thái của đơn hàng DOCS_UAT." },
+              { number: 2, guidance: "Thông tin sản phẩm, người nhận và vận chuyển tổng hợp." },
+              { number: 3, guidance: "Tóm tắt thanh toán của đơn hàng UAT." },
+            ],
+          },
+        },
+      },
     ],
   },
   {

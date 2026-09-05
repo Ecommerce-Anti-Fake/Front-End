@@ -74,6 +74,7 @@ test("annotated Help visuals define a written explanation for every marker", () 
     ["B04/discover", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
     ["B04/product-detail", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
     ["B04/cart", { desktop: [1, 2], mobile: [1, 2] }],
+    ["B04/order", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
     ["B05/list", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
     ["B05/detail", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
     ["B03/open", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
@@ -183,6 +184,7 @@ test("registered journey steps expose platform-specific visuals", () => {
   const expected = [
     ["B01", "register", "/journey-visuals/b01-registration-desktop.png", "/journey-visuals/b01-registration-mobile.png"],
     ["B04", "cart", "/journey-visuals/b04-cart-desktop.png", "/journey-visuals/b04-cart-mobile.png"],
+    ["B04", "order", "/journey-visuals/b05-order-detail-desktop.png", "/journey-visuals/b05-order-detail-mobile.png"],
     ["B05", "list", "/journey-visuals/b05-orders-desktop.png", "/journey-visuals/b05-orders-mobile.png"],
     ["B05", "detail", "/journey-visuals/b05-order-detail-desktop.png", "/journey-visuals/b05-order-detail-mobile.png"],
     ["B07", "open", "/journey-visuals/b07-chat-open-desktop.png", "/journey-visuals/b07-chat-open-mobile.png"],
@@ -232,13 +234,19 @@ test("B04 reuses accepted B02 visuals for equivalent public states", () => {
   const b02Detail = b02?.steps.find((step) => step.slug === "detail");
   const b04Discover = b04?.steps.find((step) => step.slug === "discover");
   const b04Detail = b04?.steps.find((step) => step.slug === "product-detail");
+  const b04Order = b04?.steps.find((step) => step.slug === "order");
+  const b05 = helpArticles.find((article) => article.journey === "B05");
+  const b05Detail = b05?.steps.find((step) => step.slug === "detail");
 
   assert.ok(b02Search?.visual);
   assert.ok(b02Detail?.visual);
   assert.ok(b04Discover?.visual);
   assert.ok(b04Detail?.visual);
+  assert.ok(b04Order?.visual);
+  assert.ok(b05Detail?.visual);
   assert.deepEqual(b04Discover.visual, b02Search.visual);
   assert.deepEqual(b04Detail.visual, b02Detail.visual);
+  assert.deepEqual(b04Order.visual, b05Detail.visual);
 });
 
 test("B09 shop reuses the accepted B02 product-detail visual", () => {
@@ -367,12 +375,12 @@ test("served Journey visuals are exact annotated evidence copies", () => {
   );
   const visualEvidence = {
     "/journey-visuals/admin-dashboard-desktop.png": [
-      "docs/images/admin/admin-dashboard-desktop-production-bb0eee1.png",
-      "docs/images/admin/admin-dashboard-desktop-production-bb0eee1-annotated.png",
+      "docs/images/admin/admin-dashboard-desktop-uat-20260905.png",
+      "docs/images/admin/admin-dashboard-desktop-uat-20260905-annotated.png",
     ],
     "/journey-visuals/admin-dashboard-mobile.png": [
-      "docs/images/admin/admin-dashboard-mobile-production-bb0eee1.png",
-      "docs/images/admin/admin-dashboard-mobile-production-bb0eee1-annotated.png",
+      "docs/images/admin/admin-dashboard-mobile-uat-20260905.png",
+      "docs/images/admin/admin-dashboard-mobile-uat-20260905-annotated.png",
     ],
     "/journey-visuals/admin-users-desktop.png": [
       "docs/images/admin/a02-users-desktop-uat-20260905.png",
@@ -391,12 +399,12 @@ test("served Journey visuals are exact annotated evidence copies", () => {
       "docs/images/admin/a02-user-detail-mobile-uat-20260905-annotated.png",
     ],
     "/journey-visuals/admin-product-review-desktop.png": [
-      "docs/images/admin/admin-product-registrations-desktop-production-9637e9f.png",
-      "docs/images/admin/admin-product-registrations-desktop-production-9637e9f-annotated.png",
+      "docs/images/admin/admin-product-review-desktop-uat-20260905.png",
+      "docs/images/admin/admin-product-review-desktop-uat-20260905-annotated.png",
     ],
     "/journey-visuals/admin-product-review-mobile.png": [
-      "docs/images/admin/admin-product-registrations-mobile-production-9637e9f.png",
-      "docs/images/admin/admin-product-registrations-mobile-production-9637e9f-annotated.png",
+      "docs/images/admin/admin-product-review-mobile-uat-20260905.png",
+      "docs/images/admin/admin-product-review-mobile-uat-20260905-annotated.png",
     ],
     "/journey-visuals/admin-promotions-desktop.png": [
       "docs/images/admin/admin-vouchers-desktop-production-9637e9f.png",
