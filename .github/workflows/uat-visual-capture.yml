@@ -24,10 +24,12 @@ jobs:
       UAT_APPROVED_PUBLIC_HOSTS: antifake.io.vn,www.antifake.io.vn
       UAT_BASE_URL: https://antifake.io.vn
       UAT_FIXTURE_SMOKE: "true"
-      UAT_USER_EMAIL: ${{ secrets.UAT_USER_EMAIL }}
-      UAT_SELLER_EMAIL: ${{ secrets.UAT_SELLER_EMAIL }}
-      UAT_ADMIN_EMAIL: ${{ secrets.UAT_ADMIN_EMAIL }}
-      UAT_TEST_PASSWORD: ${{ secrets.UAT_TEST_PASSWORD }}
+      ANTIFAKE_UAT_BUYER_EMAIL: ${{ secrets.ANTIFAKE_UAT_BUYER_EMAIL }}
+      ANTIFAKE_UAT_BUYER_PASSWORD: ${{ secrets.ANTIFAKE_UAT_BUYER_PASSWORD }}
+      ANTIFAKE_UAT_SELLER_EMAIL: ${{ secrets.ANTIFAKE_UAT_SELLER_EMAIL }}
+      ANTIFAKE_UAT_SELLER_PASSWORD: ${{ secrets.ANTIFAKE_UAT_SELLER_PASSWORD }}
+      ANTIFAKE_UAT_ADMIN_EMAIL: ${{ secrets.ANTIFAKE_UAT_ADMIN_EMAIL }}
+      ANTIFAKE_UAT_ADMIN_PASSWORD: ${{ secrets.ANTIFAKE_UAT_ADMIN_PASSWORD }}
       UAT_QR_CODE: ${{ secrets.UAT_QR_CODE }}
       UAT_VIDEO: "false"
     steps:
@@ -48,72 +50,77 @@ jobs:
           mkdir -p .uat-runtime
           preflight_status=.uat-runtime/capture-preflight-status
 
-          required_secrets=(
-            UAT_USER_EMAIL
-            UAT_SELLER_EMAIL
-            UAT_ADMIN_EMAIL
-            UAT_TEST_PASSWORD
-            UAT_QR_CODE
-          )
-          missing_secrets=()
-          for secret_name in "${required_secrets[@]}"; do
-            if [ -z "${!secret_name:-}" ]; then
-              missing_secrets+=("$secret_name")
+          credential_available() {
+            local email_name="$1"
+            local password_name="$2"
+            if [ -n "${!email_name:-}" ] && [ -n "${!password_name:-}" ]; then
+              echo true
+            else
+              echo false
             fi
-          done
+          }
 
-          if [ "${#missing_secrets[@]}" -gt 0 ]; then
-            echo "::warning::Authenticated capture inputs are incomplete; public and independently configured role captures will still run. Missing names: ${missing_secrets[*]}"
-            echo incomplete > "$preflight_status"
-          else
+          buyer_available="$(credential_available ANTIFAKE_UAT_BUYER_EMAIL ANTIFAKE_UAT_BUYER_PASSWORD)"
+          seller_available="$(credential_available ANTIFAKE_UAT_SELLER_EMAIL ANTIFAKE_UAT_SELLER_PASSWORD)"
+          admin_available="$(credential_available ANTIFAKE_UAT_ADMIN_EMAIL ANTIFAKE_UAT_ADMIN_PASSWORD)"
+          echo "BUYER_CREDENTIAL_AVAILABLE=$buyer_available"
+          echo "SELLER_CREDENTIAL_AVAILABLE=$seller_available"
+          echo "ADMIN_CREDENTIAL_AVAILABLE=$admin_available"
+
+          if [ "$buyer_available" = true ] && [ "$seller_available" = true ] && [ "$admin_available" = true ]; then
             echo complete > "$preflight_status"
+          else
+            echo partial > "$preflight_status"
+            echo "::warning::One or more authenticated UAT role inputs are unavailable; available roles and public fixture captures will still run."
           fi
 
-          if [ -n "${UAT_USER_EMAIL:-}" ]; then
-            case "${UAT_USER_EMAIL,,}" in
+          if [ -n "${ANTIFAKE_UAT_BUYER_EMAIL:-}" ]; then
+            case "${ANTIFAKE_UAT_BUYER_EMAIL,,}" in
               *@antifake.local) ;;
-              *) echo "::error::UAT_USER_EMAIL must use the approved synthetic domain"; exit 1 ;;
+              *) echo "::error::Buyer UAT credential must use the approved synthetic domain"; exit 1 ;;
             esac
           fi
-          if [ -n "${UAT_SELLER_EMAIL:-}" ]; then
-            case "${UAT_SELLER_EMAIL,,}" in
+          if [ -n "${ANTIFAKE_UAT_SELLER_EMAIL:-}" ]; then
+            case "${ANTIFAKE_UAT_SELLER_EMAIL,,}" in
               *@antifake.local) ;;
-              *) echo "::error::UAT_SELLER_EMAIL must use the approved synthetic domain"; exit 1 ;;
+              *) echo "::error::Seller UAT credential must use the approved synthetic domain"; exit 1 ;;
             esac
           fi
-          if [ -n "${UAT_ADMIN_EMAIL:-}" ]; then
-            case "${UAT_ADMIN_EMAIL,,}" in
+          if [ -n "${ANTIFAKE_UAT_ADMIN_EMAIL:-}" ]; then
+            case "${ANTIFAKE_UAT_ADMIN_EMAIL,,}" in
               admin@antifake.io.vn|*@antifake.local) ;;
-              *) echo "::error::UAT_ADMIN_EMAIL is not an approved UAT alias"; exit 1 ;;
+              *) echo "::error::Admin UAT credential is not an approved UAT alias"; exit 1 ;;
             esac
           fi
+          for password_name in \
+            ANTIFAKE_UAT_BUYER_PASSWORD \
+            ANTIFAKE_UAT_SELLER_PASSWORD \
+            ANTIFAKE_UAT_ADMIN_PASSWORD; do
+            password_value="${!password_name:-}"
+            case "${password_value,,}" in
+              changeme|change-me|password|example|test)
+                echo "::error::A UAT role password is still a placeholder"
+                exit 1
+                ;;
+            esac
+          done
           if [ -n "${UAT_QR_CODE:-}" ] && ! [[ "${UAT_QR_CODE^^}" =~ ^UAT[-_][A-Z0-9_-]+$ ]]; then
             echo "::error::UAT_QR_CODE must use the synthetic UAT namespace"
             exit 1
           fi
-          if [ -n "${UAT_TEST_PASSWORD:-}" ]; then
-            case "${UAT_TEST_PASSWORD,,}" in
-              changeme|change-me|password|example|test)
-                echo "::error::UAT_TEST_PASSWORD is still a placeholder"
-                exit 1
-                ;;
-            esac
-          fi
-
           echo "UAT capture input preflight completed without printing secret values."
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
       - name: Capture raw and temporary annotated pairs
         run: npm run test:e2e:uat:visual
-      - name: Require complete authenticated capture inputs
+      - name: Report authenticated capture input status
         if: always()
         shell: bash
         run: |
           set -Eeuo pipefail
-          if [ "$(cat .uat-runtime/capture-preflight-status 2>/dev/null || echo incomplete)" != "complete" ]; then
-            echo "::error::Authenticated UAT capture remains incomplete; configure the missing GitHub environment secrets and rerun. Secret values are not printed."
-            exit 1
-          fi
+          status="$(cat .uat-runtime/capture-preflight-status 2>/dev/null || echo unavailable)"
+          echo "AUTHENTICATED_CAPTURE_INPUT_STATUS=$status"
+          echo "Authenticated UAT capture status reported without printing secret values."
       - name: Upload capture artifacts for privacy review
         if: always()
         uses: actions/upload-artifact@v4

@@ -1,20 +1,20 @@
 import { expect, test } from "@playwright/test";
 import { assertNoServerErrors, loginAs, requiredCredential, requiredPassword } from "./helpers/session";
 
-const buyerEmail = requiredCredential("UAT_USER_EMAIL");
-const password = requiredPassword();
+const buyerEmail = requiredCredential("buyer");
+const password = requiredPassword("buyer");
 
 test.describe("cart and checkout safe smoke", () => {
   test("buyer cart loads without creating data", async ({ page }) => {
-    test.skip(!buyerEmail || !password, "UAT_USER_EMAIL and UAT_TEST_PASSWORD are required");
-    await loginAs(page, buyerEmail!, password!);
+    test.skip(!buyerEmail || !password, "ANTIFAKE_UAT_BUYER_EMAIL and ANTIFAKE_UAT_BUYER_PASSWORD are required");
+    await loginAs(page, buyerEmail!, password!, "buyer");
     await assertNoServerErrors(page, "/cart");
     expect(new URL(page.url()).pathname).toBe("/cart");
   });
 
   test("header cart badge follows quantity updates", async ({ page }) => {
-    test.skip(!buyerEmail || !password, "UAT_USER_EMAIL and UAT_TEST_PASSWORD are required");
-    await loginAs(page, buyerEmail!, password!);
+    test.skip(!buyerEmail || !password, "ANTIFAKE_UAT_BUYER_EMAIL and ANTIFAKE_UAT_BUYER_PASSWORD are required");
+    await loginAs(page, buyerEmail!, password!, "buyer");
     await page.goto("/cart");
 
     const cartItems = page.locator(".cart-item");
@@ -45,8 +45,8 @@ test.describe("cart and checkout safe smoke", () => {
   });
 
   test("empty checkout route does not expose a server error", async ({ page }) => {
-    test.skip(!buyerEmail || !password, "UAT_USER_EMAIL and UAT_TEST_PASSWORD are required");
-    await loginAs(page, buyerEmail!, password!);
+    test.skip(!buyerEmail || !password, "ANTIFAKE_UAT_BUYER_EMAIL and ANTIFAKE_UAT_BUYER_PASSWORD are required");
+    await loginAs(page, buyerEmail!, password!, "buyer");
     await assertNoServerErrors(page, "/checkout");
     expect(new URL(page.url()).pathname).toBe("/checkout");
   });

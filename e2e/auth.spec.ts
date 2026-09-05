@@ -1,10 +1,11 @@
 import { expect, test } from "@playwright/test";
+import { requiredCredential, requiredPassword } from "./helpers/session";
 
-const adminUsername = process.env.UAT_ADMIN_EMAIL;
-const testPassword = process.env.UAT_TEST_PASSWORD;
+const adminUsername = requiredCredential("admin");
+const testPassword = requiredPassword("admin");
 
 test("seed admin can sign in and reach the admin console", async ({ page }) => {
-  test.skip(!adminUsername || !testPassword, "UAT_ADMIN_EMAIL and UAT_TEST_PASSWORD are required");
+  test.skip(!adminUsername || !testPassword, "ANTIFAKE_UAT_ADMIN_EMAIL and ANTIFAKE_UAT_ADMIN_PASSWORD are required");
 
   await page.goto("/auth", { waitUntil: "domcontentloaded" });
   await page.getByLabel("Email hoặc số điện thoại").fill(adminUsername!);

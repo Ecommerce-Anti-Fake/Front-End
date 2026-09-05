@@ -1,25 +1,14 @@
 import { expect, test, type Page } from "@playwright/test";
 import { loginAs } from "./helpers/session";
+import { readUatAuthInput } from "./helpers/uat-auth-contract";
 
-const password = process.env.UAT_TEST_PASSWORD;
-const buyerEmail = process.env.UAT_USER_EMAIL;
-const sellerEmail = process.env.UAT_SELLER_EMAIL;
-const adminEmail = process.env.UAT_ADMIN_EMAIL;
 const qrCode = process.env.UAT_QR_CODE;
-const isSyntheticIdentifier = (value: string | undefined) =>
-  Boolean(value && /@antifake\.local$/i.test(value));
-const isApprovedAdminIdentifier = (value: string | undefined) =>
-  Boolean(
-    value &&
-    (/@antifake\.local$/i.test(value) ||
-      value.toLowerCase() === "admin@antifake.io.vn"),
-  );
+const buyerAuth = readUatAuthInput("buyer");
+const sellerAuth = readUatAuthInput("seller");
+const adminAuth = readUatAuthInput("admin");
 const canRun =
   process.env.UAT_FIXTURE_SMOKE === "true" &&
-  Boolean(password && qrCode) &&
-  isSyntheticIdentifier(buyerEmail) &&
-  isSyntheticIdentifier(sellerEmail) &&
-  isApprovedAdminIdentifier(adminEmail);
+  Boolean(buyerAuth && sellerAuth && adminAuth && qrCode);
 
 async function visitFixtureRoute(page: Page, route: string) {
   const errors: string[] = [];
@@ -49,7 +38,7 @@ test.describe("approved UAT demo fixture smoke", () => {
   test("buyer profile, address, cart, orders, affiliate, chat and community are backed by UAT fixtures", async ({
     page,
   }) => {
-    await loginAs(page, buyerEmail!, password!);
+    await loginAs(page, buyerAuth!.email, buyerAuth!.password, "buyer");
     await visitFixtureRoute(page, "/profile");
     await visitFixtureRoute(page, "/profile/address");
     await visitFixtureRoute(page, "/profile/wallet");
@@ -76,7 +65,7 @@ test.describe("approved UAT demo fixture smoke", () => {
   test("seller shop, product, order, voucher, wallet, affiliate and chat surfaces load from the shared graph", async ({
     page,
   }) => {
-    await loginAs(page, sellerEmail!, password!);
+    await loginAs(page, sellerAuth!.email, sellerAuth!.password, "seller");
     await visitFixtureRoute(page, "/seller/shop-info");
     await visitFixtureRoute(page, "/seller/products");
     await visitFixtureRoute(page, "/seller/orders");
@@ -87,7 +76,7 @@ test.describe("approved UAT demo fixture smoke", () => {
   });
 
   test("Admin review queues load synthetic records", async ({ page }) => {
-    await loginAs(page, adminEmail!, password!);
+    await loginAs(page, adminAuth!.email, adminAuth!.password, "admin");
     await visitFixtureRoute(page, "/admin");
     await visitFixtureRoute(page, "/admin/users");
     await visitFixtureRoute(page, "/admin/shop-registrations");

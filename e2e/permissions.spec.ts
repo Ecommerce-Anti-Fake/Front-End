@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { requiredCredential, requiredPassword } from "./helpers/session";
 
 test("guest access to admin redirects to authentication", async ({ page }) => {
   await page.goto("/admin", { waitUntil: "domcontentloaded" });
@@ -28,9 +29,9 @@ for (const route of ["/payment", "/payment-success", "/payment-failed"]) {
 }
 
 test("authenticated non-admin is redirected away from admin", async ({ page }) => {
-  const username = process.env.UAT_USER_EMAIL;
-  const password = process.env.UAT_TEST_PASSWORD;
-  test.skip(!username || !password, "UAT_USER_EMAIL and UAT_TEST_PASSWORD are required");
+  const username = requiredCredential("buyer");
+  const password = requiredPassword("buyer");
+  test.skip(!username || !password, "ANTIFAKE_UAT_BUYER_EMAIL and ANTIFAKE_UAT_BUYER_PASSWORD are required");
 
   await page.goto("/auth", { waitUntil: "domcontentloaded" });
   await page.getByLabel("Email hoặc số điện thoại").fill(username!);

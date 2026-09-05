@@ -1,8 +1,13 @@
 import { expect, test } from "@playwright/test";
-import { assertNoServerErrors, loginAs, requiredPassword } from "./helpers/session";
+import {
+  assertNoServerErrors,
+  loginAs,
+  requiredCredential,
+  requiredPassword,
+} from "./helpers/session";
 
-const adminEmail = process.env.UAT_ADMIN_EMAIL;
-const password = requiredPassword();
+const adminEmail = requiredCredential("admin");
+const password = requiredPassword("admin");
 const adminReadOnlyRoutes = [
   "/admin",
   "/admin/users",
@@ -16,15 +21,15 @@ const adminReadOnlyRoutes = [
 ] as const;
 
 test("admin seed reaches the admin route when the account is active", async ({ page }) => {
-  test.skip(!adminEmail || !password, "UAT_ADMIN_EMAIL and UAT_TEST_PASSWORD are required");
-  await loginAs(page, adminEmail!, password!);
+  test.skip(!adminEmail || !password, "ANTIFAKE_UAT_ADMIN_EMAIL and ANTIFAKE_UAT_ADMIN_PASSWORD are required");
+  await loginAs(page, adminEmail!, password!, "admin");
   await assertNoServerErrors(page, "/admin");
   await expect(page).toHaveURL(/\/admin(?:\/|$)/);
 });
 
 test("admin read-only route inventory renders without server errors", async ({ page }) => {
-  test.skip(!adminEmail || !password, "UAT_ADMIN_EMAIL and UAT_TEST_PASSWORD are required");
-  await loginAs(page, adminEmail!, password!);
+  test.skip(!adminEmail || !password, "ANTIFAKE_UAT_ADMIN_EMAIL and ANTIFAKE_UAT_ADMIN_PASSWORD are required");
+  await loginAs(page, adminEmail!, password!, "admin");
 
   for (const route of adminReadOnlyRoutes) {
     await assertNoServerErrors(page, route);

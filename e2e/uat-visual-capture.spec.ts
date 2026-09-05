@@ -5,33 +5,24 @@ import {
   type Page,
   type TestInfo,
 } from "@playwright/test";
-import { loginAs } from "./helpers/session";
+import {
+  createAuthenticatedPage,
+} from "./helpers/session";
+import { readUatAuthInput } from "./helpers/uat-auth-contract";
 
-const password = process.env.UAT_TEST_PASSWORD;
-const buyerEmail = process.env.UAT_USER_EMAIL;
-const sellerEmail = process.env.UAT_SELLER_EMAIL;
-const adminEmail = process.env.UAT_ADMIN_EMAIL;
 const qrCode = process.env.UAT_QR_CODE;
-const isSyntheticIdentifier = (value: string | undefined) =>
-  Boolean(value && /@antifake\.local$/i.test(value));
-const isApprovedAdminIdentifier = (value: string | undefined) =>
-  Boolean(
-    value &&
-    (/@antifake\.local$/i.test(value) ||
-      value.toLowerCase() === "admin@antifake.io.vn"),
-  );
+const buyerCredentialAvailable = Boolean(readUatAuthInput("buyer"));
+const sellerCredentialAvailable = Boolean(readUatAuthInput("seller"));
+const adminCredentialAvailable = Boolean(readUatAuthInput("admin"));
 const canRunBuyer =
   process.env.UAT_FIXTURE_SMOKE === "true" &&
-  Boolean(password) &&
-  isSyntheticIdentifier(buyerEmail);
+  buyerCredentialAvailable;
 const canRunSeller =
   process.env.UAT_FIXTURE_SMOKE === "true" &&
-  Boolean(password) &&
-  isSyntheticIdentifier(sellerEmail);
+  sellerCredentialAvailable;
 const canRunAdmin =
   process.env.UAT_FIXTURE_SMOKE === "true" &&
-  Boolean(password) &&
-  isApprovedAdminIdentifier(adminEmail);
+  adminCredentialAvailable;
 const canRunPublicFixtureCapture = process.env.UAT_FIXTURE_SMOKE === "true";
 const canRunQrFixtureCapture =
   process.env.UAT_FIXTURE_SMOKE === "true" && Boolean(qrCode);
@@ -332,13 +323,15 @@ test("scheduled live fixture produces a non-provider room shell pair", async ({
 
 test.describe("approved UAT demo visual capture scaffold", () => {
   test("buyer fixture pack produces raw and annotated pairs", async ({
-    page,
+    browser,
   }, testInfo) => {
     test.skip(
       !canRunBuyer,
-      "Set UAT_USER_EMAIL and UAT_TEST_PASSWORD for Buyer capture",
+      "Set ANTIFAKE_UAT_BUYER_EMAIL and ANTIFAKE_UAT_BUYER_PASSWORD for Buyer capture",
     );
-    await loginAs(page, buyerEmail!, password!);
+    const session = await createAuthenticatedPage(browser, "buyer", testInfo);
+    const page = session.page;
+    try {
 
     await visitFixtureRoute(page, "/profile");
     await capturePair(page, testInfo, "buyer-profile", [
@@ -402,16 +395,21 @@ test.describe("approved UAT demo visual capture scaffold", () => {
       { number: 2, selector: ".community-page" },
       { number: 3, selector: ".community-content > *" },
     ]);
+    } finally {
+      await session.close();
+    }
   });
 
   test("seller fixture pack produces raw and annotated pairs", async ({
-    page,
+    browser,
   }, testInfo) => {
     test.skip(
       !canRunSeller,
-      "Set UAT_SELLER_EMAIL and UAT_TEST_PASSWORD for Seller capture",
+      "Set ANTIFAKE_UAT_SELLER_EMAIL and ANTIFAKE_UAT_SELLER_PASSWORD for Seller capture",
     );
-    await loginAs(page, sellerEmail!, password!);
+    const session = await createAuthenticatedPage(browser, "seller", testInfo);
+    const page = session.page;
+    try {
 
     await visitFixtureRoute(page, "/seller/shop-info");
     await capturePair(page, testInfo, "seller-shop", [
@@ -479,16 +477,21 @@ test.describe("approved UAT demo visual capture scaffold", () => {
       { number: 2, selector: ".message-room-list" },
       { number: 3, selector: ".message-content" },
     ]);
+    } finally {
+      await session.close();
+    }
   });
 
   test("Admin review pack produces raw and annotated pairs", async ({
-    page,
+    browser,
   }, testInfo) => {
     test.skip(
       !canRunAdmin,
-      "Set UAT_ADMIN_EMAIL and UAT_TEST_PASSWORD for Admin capture",
+      "Set ANTIFAKE_UAT_ADMIN_EMAIL and ANTIFAKE_UAT_ADMIN_PASSWORD for Admin capture",
     );
-    await loginAs(page, adminEmail!, password!);
+    const session = await createAuthenticatedPage(browser, "admin", testInfo);
+    const page = session.page;
+    try {
 
     const captures: Array<{ id: string; route: string; markers: Marker[] }> = [
       {
@@ -559,6 +562,9 @@ test.describe("approved UAT demo visual capture scaffold", () => {
     for (const capture of captures) {
       await visitFixtureRoute(page, capture.route);
       await capturePair(page, testInfo, capture.id, capture.markers);
+    }
+    } finally {
+      await session.close();
     }
   });
 });

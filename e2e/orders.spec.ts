@@ -1,12 +1,12 @@
 import { expect, test } from "@playwright/test";
 import { assertNoServerErrors, loginAs, requiredCredential, requiredPassword } from "./helpers/session";
 
-const buyerEmail = requiredCredential("UAT_USER_EMAIL");
-const password = requiredPassword();
+const buyerEmail = requiredCredential("buyer");
+const password = requiredPassword("buyer");
 
 test("buyer order list and any visible order detail use owned routes", async ({ page }) => {
-  test.skip(!buyerEmail || !password, "UAT_USER_EMAIL and UAT_TEST_PASSWORD are required");
-  await loginAs(page, buyerEmail!, password!);
+  test.skip(!buyerEmail || !password, "ANTIFAKE_UAT_BUYER_EMAIL and ANTIFAKE_UAT_BUYER_PASSWORD are required");
+  await loginAs(page, buyerEmail!, password!, "buyer");
   await assertNoServerErrors(page, "/profile/orders");
 
   const orderLinks = page.locator('a[href^="/profile/orders/"]');

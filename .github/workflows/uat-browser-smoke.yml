@@ -20,10 +20,12 @@ jobs:
       UAT_APPROVED_PUBLIC_HOSTS: antifake.io.vn,www.antifake.io.vn
       UAT_BASE_URL: https://antifake.io.vn
       UAT_FIXTURE_SMOKE: "true"
-      UAT_USER_EMAIL: ${{ secrets.UAT_USER_EMAIL }}
-      UAT_SELLER_EMAIL: ${{ secrets.UAT_SELLER_EMAIL }}
-      UAT_ADMIN_EMAIL: ${{ secrets.UAT_ADMIN_EMAIL }}
-      UAT_TEST_PASSWORD: ${{ secrets.UAT_TEST_PASSWORD }}
+      ANTIFAKE_UAT_BUYER_EMAIL: ${{ secrets.ANTIFAKE_UAT_BUYER_EMAIL }}
+      ANTIFAKE_UAT_BUYER_PASSWORD: ${{ secrets.ANTIFAKE_UAT_BUYER_PASSWORD }}
+      ANTIFAKE_UAT_SELLER_EMAIL: ${{ secrets.ANTIFAKE_UAT_SELLER_EMAIL }}
+      ANTIFAKE_UAT_SELLER_PASSWORD: ${{ secrets.ANTIFAKE_UAT_SELLER_PASSWORD }}
+      ANTIFAKE_UAT_ADMIN_EMAIL: ${{ secrets.ANTIFAKE_UAT_ADMIN_EMAIL }}
+      ANTIFAKE_UAT_ADMIN_PASSWORD: ${{ secrets.ANTIFAKE_UAT_ADMIN_PASSWORD }}
       UAT_QR_CODE: ${{ secrets.UAT_QR_CODE }}
     steps:
       - name: Checkout
@@ -38,4 +40,4 @@ jobs:
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
       - name: Run UAT fixture smoke
-        run: npx playwright test --config=playwright.uat.config.ts e2e/uat-fixture-smoke.spec.ts --project=desktop --project=mobile
+        run: npx playwright test --config=playwright.uat.config.ts e2e/uat-fixture-smoke.spec.ts e2e/uat-auth-storage-state.spec.ts --project=desktop --project=mobile
