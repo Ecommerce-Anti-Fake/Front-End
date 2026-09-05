@@ -139,8 +139,50 @@ export const helpArticles: HelpArticle[] = [
     status: "PARTIAL",
     sourceRefs: ["Front-End/src/pages/profile/ordersPage.tsx", "docs/UAT_TEST_MATRIX.md#AF-B-004"],
     steps: [
-      { slug: "list", title: "Mở danh sách đơn", description: "Vào Tài khoản rồi chọn Đơn mua để xem các đơn của bạn." },
-      { slug: "detail", title: "Xem chi tiết", description: "Chọn một đơn để xem sản phẩm, thanh toán và tiến trình giao hàng." },
+      {
+        slug: "list",
+        title: "Mở danh sách đơn",
+        description: "Vào Tài khoản rồi chọn Đơn mua để xem các đơn của bạn.",
+        visual: {
+          desktop: "/journey-visuals/b05-orders-desktop.png",
+          mobile: "/journey-visuals/b05-orders-mobile.png",
+          alt: "Danh sách đơn hàng Buyer với dữ liệu DOCS_UAT trên Desktop hoặc Mobile",
+          markers: {
+            desktop: [
+              { number: 1, guidance: "Khu vực danh sách đơn mua của tài khoản Buyer." },
+              { number: 2, guidance: "Thông tin người nhận và đơn hàng DOCS_UAT." },
+              { number: 3, guidance: "Mở chi tiết đơn hàng bằng nút xem chi tiết." },
+            ],
+            mobile: [
+              { number: 1, guidance: "Khu vực danh sách đơn mua của tài khoản Buyer." },
+              { number: 2, guidance: "Thông tin người nhận và đơn hàng DOCS_UAT." },
+              { number: 3, guidance: "Mở chi tiết đơn hàng bằng nút xem chi tiết." },
+            ],
+          },
+        },
+      },
+      {
+        slug: "detail",
+        title: "Xem chi tiết",
+        description: "Chọn một đơn để xem sản phẩm, thanh toán và tiến trình giao hàng.",
+        visual: {
+          desktop: "/journey-visuals/b05-order-detail-desktop.png",
+          mobile: "/journey-visuals/b05-order-detail-mobile.png",
+          alt: "Chi tiết đơn hàng Buyer với thông tin tổng hợp DOCS_UAT trên Desktop hoặc Mobile",
+          markers: {
+            desktop: [
+              { number: 1, guidance: "Tiêu đề và trạng thái của đơn hàng DOCS_UAT." },
+              { number: 2, guidance: "Thông tin sản phẩm, người nhận và vận chuyển tổng hợp." },
+              { number: 3, guidance: "Tóm tắt thanh toán của đơn hàng UAT." },
+            ],
+            mobile: [
+              { number: 1, guidance: "Tiêu đề và trạng thái của đơn hàng DOCS_UAT." },
+              { number: 2, guidance: "Thông tin sản phẩm, người nhận và vận chuyển tổng hợp." },
+              { number: 3, guidance: "Tóm tắt thanh toán của đơn hàng UAT." },
+            ],
+          },
+        },
+      },
       { slug: "next-action", title: "Thực hiện bước tiếp theo", description: "Chỉ chọn hành động được hiển thị cho trạng thái hiện tại của đơn." },
     ],
   },
@@ -324,7 +366,28 @@ export const helpArticles: HelpArticle[] = [
     status: "PARTIAL",
     sourceRefs: ["Front-End/src/components/chat/ChatLayout.tsx", "docs/user-guide/FEATURE_GUIDE_MATRIX.md#Chat"],
     steps: [
-      { slug: "open", title: "Mở Chat", description: "Từ Shop hoặc khu vực tin nhắn, mở cuộc trò chuyện phù hợp." },
+      {
+        slug: "open",
+        title: "Mở Chat",
+        description: "Từ Shop hoặc khu vực tin nhắn, mở cuộc trò chuyện phù hợp.",
+        visual: {
+          desktop: "/journey-visuals/b07-chat-open-desktop.png",
+          mobile: "/journey-visuals/b07-chat-open-mobile.png",
+          alt: "Lịch sử Chat tổng hợp giữa Buyer và Shop DOCS_UAT trên Desktop hoặc Mobile",
+          markers: {
+            desktop: [
+              { number: 1, guidance: "Khu vực Chat của tài khoản Buyer." },
+              { number: 2, guidance: "Danh sách phòng trò chuyện đã lọc theo DOCS_UAT." },
+              { number: 3, guidance: "Lịch sử tin nhắn tổng hợp giữa Buyer và Shop." },
+            ],
+            mobile: [
+              { number: 1, guidance: "Khu vực nội dung của cuộc trò chuyện DOCS_UAT." },
+              { number: 2, guidance: "Tiêu đề phòng và người trò chuyện tổng hợp." },
+              { number: 3, guidance: "Các tin nhắn kiểm thử đã được seed an toàn." },
+            ],
+          },
+        },
+      },
       { slug: "send", title: "Gửi nội dung", description: "Kiểm tra người nhận trước khi gửi tin nhắn hoặc media được hỗ trợ." },
       { slug: "reconnect", title: "Xử lý mất kết nối", description: "Nếu tin nhắn chưa đồng bộ, chờ kết nối lại và không gửi lặp ngoài trạng thái hệ thống." },
     ],
@@ -692,8 +755,50 @@ export const helpArticles: HelpArticle[] = [
     status: "PARTIAL",
     sourceRefs: ["Front-End/src/pages/admin/users/index.tsx", "back-end/libs/auth/src/presentation/rpc/auth.rpc-controller.ts", "docs/UAT_TEST_MATRIX.md#AF-AD-001"],
     steps: [
-      { slug: "search", title: "Tìm người dùng", description: "Mở danh sách và tìm theo control đang có; không truy cập dữ liệu ngoài phạm vi được cấp." },
-      { slug: "detail", title: "Xem chi tiết", description: "Đối chiếu role và accountStatus từ server trước mọi thao tác nhạy cảm." },
+      {
+        slug: "search",
+        title: "Tìm người dùng",
+        description: "Mở danh sách và tìm theo control đang có; không truy cập dữ liệu ngoài phạm vi được cấp.",
+        visual: {
+          desktop: "/journey-visuals/admin-users-desktop.png",
+          mobile: "/journey-visuals/admin-users-mobile.png",
+          alt: "Danh sách người dùng Admin đã lọc theo DOCS_UAT trên Desktop hoặc Mobile",
+          markers: {
+            desktop: [
+              { number: 1, guidance: "Tiêu đề khu vực quản lý người dùng trong Admin." },
+              { number: 2, guidance: "Các chỉ số tổng quan do server trả về." },
+              { number: 3, guidance: "Bảng người dùng chỉ hiển thị bản ghi DOCS_UAT đã lọc." },
+            ],
+            mobile: [
+              { number: 1, guidance: "Thanh công cụ của hàng đợi người dùng Admin." },
+              { number: 2, guidance: "Trường tìm kiếm đang lọc theo DOCS_UAT." },
+              { number: 3, guidance: "Bảng kết quả với người dùng kiểm thử tổng hợp." },
+            ],
+          },
+        },
+      },
+      {
+        slug: "detail",
+        title: "Xem chi tiết",
+        description: "Đối chiếu role và accountStatus từ server trước mọi thao tác nhạy cảm.",
+        visual: {
+          desktop: "/journey-visuals/admin-user-detail-desktop.png",
+          mobile: "/journey-visuals/admin-user-detail-mobile.png",
+          alt: "Chi tiết người dùng kiểm thử DOCS_UAT trong Admin trên Desktop hoặc Mobile",
+          markers: {
+            desktop: [
+              { number: 1, guidance: "Thẻ hồ sơ của bản ghi người dùng DOCS_UAT." },
+              { number: 2, guidance: "Tên hiển thị và role do server cung cấp." },
+              { number: 3, guidance: "Ma trận thông tin tổng hợp để đối chiếu trước thao tác." },
+            ],
+            mobile: [
+              { number: 1, guidance: "Thẻ hồ sơ của bản ghi người dùng DOCS_UAT." },
+              { number: 2, guidance: "Tên hiển thị và role do server cung cấp." },
+              { number: 3, guidance: "Ma trận thông tin tổng hợp để đối chiếu trước thao tác." },
+            ],
+          },
+        },
+      },
     ],
   },
   {

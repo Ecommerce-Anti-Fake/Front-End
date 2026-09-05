@@ -11,9 +11,10 @@
     "test:e2e": "playwright test",
     "test:e2e:uat": "playwright test --config=playwright.uat.config.ts e2e/uat-fixture-smoke.spec.ts",
     "test:e2e:uat:visual": "playwright test --config=playwright.uat.config.ts e2e/uat-visual-capture.spec.ts",
+    "test:e2e:uat:visual:local": "node scripts/run-uat-visual-capture.mjs",
     "test:help": "node --test --experimental-strip-types test/help-content.test.mjs",
     "test:auth": "node --test --experimental-strip-types test/google-auth-error.test.mjs",
-    "test:uat-auth": "node --test --experimental-strip-types test/uat-auth-contract.test.mjs",
+    "test:uat-auth": "node --test --experimental-strip-types test/uat-auth-contract.test.mjs test/uat-local-capture-runner.test.mjs",
     "test:live": "node --test --experimental-strip-types test/live-rtc.test.mjs",
     "test:payos": "node --test --experimental-strip-types test/payos-checkout-state.test.mjs",
     "test:pwa": "node --test --experimental-strip-types test/pwa-install.test.mjs test/session-restore.test.mjs"

@@ -74,16 +74,21 @@ test("annotated Help visuals define a written explanation for every marker", () 
     ["B04/discover", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
     ["B04/product-detail", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
     ["B04/cart", { desktop: [1, 2], mobile: [1, 2] }],
+    ["B05/list", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
+    ["B05/detail", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
     ["B03/open", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
     ["B03/enter-code", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
     ["B03/result", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
     ["B08/feed", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
+    ["B07/open", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
     ["B02/search", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
     ["B02/detail", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
     ["B02/choose", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
     ["B09/discover", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
     ["B09/shop", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
     ["A01/open", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
+    ["A02/search", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
+    ["A02/detail", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
     ["A05/pending", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
     ["A09/list", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
     ["ADMIN-REVIEW/dashboard", { desktop: [1, 2, 3], mobile: [1, 2, 3] }],
@@ -178,6 +183,9 @@ test("registered journey steps expose platform-specific visuals", () => {
   const expected = [
     ["B01", "register", "/journey-visuals/b01-registration-desktop.png", "/journey-visuals/b01-registration-mobile.png"],
     ["B04", "cart", "/journey-visuals/b04-cart-desktop.png", "/journey-visuals/b04-cart-mobile.png"],
+    ["B05", "list", "/journey-visuals/b05-orders-desktop.png", "/journey-visuals/b05-orders-mobile.png"],
+    ["B05", "detail", "/journey-visuals/b05-order-detail-desktop.png", "/journey-visuals/b05-order-detail-mobile.png"],
+    ["B07", "open", "/journey-visuals/b07-chat-open-desktop.png", "/journey-visuals/b07-chat-open-mobile.png"],
     ["B03", "open", "/journey-visuals/b03-open-desktop.png", "/journey-visuals/b03-open-mobile.png"],
     ["B03", "enter-code", "/journey-visuals/b03-enter-code-desktop.png", "/journey-visuals/b03-enter-code-mobile.png"],
     ["B03", "result", "/journey-visuals/b03-positive-result-desktop.png", "/journey-visuals/b03-positive-result-mobile.png"],
@@ -187,6 +195,8 @@ test("registered journey steps expose platform-specific visuals", () => {
     ["B09", "discover", "/journey-visuals/b09-live-discovery-desktop.png", "/journey-visuals/b09-live-discovery-mobile.png"],
     ["B09", "shop", "/journey-visuals/b02-product-detail-desktop.png", "/journey-visuals/b02-product-detail-mobile.png"],
     ["A01", "open", "/journey-visuals/admin-dashboard-desktop.png", "/journey-visuals/admin-dashboard-mobile.png"],
+    ["A02", "search", "/journey-visuals/admin-users-desktop.png", "/journey-visuals/admin-users-mobile.png"],
+    ["A02", "detail", "/journey-visuals/admin-user-detail-desktop.png", "/journey-visuals/admin-user-detail-mobile.png"],
     ["A05", "pending", "/journey-visuals/admin-product-review-desktop.png", "/journey-visuals/admin-product-review-mobile.png"],
     ["A09", "list", "/journey-visuals/admin-promotions-desktop.png", "/journey-visuals/admin-promotions-mobile.png"],
     ["ADMIN-REVIEW", "dashboard", "/journey-visuals/admin-dashboard-desktop.png", "/journey-visuals/admin-dashboard-mobile.png"],
@@ -364,6 +374,22 @@ test("served Journey visuals are exact annotated evidence copies", () => {
       "docs/images/admin/admin-dashboard-mobile-production-bb0eee1.png",
       "docs/images/admin/admin-dashboard-mobile-production-bb0eee1-annotated.png",
     ],
+    "/journey-visuals/admin-users-desktop.png": [
+      "docs/images/admin/a02-users-desktop-uat-20260905.png",
+      "docs/images/admin/a02-users-desktop-uat-20260905-annotated.png",
+    ],
+    "/journey-visuals/admin-users-mobile.png": [
+      "docs/images/admin/a02-users-mobile-uat-20260905.png",
+      "docs/images/admin/a02-users-mobile-uat-20260905-annotated.png",
+    ],
+    "/journey-visuals/admin-user-detail-desktop.png": [
+      "docs/images/admin/a02-user-detail-desktop-uat-20260905.png",
+      "docs/images/admin/a02-user-detail-desktop-uat-20260905-annotated.png",
+    ],
+    "/journey-visuals/admin-user-detail-mobile.png": [
+      "docs/images/admin/a02-user-detail-mobile-uat-20260905.png",
+      "docs/images/admin/a02-user-detail-mobile-uat-20260905-annotated.png",
+    ],
     "/journey-visuals/admin-product-review-desktop.png": [
       "docs/images/admin/admin-product-registrations-desktop-production-9637e9f.png",
       "docs/images/admin/admin-product-registrations-desktop-production-9637e9f-annotated.png",
@@ -419,6 +445,30 @@ test("served Journey visuals are exact annotated evidence copies", () => {
     "/journey-visuals/b04-cart-mobile.png": [
       "docs/images/buyer/cart-mobile-production-8157ffa.png",
       "docs/images/buyer/cart-mobile-production-8157ffa-annotated.png",
+    ],
+    "/journey-visuals/b05-orders-desktop.png": [
+      "docs/images/order/b05-orders-desktop-uat-20260905.png",
+      "docs/images/order/b05-orders-desktop-uat-20260905-annotated.png",
+    ],
+    "/journey-visuals/b05-orders-mobile.png": [
+      "docs/images/order/b05-orders-mobile-uat-20260905.png",
+      "docs/images/order/b05-orders-mobile-uat-20260905-annotated.png",
+    ],
+    "/journey-visuals/b05-order-detail-desktop.png": [
+      "docs/images/order/b05-order-detail-desktop-uat-20260905.png",
+      "docs/images/order/b05-order-detail-desktop-uat-20260905-annotated.png",
+    ],
+    "/journey-visuals/b05-order-detail-mobile.png": [
+      "docs/images/order/b05-order-detail-mobile-uat-20260905.png",
+      "docs/images/order/b05-order-detail-mobile-uat-20260905-annotated.png",
+    ],
+    "/journey-visuals/b07-chat-open-desktop.png": [
+      "docs/images/chat/b07-chat-open-desktop-uat-20260905.png",
+      "docs/images/chat/b07-chat-open-desktop-uat-20260905-annotated.png",
+    ],
+    "/journey-visuals/b07-chat-open-mobile.png": [
+      "docs/images/chat/b07-chat-open-mobile-uat-20260905.png",
+      "docs/images/chat/b07-chat-open-mobile-uat-20260905-annotated.png",
     ],
     "/journey-visuals/b03-open-desktop.png": [
       "docs/images/qr/b03-open-desktop-production-78646d7.png",

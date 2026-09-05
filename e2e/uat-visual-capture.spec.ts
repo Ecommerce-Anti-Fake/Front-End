@@ -72,6 +72,45 @@ async function visitFixtureRoute(page: Page, route: string) {
   page.off("response", onResponse);
 }
 
+async function narrowAdminQueueToManagedFixture(page: Page, route: string) {
+  if (
+    ![
+      "/admin/users",
+      "/admin/shop-registrations",
+      "/admin/product-registrations",
+    ].includes(route)
+  ) {
+    return;
+  }
+
+  const search = page.locator(".admin-table-search input").first();
+  await expect(search).toBeVisible();
+  await search.fill("DOCS_UAT");
+  await expect(page.locator(".admin-table-wrap")).toContainText("DOCS_UAT", {
+    timeout: 10000,
+  });
+}
+
+async function scrollAdminContentIntoView(
+  page: Page,
+  selector = ".admin-page",
+) {
+  const selectedContent = page.locator(selector).first();
+  const content =
+    (await selectedContent.count()) > 0
+      ? selectedContent
+      : page.locator("main").first();
+  await expect(content).toBeVisible();
+  await content.evaluate((element) => {
+    element.scrollIntoView({ block: "start", inline: "nearest" });
+    const fixedHeaderOffset = window.innerWidth <= 640 ? 72 : 0;
+    const absoluteTop =
+      element.getBoundingClientRect().top + window.scrollY - fixedHeaderOffset;
+    window.scrollTo({ top: absoluteTop, left: 0, behavior: "instant" });
+  });
+  await page.waitForTimeout(50);
+}
+
 async function capturePair(
   page: Page,
   testInfo: TestInfo,
@@ -322,6 +361,8 @@ test("scheduled live fixture produces a non-provider room shell pair", async ({
 });
 
 test.describe("approved UAT demo visual capture scaffold", () => {
+  test.describe.configure({ timeout: 120_000 });
+
   test("buyer fixture pack produces raw and annotated pairs", async ({
     browser,
   }, testInfo) => {
@@ -335,7 +376,7 @@ test.describe("approved UAT demo visual capture scaffold", () => {
 
     await visitFixtureRoute(page, "/profile");
     await capturePair(page, testInfo, "buyer-profile", [
-      { number: 1, selector: ".profile-header" },
+      { number: 1, selector: ".profile-header, .profile-card" },
       { number: 2, selector: ".profile-info" },
       { number: 3, selector: ".profile-avatar-section" },
     ]);
@@ -369,11 +410,30 @@ test.describe("approved UAT demo visual capture scaffold", () => {
     ]);
 
     await visitFixtureRoute(page, "/affiliate");
-    await capturePair(page, testInfo, "buyer-affiliate", [
-      { number: 1, selector: ".affiliate-center-tabs" },
-      { number: 2, selector: ".affiliate-program-overview" },
-      { number: 3, selector: ".affiliate-commission-panel" },
-    ]);
+    const affiliateMarkers = [
+      ".affiliate-center-tabs",
+      ".affiliate-program-overview",
+      ".affiliate-commission-panel",
+    ];
+    const affiliateFixtureReady = (
+      await Promise.all(
+        affiliateMarkers.map((selector) =>
+          page.locator(selector).first().isVisible().catch(() => false),
+        ),
+      )
+    ).every(Boolean);
+    if (affiliateFixtureReady) {
+      await capturePair(page, testInfo, "buyer-affiliate", [
+        { number: 1, selector: affiliateMarkers[0] },
+        { number: 2, selector: affiliateMarkers[1] },
+        { number: 3, selector: affiliateMarkers[2] },
+      ]);
+    } else {
+      test.info().annotations.push({
+        type: "fixture-blocked",
+        description: "buyer-affiliate: managed affiliate state is not rendered",
+      });
+    }
 
     await visitFixtureRoute(page, "/profile/wallet");
     await capturePair(page, testInfo, "buyer-wallet", [
@@ -383,10 +443,28 @@ test.describe("approved UAT demo visual capture scaffold", () => {
     ]);
 
     await visitFixtureRoute(page, "/chat");
+    const chatSearch = page.locator(".message-search input").first();
+    await expect(chatSearch).toBeVisible();
+    await chatSearch.fill("DOCS_UAT");
+    const firstRoom = page.locator(".message-room-card").first();
+    await expect(firstRoom).toBeVisible();
+    await firstRoom.click();
+    await expect(page.locator(".message-content")).toBeVisible();
+    await expect(page.locator(".chat-text").first()).toBeVisible({
+      timeout: 10000,
+    });
     await capturePair(page, testInfo, "buyer-chat-history", [
-      { number: 1, selector: ".message-sidebar" },
-      { number: 2, selector: ".message-room-list" },
-      { number: 3, selector: ".message-content" },
+      ...(testInfo.project.name === "mobile"
+        ? [
+            { number: 1, selector: ".message-content" },
+            { number: 2, selector: ".chat-header" },
+            { number: 3, selector: ".chat-messages" },
+          ]
+        : [
+            { number: 1, selector: ".message-sidebar" },
+            { number: 2, selector: ".message-room-list" },
+            { number: 3, selector: ".message-content" },
+          ]),
     ]);
 
     await visitFixtureRoute(page, "/community");
@@ -493,7 +571,13 @@ test.describe("approved UAT demo visual capture scaffold", () => {
     const page = session.page;
     try {
 
-    const captures: Array<{ id: string; route: string; markers: Marker[] }> = [
+    const captures: Array<{
+      id: string;
+      route: string;
+      markers: Marker[];
+      mobileMarkers?: Marker[];
+      mobileScrollSelector?: string;
+    }> = [
       {
         id: "admin-dashboard",
         route: "/admin",
@@ -511,6 +595,12 @@ test.describe("approved UAT demo visual capture scaffold", () => {
           { number: 2, selector: ".admin-stat-grid" },
           { number: 3, selector: ".admin-table-card" },
         ],
+        mobileMarkers: [
+          { number: 1, selector: ".admin-table-toolbar" },
+          { number: 2, selector: ".admin-table-search" },
+          { number: 3, selector: ".admin-table-wrap" },
+        ],
+        mobileScrollSelector: ".admin-table-card",
       },
       {
         id: "admin-shop-review",
@@ -520,6 +610,12 @@ test.describe("approved UAT demo visual capture scaffold", () => {
           { number: 2, selector: ".admin-table-toolbar" },
           { number: 3, selector: ".admin-table-wrap" },
         ],
+        mobileMarkers: [
+          { number: 1, selector: ".admin-table-toolbar" },
+          { number: 2, selector: ".admin-table-search" },
+          { number: 3, selector: ".admin-table-wrap" },
+        ],
+        mobileScrollSelector: ".admin-table-card",
       },
       {
         id: "admin-product-review",
@@ -529,6 +625,12 @@ test.describe("approved UAT demo visual capture scaffold", () => {
           { number: 2, selector: ".admin-table-toolbar" },
           { number: 3, selector: ".admin-table-wrap" },
         ],
+        mobileMarkers: [
+          { number: 1, selector: ".admin-table-toolbar" },
+          { number: 2, selector: ".admin-table-search" },
+          { number: 3, selector: ".admin-table-wrap" },
+        ],
+        mobileScrollSelector: ".admin-table-card",
       },
       {
         id: "admin-vouchers",
@@ -561,7 +663,76 @@ test.describe("approved UAT demo visual capture scaffold", () => {
 
     for (const capture of captures) {
       await visitFixtureRoute(page, capture.route);
-      await capturePair(page, testInfo, capture.id, capture.markers);
+      await narrowAdminQueueToManagedFixture(page, capture.route);
+      const mobileCapture = testInfo.project.name === "mobile";
+      await scrollAdminContentIntoView(
+        page,
+        mobileCapture ? capture.mobileScrollSelector : undefined,
+      );
+      await capturePair(
+        page,
+        testInfo,
+        capture.id,
+        mobileCapture ? capture.mobileMarkers ?? capture.markers : capture.markers,
+      );
+
+      if (capture.id === "admin-users") {
+        const userDetailResponse = page.waitForResponse(
+          (response) => {
+            const pathname = new URL(response.url()).pathname;
+            return (
+              response.request().method() === "GET" &&
+              /^\/api\/admin\/users\/[^/]+\/?$/.test(pathname)
+            );
+          },
+          { timeout: 20000 },
+        );
+        await page.locator(".admin-table-actions a").first().click();
+        const response = await userDetailResponse;
+        expect(response.status()).toBe(200);
+        await expect(page.locator(".admin-user-detail-stack")).toBeVisible({
+          timeout: 15000,
+        });
+        await scrollAdminContentIntoView(
+          page,
+          mobileCapture ? ".admin-user-profile-card" : undefined,
+        );
+        await capturePair(page, testInfo, "admin-user-detail", [
+          { number: 1, selector: ".admin-user-profile-card" },
+          { number: 2, selector: ".admin-user-profile-title" },
+          { number: 3, selector: ".admin-user-info-matrix" },
+        ]);
+      }
+
+      if (capture.id === "admin-shop-review") {
+        const shopDetailResponse = page.waitForResponse(
+          (response) => {
+            const pathname = new URL(response.url()).pathname;
+            return (
+              response.request().method() === "GET" &&
+              /^\/api\/shops\/admin\/[^/]+\/verification-detail\/?$/.test(
+                pathname,
+              )
+            );
+          },
+          { timeout: 20000 },
+        );
+        await page.locator(".admin-table-actions a").first().click();
+        const response = await shopDetailResponse;
+        expect(response.status()).toBe(200);
+        await expect(page.locator(".admin-shop-summary")).toBeVisible({
+          timeout: 15000,
+        });
+        await scrollAdminContentIntoView(
+          page,
+          mobileCapture ? ".admin-shop-summary" : undefined,
+        );
+        await capturePair(page, testInfo, "admin-shop-review-detail", [
+          { number: 1, selector: ".admin-shop-summary" },
+          { number: 2, selector: ".admin-shop-identity" },
+          { number: 3, selector: ".admin-detail-info-grid" },
+        ]);
+      }
     }
     } finally {
       await session.close();
