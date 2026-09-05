@@ -6,9 +6,11 @@ const qrCode = process.env.UAT_QR_CODE;
 const buyerAuth = readUatAuthInput("buyer");
 const sellerAuth = readUatAuthInput("seller");
 const adminAuth = readUatAuthInput("admin");
-const canRun =
-  process.env.UAT_FIXTURE_SMOKE === "true" &&
-  Boolean(buyerAuth && sellerAuth && adminAuth && qrCode);
+const fixtureSmokeEnabled = process.env.UAT_FIXTURE_SMOKE === "true";
+const canRunBuyer = fixtureSmokeEnabled && Boolean(buyerAuth);
+const canRunSeller = fixtureSmokeEnabled && Boolean(sellerAuth);
+const canRunAdmin = fixtureSmokeEnabled && Boolean(adminAuth);
+const canRunQr = fixtureSmokeEnabled && Boolean(qrCode);
 
 async function visitFixtureRoute(page: Page, route: string) {
   const errors: string[] = [];
@@ -30,14 +32,13 @@ async function visitFixtureRoute(page: Page, route: string) {
 }
 
 test.describe("approved UAT demo fixture smoke", () => {
-  test.skip(
-    !canRun,
-    "Set UAT_FIXTURE_SMOKE and injected UAT account/QR variables",
-  );
-
   test("buyer profile, address, cart, orders, affiliate, chat and community are backed by UAT fixtures", async ({
     page,
   }) => {
+    test.skip(
+      !canRunBuyer,
+      "Set UAT_FIXTURE_SMOKE and Buyer UAT account variables",
+    );
     await loginAs(page, buyerAuth!.email, buyerAuth!.password, "buyer");
     await visitFixtureRoute(page, "/profile");
     await visitFixtureRoute(page, "/profile/address");
@@ -52,6 +53,10 @@ test.describe("approved UAT demo fixture smoke", () => {
   test("positive QR uses the UAT database verification result", async ({
     page,
   }) => {
+    test.skip(
+      !canRunQr,
+      "Set UAT_FIXTURE_SMOKE and the injected UAT QR variable",
+    );
     await visitFixtureRoute(page, "/qr");
     await page.getByTestId("verification-tab-code").click();
     await page.getByTestId("verification-code-input").fill(qrCode!);
@@ -65,6 +70,10 @@ test.describe("approved UAT demo fixture smoke", () => {
   test("seller shop, product, order, voucher, wallet, affiliate and chat surfaces load from the shared graph", async ({
     page,
   }) => {
+    test.skip(
+      !canRunSeller,
+      "Set UAT_FIXTURE_SMOKE and Seller UAT account variables",
+    );
     await loginAs(page, sellerAuth!.email, sellerAuth!.password, "seller");
     await visitFixtureRoute(page, "/seller/shop-info");
     await visitFixtureRoute(page, "/seller/products");
@@ -76,6 +85,10 @@ test.describe("approved UAT demo fixture smoke", () => {
   });
 
   test("Admin review queues load synthetic records", async ({ page }) => {
+    test.skip(
+      !canRunAdmin,
+      "Set UAT_FIXTURE_SMOKE and Admin UAT account variables",
+    );
     await loginAs(page, adminAuth!.email, adminAuth!.password, "admin");
     await visitFixtureRoute(page, "/admin");
     await visitFixtureRoute(page, "/admin/users");
