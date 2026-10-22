@@ -5,6 +5,7 @@ export type Order = {
   shopName: string;
   totalAmount: number;
   paymentMethod: string;
+  paymentStatus?: string;
   firstProduct: {
     name: string;
     variant: string;

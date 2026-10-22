@@ -1,3 +1,4 @@
+import ResumePayment from "./resumePayment";
 import { useNavigate } from "react-router-dom";
 import "../../css/components/order/orderCard.css";
 import type { Order } from "../../type/order";
@@ -82,6 +83,7 @@ export default function OrderCard({ order }: Props) {
       </div>
 
       <div className="order-footer">
+        <ResumePayment order={order} />
         <div className="order-payment-info">
           <div>
             <span>Tổng thanh toán</span>

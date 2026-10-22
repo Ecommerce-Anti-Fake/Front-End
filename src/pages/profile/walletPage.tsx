@@ -1,3 +1,4 @@
+import PendingTopUps from "../../components/wallet/pendingTopUps";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -115,7 +116,7 @@ export default function WalletPage() {
           toast.error(error instanceof Error ? error.message : "Không thể đối soát giao dịch PayOS");
         });
     } else if (topUpReturn === "cancelled") {
-      toast.info("Bạn đã hủy yêu cầu nạp tiền.");
+      toast.info("Đã quay lại từ PayOS. Vui lòng kiểm tra trạng thái yêu cầu nạp tiền.");
     }
   }, [returnedPaymentLinkId, topUpReturn]);
 
@@ -171,6 +172,7 @@ export default function WalletPage() {
         </button>
       </div>
 
+      <PendingTopUps />
       <div className="wallet-page-grid">
         <div className="wallet-user-card">
           <WalletIcon size={22} />

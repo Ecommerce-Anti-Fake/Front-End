@@ -363,3 +363,9 @@
 /* Laptop */
 @media (min-width: 1025px) and (max-width: 1440px) {
 }
+
+.pending-top-ups { background: white; border: 1px solid #eee; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+.pending-top-ups h2 { font-size: 18px; margin: 0 0 12px; }
+.pending-top-up-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; padding: 12px 0; border-top: 1px solid #eee; }
+.pending-top-up-row small { display: block; margin-top: 4px; }
+.pending-top-up-row button { background: #a50017; color: white; border: 0; border-radius: 6px; padding: 10px 14px; cursor: pointer; }

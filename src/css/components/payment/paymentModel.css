@@ -579,3 +579,28 @@
     min-height: 220px;
   }
 }
+
+/* Render the official PayOS QR payload as a crisp, responsive SVG. The cross-origin
+   embedded form remains available; its internal QR cannot be styled safely. */
+.payment-model-content { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); }
+.payment-qr-card { padding: 60px 20px 24px; }
+.payment-official-qr { width: min(100%, 384px); aspect-ratio: 1; margin: 0 auto; padding: 12px; box-sizing: border-box; background: white; }
+.payment-official-qr svg { display: block; width: 100%; height: auto; }
+.payment-countdown { text-align: center; margin: 16px 0; font-variant-numeric: tabular-nums; }
+.payment-countdown strong { color: #a50017; font-size: 22px; }
+.payment-expired { padding: 30px 12px; color: #a50017; text-align: center; }
+.payment-info-card { min-width: 0; padding: 24px; border: 1px solid #f0dede; border-radius: 8px; background: white; }
+.payment-info-card .payment-check-btn, .payment-info-card .payment-result-btn { margin: 8px 0; width: 100%; }
+.payment-cancel-confirm { margin-top: 16px; padding: 16px; border: 1px solid #a50017; border-radius: 8px; }
+.payment-model-shell button:focus-visible { outline: 3px solid #2173a8; outline-offset: 3px; }
+@media (max-width: 767px) {
+  .payment-model-page { padding: 24px 12px; }
+  .payment-model-content { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .payment-qr-card { padding: 58px 12px 20px; }
+  .payment-model-header h1 { font-size: 24px; }
+  .payment-info-card { padding: 18px; }
+}
+
+@media (min-width: 768px) and (max-width: 900px) { .payment-model-content { grid-template-columns: minmax(0, 1fr); } }
+
+.payment-qr-card > .payment-check-btn { display: flex; justify-content: center; margin: 12px auto; padding: 10px 16px; }

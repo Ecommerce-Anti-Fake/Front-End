@@ -1,3 +1,4 @@
+import ResumePayment from "./resumePayment";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
@@ -236,6 +237,7 @@ export default function OrderDetailPage() {
   return (
     <div className="order-detail-page">
       <section className="od-section od-hero">
+        <ResumePayment order={order} />
         <button className="od-back-btn" onClick={() => navigate("/profile/orders")}>
           <ArrowLeft size={20} />
           <span>Đơn mua</span>
