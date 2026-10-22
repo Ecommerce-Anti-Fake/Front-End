@@ -585,7 +585,8 @@
 .payment-countdown strong { color: #a50017; font-size: 15px; }
 .payment-management { display: flex; flex-direction: column; align-items: stretch; gap: 8px; margin-bottom: 18px; }
 .payment-status-label { margin: 0 0 4px; text-align: center; color: #6b3b3b; font-size: 13px; }
-.payment-cancel-btn { align-self: center; min-height: 36px; padding: 6px 12px; border: 0; background: transparent; color: #9a6a6a; font: inherit; font-size: 12px; text-decoration: underline; cursor: pointer; }
+.payment-cancel-btn { align-self: stretch; min-height: 42px; padding: 10px 16px; border: 1px solid #a50017; border-radius: 6px; background: #fff3f4; color: #a50017; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+.payment-cancel-btn:hover:not(:disabled) { background: #ffe5e9; }
 .payment-cancel-btn:disabled { opacity: .7; cursor: not-allowed; }
 .payment-expired, .payment-result-card--compact { min-height: 0; margin: 12px 0 16px; padding: 18px 14px; font-size: 13px; line-height: 1.55; text-align: center; }
 .payment-expired { border: 1px solid #ffd2a8; border-radius: 8px; background: #fff8ed; color: #8a4b00; }

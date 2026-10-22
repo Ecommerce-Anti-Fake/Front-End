@@ -266,8 +266,9 @@ export const getPayOSCheckoutRoutes = (flow: PayOSCheckoutFlow) => {
   };
 };
 
-export const getPayOSEmbeddedReturnUrl = (origin: string, reference?: PaymentReference) =>
-  origin.replace(/\/$/, "") + (reference ? paymentPath(reference) : "/payment");
+// PayOS rejects query-bearing redirect_uri values; the parent URL keeps the reference.
+export const getPayOSEmbeddedReturnUrl = (pageUrl: string) =>
+  new URL("/payment", pageUrl).href;
 
 // Missing legacy expiry never receives a fresh client-side lifetime.
 export const paymentSecondsRemaining = (expiresAt: string | null | undefined, now: number) => {
