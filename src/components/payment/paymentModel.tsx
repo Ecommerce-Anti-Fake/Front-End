@@ -1,7 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import QRCode from "react-qr-code";
-import { ArrowLeft, CircleHelp, Landmark, Loader2, QrCode, RefreshCw, ShieldCheck, Wallet } from "lucide-react";
+import { ArrowLeft, CircleHelp, Landmark, QrCode, ShieldCheck, Wallet } from "lucide-react";
 import { requestPayOSPayment, paymentCheckout } from "../../services/payos.api";
 import { formatVnd } from "../../ultil/currency";
 import {
@@ -35,7 +34,6 @@ export default function PaymentModel({ onBack, onSupport }: PaymentModelProps) {
   const [verified, setVerified] = useState(false);
   const [now, setNow] = useState(() => Date.now());
   const [offset, setOffset] = useState(0);
-  const [embedded, setEmbedded] = useState(false);
   const [confirmCancel, setConfirmCancel] = useState(false);
   const checking = useRef(false);
   const expiryChecked = useRef(false);
@@ -88,35 +86,36 @@ export default function PaymentModel({ onBack, onSupport }: PaymentModelProps) {
     return () => window.clearTimeout(id);
   }, [expired, refresh]);
   const checkoutUrl = pending ? checkout?.checkoutUrl : undefined;
-  const qrCode = pending ? checkout?.qrCode : undefined;
-  useEffect(() => {
-    if (!checkoutUrl || !isAllowedPayOSCheckoutUrl(checkoutUrl) || (qrCode && !embedded)) return;
+  useLayoutEffect(() => {
+    if (!checkoutUrl || !isAllowedPayOSCheckoutUrl(checkoutUrl)) return;
     const container = document.getElementById("payos-checkout-frame");
     if (!container) return;
     const sdk = window.PayOSCheckout;
-    if (!sdk) { container.textContent = "Không thể tải biểu mẫu PayOS. Hãy hiển thị QR lớn hoặc tải lại trang."; return; }
+    if (!sdk) { container.textContent = "Không thể tải thanh toán PayOS. Vui lòng tải lại trang."; return; }
+    container.replaceChildren();
     let disposed = false;
     const reconcile = () => { if (!disposed) void refresh(); };
     const client = sdk.usePayOS({
-      RETURN_URL: getPayOSEmbeddedReturnUrl(window.location.origin, reference ?? undefined), ELEMENT_ID: "payos-checkout-frame",
-      CHECKOUT_URL: checkoutUrl, embedded: true, onSuccess: reconcile, onCancel: reconcile, onExit: () => { if (!disposed) back(); },
+      // The SDK concatenates this value without encoding its nested query.
+      RETURN_URL: encodeURIComponent(getPayOSEmbeddedReturnUrl(window.location.origin, reference ?? undefined)), ELEMENT_ID: "payos-checkout-frame",
+      CHECKOUT_URL: checkoutUrl, embedded: true, onSuccess: reconcile, onCancel: reconcile, onExit: reconcile,
     });
-    try { client.open(); } catch { container.textContent = "Không thể tải PayOS. Vui lòng làm mới trạng thái."; }
+    try { client.open(); } catch { container.textContent = "Không thể tải PayOS. Vui lòng tải lại trang."; }
     const frame = container.querySelector("iframe");
     if (frame) frame.title = "Biểu mẫu thanh toán PayOS";
     const message = (event: MessageEvent) => {
       if (!["https://next.pay.payos.vn", "https://pay.payos.vn"].includes(event.origin) || !frame || event.source !== frame.contentWindow) return;
       const result = parsePayOSCheckoutMessage(event.data);
-      if (result === "EXIT") back();
-      else if (result) reconcile();
+      if (result) reconcile();
     };
     window.addEventListener("message", message);
     return () => {
       disposed = true;
       window.removeEventListener("message", message);
-      try { client.exit(); } catch { container.replaceChildren(); }
+      try { if (container.querySelector("iframe")) client.exit(); } catch { /* PayOS may have already removed its frame. */ }
+      container.replaceChildren();
     };
-  }, [checkoutUrl, qrCode, embedded, refresh, back, reference]);
+  }, [checkoutUrl, refresh, reference]);
 
   const title = reference?.flow === "USER_WALLET_TOP_UP" ? "Nạp tiền vào ví" : reference?.flow === "SHOP_WALLET_TOP_UP" ? "Nạp tiền vào ví shop" : "Thanh toán đơn hàng";
   const statusLabel: Record<string, string> = { PENDING: "Chờ thanh toán", PROCESSING: "Đang xử lý", PAID: "Đã thanh toán", CANCELLED: "Đã hủy", EXPIRED: "Đã hết hạn", FAILED: "Chưa thành công" };
@@ -133,9 +132,8 @@ export default function PaymentModel({ onBack, onSupport }: PaymentModelProps) {
             {!reference ? <p role="alert">Thiếu thông tin giao dịch. Vui lòng quay lại danh sách đơn hàng hoặc ví để tiếp tục.</p> : null}
             {reference && !verified ? <p role="status">Đang xác minh giao dịch với PayOS...</p> : null}
             {pending ? <>
-              {qrCode && !embedded ? <div className="payment-official-qr" role="img" aria-label="Mã QR thanh toán PayOS"><QRCode value={qrCode} size={250} level="M" /></div> : <div id="payos-checkout-frame" className="payment-embed-frame" />}
+              <div id="payos-checkout-frame" className="payment-embed-frame" />
               <p className="payment-countdown">{seconds === null ? "Đang đối soát thời hạn giao dịch" : <>Hết hạn sau <strong>{formatPaymentCountdown(seconds)}</strong></>}</p>
-              {qrCode ? <button type="button" className="payment-check-btn payment-form-toggle" onClick={() => setEmbedded(!embedded)}>{embedded ? "Hiển thị QR lớn" : "Mở biểu mẫu PayOS"}</button> : null}
             </> : null}
             {expired ? <p className="payment-expired" role="status">Mã QR đã hết hạn. Vui lòng tạo yêu cầu thanh toán mới.</p> : null}
             {status === "PAID" ? <p className="payment-result-card payment-result-card--compact" role="status">Thanh toán thành công. Hệ thống đã xác nhận giao dịch.</p> : null}
@@ -146,7 +144,6 @@ export default function PaymentModel({ onBack, onSupport }: PaymentModelProps) {
             <div className="payment-management">
               <p className="payment-status-label" aria-live="polite">Trạng thái: <strong>{statusLabel[status] || "Đang kiểm tra"}</strong></p>
               {error ? <p role="alert" className="payment-embed-alert">{error}</p> : null}
-              {reference ? <button className="payment-check-btn" type="button" disabled={busy} onClick={() => void refresh()}>{busy ? <Loader2 size={16} className="payment-spin" /> : <RefreshCw size={16} />} Kiểm tra trạng thái</button> : null}
               {awaiting ? <button className="payment-cancel-btn" type="button" disabled={busy} onClick={() => setConfirmCancel(true)}>Hủy thanh toán</button> : null}
               {(expired || (status === "CANCELLED" && reference?.flow !== "ORDER") || status === "FAILED") && checkout?.canRetry !== false ? <button className="payment-result-btn" type="button" disabled={busy} onClick={() => reference?.flow === "ORDER" ? void refresh("retry") : navigate(backPath)}>Tạo yêu cầu thanh toán mới</button> : null}
               {status === "PAID" ? <button className="payment-result-btn" type="button" onClick={back}>{reference?.flow === "ORDER" ? "Xem đơn hàng" : "Mở ví"}</button> : null}

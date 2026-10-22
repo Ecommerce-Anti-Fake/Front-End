@@ -581,11 +581,8 @@
 }
 
 /* Preserve the original layout; constrain only QR and compact lifecycle controls. */
-.payment-official-qr { width: min(100%, 282px); aspect-ratio: 1; margin: 0 auto; padding: 16px; box-sizing: border-box; background: #fff; }
-.payment-official-qr svg { display: block; width: 100%; height: auto; }
 .payment-countdown { margin: 8px 0 12px; text-align: center; font-size: 13px; font-variant-numeric: tabular-nums; color: #6b3b3b; }
 .payment-countdown strong { color: #a50017; font-size: 15px; }
-.payment-form-toggle { display: flex; margin: 0 auto 14px; padding: 8px 14px; }
 .payment-management { display: flex; flex-direction: column; align-items: stretch; gap: 8px; margin-bottom: 18px; }
 .payment-status-label { margin: 0 0 4px; text-align: center; color: #6b3b3b; font-size: 13px; }
 .payment-cancel-btn { align-self: center; min-height: 36px; padding: 6px 12px; border: 0; background: transparent; color: #9a6a6a; font: inherit; font-size: 12px; text-decoration: underline; cursor: pointer; }
@@ -597,3 +594,6 @@
 .payment-cancel-confirm p { line-height: 1.5; }
 .payment-cancel-confirm button { width: 100%; margin-top: 8px; }
 .payment-model-shell button:focus-visible { outline: 3px solid #2173a8; outline-offset: 3px; }
+
+/* Native PayOS owns the QR logo, bank icons and QR/transfer tabs. */
+.payment-embed-frame { max-width: 360px; height: 360px; margin-bottom: 8px; box-sizing: border-box; }
