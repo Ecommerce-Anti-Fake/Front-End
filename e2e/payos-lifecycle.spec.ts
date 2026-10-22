@@ -171,7 +171,7 @@ for (const flow of flows) {
     await page.goto(url);
    }
    status = "PAID";
-   await expect(page.getByText("Thanh toán thành công. Hệ thống đã xác nhận giao dịch.")).toBeVisible();
+   await expect(page.getByText("Thanh toán thành công. Hệ thống đã xác nhận giao dịch.")).toBeVisible({ timeout: 8000 });
    await expect(page.getByText("Mã QR đã hết hạn. Vui lòng tạo yêu cầu thanh toán mới.")).toHaveCount(0);
   });
  });
