@@ -99,6 +99,28 @@ for (const flow of flows) {
    await expect(page.locator(".payment-official-qr")).toHaveCount(0);
    if (flow === "ORDER") await expect(page.getByRole("button", { name: "Tạo yêu cầu thanh toán mới" })).toHaveCount(0);
   });
+  test("server terminal statuses remain authoritative after the original deadline", async ({ page }) => {
+   let status = "CANCELLED";
+   await page.route("**/api/**", async route => {
+    const path = new URL(route.request().url()).pathname;
+    if (/payos-payment|top-ups/.test(path)) return route.fulfill({ json: {
+     orderCode: "AF-1", topUpId: "topup-1", paymentLinkId: "link-1", checkoutUrl: null,
+     amount: "10000", status, qrCode: null,
+     expiresAt: new Date(Date.now() - 60000).toISOString(), serverTime: new Date().toISOString(),
+    } });
+    return route.fulfill({ json: [] });
+   });
+   for (const terminal of ["CANCELLED", "FAILED", "PAID"]) {
+    status = terminal;
+    await page.goto(url);
+    await expect(page.locator(".payment-info-card")).toContainText(terminal);
+    await expect(page.locator(".payment-official-qr")).toHaveCount(0);
+    await expect(page.getByText("Mã QR đã hết hạn. Vui lòng tạo yêu cầu thanh toán mới.")).toHaveCount(0);
+    if (terminal === "CANCELLED") await expect(page.getByText("Thanh toán đã được xác nhận hủy.")).toBeVisible();
+    if (terminal === "FAILED") await expect(page.getByText("Thanh toán chưa thành công.")).toBeVisible();
+    if (terminal === "PAID") await expect(page.getByText("Thanh toán thành công. Hệ thống đã xác nhận giao dịch.")).toBeVisible();
+   }
+  });
   test("deadline hides QR online/offline, retry is deliberate; server paid overrides expired display", async ({ page }) => {
    let status = "PENDING";
    let expiresAt = new Date(Date.now() + 2400).toISOString();

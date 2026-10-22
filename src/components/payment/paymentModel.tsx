@@ -78,7 +78,7 @@ export default function PaymentModel({ onBack, onSupport }: PaymentModelProps) {
   }, []);
   const seconds = paymentSecondsRemaining(checkout?.expiresAt, now + offset);
   // Hide immediately at the server deadline, but only the server establishes final state.
-  const expired = status !== "PAID" && (status === "EXPIRED" || seconds === 0);
+  const expired = status === "EXPIRED" || (status === "PENDING" && seconds === 0);
   const awaiting = verified && status === "PENDING" && !expired;
   const pending = awaiting && checkout?.canResume !== false;
   useEffect(() => {
