@@ -35,11 +35,19 @@ for (const flow of flows) {
    await page.goto(url);
    await expect(page.getByRole("img", { name: "Mã QR thanh toán PayOS" })).toBeVisible();
    await expect(page.locator(".payment-countdown")).toContainText(/0[89]:[0-5][0-9]/);
-   for (const width of [320, 768, 1024, 1440]) {
+   for (const width of [320, 390, 768, 1024, 1440]) {
     await page.setViewportSize({ width, height: 900 });
+    await expect(page.getByRole("heading", { name: "Hướng dẫn thanh toán" })).toBeVisible();
+    await expect(page.locator(".payment-guide-card li")).toHaveCount(3);
+    await expect(page.getByRole("button", { name: "Cần hỗ trợ?" })).toBeVisible();
+    expect(await page.locator(".payment-guide-card").evaluate(el => getComputedStyle(el).backgroundColor)).toBe("rgb(165, 0, 23)");
+    const guide = await page.locator(".payment-guide-card").boundingBox();
+    const card = await page.locator(".payment-qr-card").boundingBox();
+    if (width === 1440) expect(guide!.x).toBeGreaterThan(card!.x + card!.width);
+    if (width === 390 || width === 768) expect(guide!.y).toBeGreaterThanOrEqual(card!.y + card!.height);
     const qr = await page.locator(".payment-official-qr svg").boundingBox();
-    expect(qr!.width).toBeGreaterThanOrEqual(width === 320 ? 220 : 280);
-    expect(qr!.width).toBeLessThanOrEqual(384);
+    expect(qr!.width).toBeGreaterThanOrEqual(width === 320 ? 210 : 230);
+    expect(qr!.width).toBeLessThanOrEqual(260);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy();
     if (flow === "ORDER") await page.screenshot({ path: testInfo.outputPath("qr-" + width + ".png"), fullPage: true });
    }
@@ -60,7 +68,7 @@ for (const flow of flows) {
    expect(cancels).toBe(0);
    await page.getByRole("button", { name: "Xác nhận hủy thanh toán", exact: true }).click();
    await expect(page.getByText("Thanh toán đã được xác nhận hủy.")).toHaveCount(0);
-   await expect(page.locator(".payment-info-card")).toContainText("PENDING");
+   await expect(page.locator(".payment-management")).toContainText("Chờ thanh toán");
    cancellationStatus = "PAID"; // Money wins the cancellation race, even at expiry.
    await page.getByRole("button", { name: "Hủy thanh toán", exact: true }).click();
    await page.getByRole("button", { name: "Xác nhận hủy thanh toán", exact: true }).click();
@@ -89,7 +97,7 @@ for (const flow of flows) {
    await page.getByRole("button", { name: "Mở biểu mẫu PayOS" }).click();
    await expect(page.locator("#payos-checkout-frame iframe")).toBeVisible();
    await page.evaluate(() => (window as unknown as { testPayOSSuccess: () => void }).testPayOSSuccess());
-   await expect(page.locator(".payment-info-card")).toContainText("PENDING");
+   await expect(page.locator(".payment-management")).toContainText("Chờ thanh toán");
    await expect(page.getByText("Thanh toán thành công. Hệ thống đã xác nhận giao dịch.")).toHaveCount(0);
    await page.getByRole("button", { name: "Hiển thị QR lớn" }).click();
    await page.getByRole("button", { name: "Hủy thanh toán", exact: true }).click();
@@ -113,7 +121,7 @@ for (const flow of flows) {
    for (const terminal of ["CANCELLED", "FAILED", "PAID"]) {
     status = terminal;
     await page.goto(url);
-    await expect(page.locator(".payment-info-card")).toContainText(terminal);
+    await expect(page.locator(".payment-management")).toContainText(({ CANCELLED: "Đã hủy", FAILED: "Chưa thành công", PAID: "Đã thanh toán" } as Record<string, string>)[terminal]);
     await expect(page.locator(".payment-official-qr")).toHaveCount(0);
     await expect(page.getByText("Mã QR đã hết hạn. Vui lòng tạo yêu cầu thanh toán mới.")).toHaveCount(0);
     if (terminal === "CANCELLED") await expect(page.getByText("Thanh toán đã được xác nhận hủy.")).toBeVisible();

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import QRCode from "react-qr-code";
-import { ArrowLeft, Loader2, RefreshCw, ShieldCheck } from "lucide-react";
+import { ArrowLeft, CircleHelp, Landmark, Loader2, QrCode, RefreshCw, ShieldCheck, Wallet } from "lucide-react";
 import { requestPayOSPayment, paymentCheckout } from "../../services/payos.api";
 import { formatVnd } from "../../ultil/currency";
 import {
@@ -119,44 +119,61 @@ export default function PaymentModel({ onBack, onSupport }: PaymentModelProps) {
   }, [checkoutUrl, qrCode, embedded, refresh, back, reference]);
 
   const title = reference?.flow === "USER_WALLET_TOP_UP" ? "Nạp tiền vào ví" : reference?.flow === "SHOP_WALLET_TOP_UP" ? "Nạp tiền vào ví shop" : "Thanh toán đơn hàng";
+  const statusLabel: Record<string, string> = { PENDING: "Chờ thanh toán", PROCESSING: "Đang xử lý", PAID: "Đã thanh toán", CANCELLED: "Đã hủy", EXPIRED: "Đã hết hạn", FAILED: "Chưa thành công" };
   return (
     <section className="payment-model-page">
       <div className="payment-model-shell">
-        <header className="payment-model-header"><div><h1>{title}</h1><p>Quét QR bằng ứng dụng ngân hàng để thanh toán an toàn qua PayOS.</p></div></header>
+        <header className="payment-model-header">
+          <div><h1>{title}</h1><p>{reference?.flow === "ORDER" ? "Quét mã QR PayOS bên dưới để hoàn tất giao dịch." : "Quét mã QR PayOS bên dưới để hoàn tất yêu cầu nạp tiền."}</p></div>
+          <div className="payment-order-code"><span>{reference?.flow === "ORDER" ? "Mã đơn hàng" : "Mã giao dịch"}</span><strong>{checkout ? checkout.flow === "ORDER" ? checkout.orderCode : checkout.topUpId : "Đang cập nhật"}</strong></div>
+        </header>
         <div className="payment-model-content">
           <div className="payment-qr-card">
             <div className="payment-safe-badge"><ShieldCheck size={15} /> Giao dịch an toàn</div>
             {!reference ? <p role="alert">Thiếu thông tin giao dịch. Vui lòng quay lại danh sách đơn hàng hoặc ví để tiếp tục.</p> : null}
             {reference && !verified ? <p role="status">Đang xác minh giao dịch với PayOS...</p> : null}
             {pending ? <>
-              {qrCode && !embedded ? <div className="payment-official-qr" role="img" aria-label="Mã QR thanh toán PayOS"><QRCode value={qrCode} size={384} level="M" /></div> : <div id="payos-checkout-frame" className="payment-embed-frame" />}
+              {qrCode && !embedded ? <div className="payment-official-qr" role="img" aria-label="Mã QR thanh toán PayOS"><QRCode value={qrCode} size={250} level="M" /></div> : <div id="payos-checkout-frame" className="payment-embed-frame" />}
               <p className="payment-countdown">{seconds === null ? "Đang đối soát thời hạn giao dịch" : <>Hết hạn sau <strong>{formatPaymentCountdown(seconds)}</strong></>}</p>
-              {qrCode ? <button type="button" className="payment-check-btn" onClick={() => setEmbedded(!embedded)}>{embedded ? "Hiển thị QR lớn" : "Mở biểu mẫu PayOS"}</button> : null}
+              {qrCode ? <button type="button" className="payment-check-btn payment-form-toggle" onClick={() => setEmbedded(!embedded)}>{embedded ? "Hiển thị QR lớn" : "Mở biểu mẫu PayOS"}</button> : null}
             </> : null}
             {expired ? <p className="payment-expired" role="status">Mã QR đã hết hạn. Vui lòng tạo yêu cầu thanh toán mới.</p> : null}
-            {status === "PAID" ? <p className="payment-result-card" role="status">Thanh toán thành công. Hệ thống đã xác nhận giao dịch.</p> : null}
-            {status === "CANCELLED" ? <p role="status">Thanh toán đã được xác nhận hủy.</p> : null}
-            {status === "FAILED" ? <p role="status">Thanh toán chưa thành công.</p> : null}
-            {checkout ? <><strong className="payment-amount">{formatVnd(Number(checkout.amount))}</strong><p className="payment-auto-note">{checkout.flow === "ORDER" ? checkout.orderCode : checkout.topUpId}</p></> : null}
+            {status === "PAID" ? <p className="payment-result-card payment-result-card--compact" role="status">Thanh toán thành công. Hệ thống đã xác nhận giao dịch.</p> : null}
+            {status === "CANCELLED" ? <p className="payment-result-card payment-result-card--cancelled payment-result-card--compact" role="status">Thanh toán đã được xác nhận hủy.</p> : null}
+            {status === "FAILED" ? <p className="payment-result-card payment-result-card--failed payment-result-card--compact" role="status">Thanh toán chưa thành công.</p> : null}
+            {checkout ? <strong className="payment-amount">{formatVnd(Number(checkout.amount))}</strong> : null}
             <p className="payment-auto-note">Chỉ xác nhận thanh toán sau khi hệ thống đối soát với PayOS. Quay lại không hủy yêu cầu.</p>
+            <div className="payment-management">
+              <p className="payment-status-label" aria-live="polite">Trạng thái: <strong>{statusLabel[status] || "Đang kiểm tra"}</strong></p>
+              {error ? <p role="alert" className="payment-embed-alert">{error}</p> : null}
+              {reference ? <button className="payment-check-btn" type="button" disabled={busy} onClick={() => void refresh()}>{busy ? <Loader2 size={16} className="payment-spin" /> : <RefreshCw size={16} />} Kiểm tra trạng thái</button> : null}
+              {awaiting ? <button className="payment-cancel-btn" type="button" disabled={busy} onClick={() => setConfirmCancel(true)}>Hủy thanh toán</button> : null}
+              {(expired || (status === "CANCELLED" && reference?.flow !== "ORDER") || status === "FAILED") && checkout?.canRetry !== false ? <button className="payment-result-btn" type="button" disabled={busy} onClick={() => reference?.flow === "ORDER" ? void refresh("retry") : navigate(backPath)}>Tạo yêu cầu thanh toán mới</button> : null}
+              {status === "PAID" ? <button className="payment-result-btn" type="button" onClick={back}>{reference?.flow === "ORDER" ? "Xem đơn hàng" : "Mở ví"}</button> : null}
+              {confirmCancel ? <div className="payment-cancel-confirm" role="alertdialog" aria-modal="false" aria-labelledby="payment-cancel-title">
+                <h3 id="payment-cancel-title">Xác nhận hủy thanh toán?</h3>
+                <p>{reference?.flow === "ORDER" ? "Thao tác này hủy yêu cầu PayOS và áp dụng quy tắc hủy đơn hàng hiện hành. Nếu thanh toán đã được ghi nhận, giao dịch sẽ không bị hủy." : "Yêu cầu nạp tiền này sẽ bị hủy sau khi PayOS xác nhận."}</p>
+                <button className="payment-result-btn" type="button" disabled={busy} onClick={() => void refresh("cancel")}>Xác nhận hủy thanh toán</button>
+                <button className="payment-check-btn" type="button" disabled={busy} onClick={() => setConfirmCancel(false)}>Tiếp tục thanh toán</button>
+              </div> : null}
+            </div>
+            <div className="payment-method-icons" aria-label="Phương thức hỗ trợ"><span><Landmark size={20} /></span><span><Wallet size={20} /></span><span><QrCode size={20} /></span></div>
           </div>
-          <aside className="payment-info-card">
-            <h2>Thông tin thanh toán</h2>
-            <p>Trạng thái: <strong>{status || "Đang kiểm tra"}</strong></p>
-            {error ? <p role="alert" className="payment-embed-alert">{error}</p> : null}
-            {reference ? <button className="payment-check-btn" type="button" disabled={busy} onClick={() => void refresh()}>{busy ? <Loader2 size={16} className="payment-spin" /> : <RefreshCw size={16} />} Kiểm tra trạng thái</button> : null}
-            <button className="payment-check-btn" type="button" onClick={back}><ArrowLeft size={16} /> Quay lại</button>
-            {awaiting ? <button className="payment-check-btn" type="button" disabled={busy} onClick={() => setConfirmCancel(true)}>Hủy thanh toán</button> : null}
-            {(expired || (status === "CANCELLED" && reference?.flow !== "ORDER") || status === "FAILED") && checkout?.canRetry !== false ? <button className="payment-result-btn" type="button" disabled={busy} onClick={() => reference?.flow === "ORDER" ? void refresh("retry") : navigate(backPath)}>Tạo yêu cầu thanh toán mới</button> : null}
-            {status === "PAID" ? <button className="payment-result-btn" type="button" onClick={back}>{reference?.flow === "ORDER" ? "Xem đơn hàng" : "Mở ví"}</button> : null}
-            {onSupport ? <button type="button" className="payment-check-btn" onClick={onSupport}>Liên hệ hỗ trợ</button> : null}
-            {confirmCancel ? <div className="payment-cancel-confirm" role="alertdialog" aria-modal="false" aria-labelledby="payment-cancel-title">
-              <h3 id="payment-cancel-title">Xác nhận hủy thanh toán?</h3>
-              <p>{reference?.flow === "ORDER" ? "Thao tác này hủy yêu cầu PayOS và áp dụng quy tắc hủy đơn hàng hiện hành. Nếu thanh toán đã được ghi nhận, giao dịch sẽ không bị hủy." : "Yêu cầu nạp tiền này sẽ bị hủy sau khi PayOS xác nhận."}</p>
-              <button className="payment-result-btn" type="button" disabled={busy} onClick={() => void refresh("cancel")}>Xác nhận hủy thanh toán</button>
-              <button className="payment-check-btn" type="button" disabled={busy} onClick={() => setConfirmCancel(false)}>Tiếp tục thanh toán</button>
-            </div> : null}
-          </aside>
+          <div className="payment-guide-area">
+            <div className="payment-guide-card">
+              <h2>Hướng dẫn thanh toán</h2>
+              <ol>
+                <li><span>1</span>Mở ứng dụng Ngân hàng hoặc Ví điện tử.</li>
+                <li><span>2</span>Chọn chức năng &quot;Quét mã QR&quot;.</li>
+                <li><span>3</span>Quét mã QR, xác nhận thanh toán và chờ hệ thống kiểm tra.</li>
+              </ol>
+              <div className="payment-guide-watermark" aria-hidden="true"><Wallet size={82} /></div>
+            </div>
+            <div className="payment-action-row">
+              <button type="button" className="payment-back-btn" onClick={back}><ArrowLeft size={18} />Quay lại</button>
+              <button type="button" className="payment-support-btn" onClick={onSupport ?? (() => navigate("/chat"))}><CircleHelp size={18} />Cần hỗ trợ?</button>
+            </div>
+          </div>
         </div>
       </div>
     </section>
