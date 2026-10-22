@@ -33,8 +33,7 @@ export default function PaymentSuccess() {
   const hasPayOSReturn = Boolean(
     payOSReturn?.orderCode || payOSReturn?.paymentLinkId,
   );
-  const isAwaitingWebhook =
-    !state.checkout?.orderId && !state.checkout?.orderCode && hasPayOSReturn;
+  const isAwaitingWebhook = normalizeMethod(state.paymentMethod) === "PAYOS";
   const paymentMethod = normalizeMethod(state.paymentMethod);
   const isCod = paymentMethod === "COD";
   const transactionCode =
@@ -44,7 +43,7 @@ export default function PaymentSuccess() {
     payOSReturn?.paymentLinkId ??
     "Đang cập nhật";
   const status =
-    state.paymentStatus ?? (isAwaitingWebhook ? "PENDING" : isCod ? "COD_PENDING" : "PAID");
+    isAwaitingWebhook ? "PENDING" : state.paymentStatus ?? (isCod ? "COD_PENDING" : "PAID");
 
   if (!state.checkout?.orderId && !state.checkout?.orderCode && !hasPayOSReturn) {
     return (

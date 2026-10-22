@@ -217,3 +217,41 @@ test("accepts only known PayOS embedded callback messages", () => {
   );
   assert.equal(parsePayOSCheckoutMessage("not-json"), null);
 });
+
+// Deadlines are persisted server values; entering the component never starts a timer.
+test("countdown uses server deadline across refresh and handles expiry", async () => {
+ const { paymentSecondsRemaining, formatPaymentCountdown } = await import("../src/components/payment/payosCheckoutState.ts");
+ const created = Date.parse("2026-10-22T00:00:00Z");
+ const expires = "2026-10-22T00:15:00Z";
+ assert.equal(paymentSecondsRemaining(expires, created), 900);
+ assert.equal(formatPaymentCountdown(paymentSecondsRemaining(expires, created + 73000)), "13:47");
+ assert.equal(paymentSecondsRemaining(expires, created + 900000), 0);
+ assert.equal(paymentSecondsRemaining(expires, created + 901000), 0);
+ assert.equal(paymentSecondsRemaining(undefined, created), null);
+ assert.equal(paymentSecondsRemaining("invalid", created), null);
+});
+test("durable references preserve identity for all flows without inventing links", async () => {
+ const { paymentPath, parsePaymentReference, checkoutReference } = await import("../src/components/payment/payosCheckoutState.ts");
+ for (const ref of [
+  { flow: "ORDER", reference: "order-1" },
+  { flow: "USER_WALLET_TOP_UP", reference: "link-1" },
+  { flow: "SHOP_WALLET_TOP_UP", reference: "link-2", shopId: "shop-1" },
+ ]) {
+   const parsed = parsePaymentReference(paymentPath(ref).split("?")[1]);
+   assert.equal(parsed.flow, ref.flow); assert.equal(parsed.reference, ref.reference);
+   assert.equal(parsed.shopId, ref.shopId);
+ }
+ assert.equal(parsePaymentReference("?flow=SHOP_WALLET_TOP_UP&reference=x"), null);
+ assert.equal(parsePaymentReference("?flow=OTHER&reference=x"), null);
+ assert.deepEqual(checkoutReference({ flow: "ORDER", orderId: "o", paymentLinkId: "l" }), { flow: "ORDER", reference: "o" });
+});
+test("checkout parser retains actual server lifecycle and official QR", () => {
+ const state = parsePayOSCheckoutState({ flow: "ORDER", orderId: "o", orderCode: 123, amount: 10000, checkoutUrl: "https://pay.payos.vn/web/link", paymentLinkId: "link", expiresAt: "2026-10-22T00:15:00Z", qrCode: "official-payload", status: "PENDING", serverTime: "2026-10-22T00:01:00Z" });
+ assert.equal(state.expiresAt, "2026-10-22T00:15:00Z");
+ assert.equal(state.qrCode, "official-payload");
+ assert.equal(state.serverTime, "2026-10-22T00:01:00Z");
+});
+
+test("embedded return retains server-owned transaction reference", () => {
+ assert.equal(getPayOSEmbeddedReturnUrl("https://antifake.io.vn", { flow: "ORDER", reference: "order-1" }), "https://antifake.io.vn/payment?flow=ORDER&reference=order-1");
+});

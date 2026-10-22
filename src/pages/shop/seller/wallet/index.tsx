@@ -1,3 +1,4 @@
+import PendingTopUps from "../../../../components/wallet/pendingTopUps";
 import { useCallback, useEffect, useState } from "react";
 import { AlertTriangle, Building2, CircleDollarSign, Plus, RefreshCw, ShieldCheck } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -99,7 +100,7 @@ export default function SellerWallet() {
     if (searchParams.get("topUp") === "returned") {
       toast.info("Đã quay lại từ PayOS. Hãy làm mới nếu webhook chưa kịp cập nhật số dư.");
     } else if (searchParams.get("topUp") === "cancelled") {
-      toast.info("Bạn đã hủy yêu cầu nạp tiền cho shop.");
+      toast.info("Đã quay lại từ PayOS. Vui lòng kiểm tra trạng thái yêu cầu nạp tiền.");
     }
   }, [searchParams]);
 
@@ -234,6 +235,7 @@ export default function SellerWallet() {
         </div>
       ) : null}
 
+      <PendingTopUps shopId={shopId} />
       <div className="seller-wallet-top">
         <WalletBalance
           wallet={wallet}

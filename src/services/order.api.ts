@@ -135,6 +135,7 @@ const toUserOrder = (order: unknown): Order => {
       record.totalAmount ?? record.orderAmount ?? record.paymentAmount ?? 0,
     ),
     paymentMethod: String(record.paymentMethod ?? asRecord(record.payment).method ?? ""),
+    paymentStatus: String(record.paymentStatus ?? asRecord(record.payment).status ?? ""),
     firstProduct,
     otherProducts: Number(record.otherProducts ?? Math.max(itemCount - 1, 0)),
   };

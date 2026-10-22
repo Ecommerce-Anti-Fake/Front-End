@@ -17,7 +17,8 @@
     "test:uat-auth": "node --test --experimental-strip-types test/uat-auth-contract.test.mjs test/uat-local-capture-runner.test.mjs",
     "test:live": "node --test --experimental-strip-types test/live-rtc.test.mjs",
     "test:payos": "node --test --experimental-strip-types test/payos-checkout-state.test.mjs",
-    "test:pwa": "node --test --experimental-strip-types test/pwa-install.test.mjs test/session-restore.test.mjs"
+    "test:pwa": "node --test --experimental-strip-types test/pwa-install.test.mjs test/session-restore.test.mjs",
+    "test:payos:browser": "playwright test --config=playwright.payos.config.ts"
   },
   "dependencies": {
     "@payos/payos-checkout": "^1.0.8",

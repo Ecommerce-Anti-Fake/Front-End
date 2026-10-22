@@ -8,6 +8,12 @@ type PayOSCheckoutBase = {
   checkoutUrl: string;
   paymentLinkId: string;
   amount: number | string;
+  qrCode?: string;
+  expiresAt?: string | null;
+  serverTime?: string;
+  status?: string;
+  canResume?: boolean;
+  canRetry?: boolean;
 };
 
 export type OrderPayOSCheckoutState = PayOSCheckoutBase & {
@@ -168,6 +174,12 @@ export const parsePayOSCheckoutState = (
   if (!isRecord(value)) return null;
 
   const { flow, checkoutUrl, paymentLinkId, amount } = value;
+  const lifecycle = {
+    ...(typeof value.qrCode === "string" ? { qrCode: value.qrCode } : {}),
+    ...(typeof value.expiresAt === "string" ? { expiresAt: value.expiresAt } : {}),
+    ...(typeof value.serverTime === "string" ? { serverTime: value.serverTime } : {}),
+    ...(typeof value.status === "string" ? { status: value.status } : {}),
+  };
   if (
     !isAllowedPayOSCheckoutUrl(checkoutUrl) ||
     !isNonEmptyString(paymentLinkId) ||
@@ -183,6 +195,7 @@ export const parsePayOSCheckoutState = (
     isReferenceCode(value.orderCode)
   ) {
     return {
+      ...lifecycle,
       flow,
       orderId: value.orderId,
       orderCode: value.orderCode,
@@ -198,6 +211,7 @@ export const parsePayOSCheckoutState = (
     isNonEmptyString(value.currency)
   ) {
     return {
+      ...lifecycle,
       flow,
       topUpId: value.topUpId,
       checkoutUrl,
@@ -214,6 +228,7 @@ export const parsePayOSCheckoutState = (
     isNonEmptyString(value.currency)
   ) {
     return {
+      ...lifecycle,
       flow,
       topUpId: value.topUpId,
       shopId: value.shopId,
@@ -251,5 +266,30 @@ export const getPayOSCheckoutRoutes = (flow: PayOSCheckoutFlow) => {
   };
 };
 
-export const getPayOSEmbeddedReturnUrl = (origin: string) =>
-  `${origin.replace(/\/$/, "")}/payment`;
+export const getPayOSEmbeddedReturnUrl = (origin: string, reference?: PaymentReference) =>
+  origin.replace(/\/$/, "") + (reference ? paymentPath(reference) : "/payment");
+
+// Missing legacy expiry never receives a fresh client-side lifetime.
+export const paymentSecondsRemaining = (expiresAt: string | null | undefined, now: number) => {
+  const expiry = expiresAt ? Date.parse(expiresAt) : NaN;
+  return Number.isFinite(expiry) ? Math.max(0, Math.ceil((expiry - now) / 1000)) : null;
+};
+export const formatPaymentCountdown = (seconds: number) =>
+  String(Math.floor(seconds / 60)).padStart(2, "0") + ":" + String(seconds % 60).padStart(2, "0");
+export type PaymentReference = { flow: PayOSCheckoutFlow; reference: string; shopId?: string };
+export const paymentPath = ({ flow, reference, shopId }: PaymentReference) =>
+  "/payment?" + new URLSearchParams({ flow, reference, ...(shopId ? { shopId } : {}) });
+export const checkoutReference = (checkout: PayOSCheckoutState): PaymentReference => ({
+  flow: checkout.flow,
+  reference: checkout.flow === "ORDER" ? checkout.orderId : checkout.paymentLinkId,
+  ...(checkout.flow === "SHOP_WALLET_TOP_UP" ? { shopId: checkout.shopId } : {}),
+});
+export const parsePaymentReference = (search: string): PaymentReference | null => {
+  const params = new URLSearchParams(search);
+  const flow = params.get("flow");
+  const reference = params.get("reference");
+  const shopId = params.get("shopId") || undefined;
+  if (!reference || !["ORDER", "USER_WALLET_TOP_UP", "SHOP_WALLET_TOP_UP"].includes(flow || "")) return null;
+  if (flow === "SHOP_WALLET_TOP_UP" && !shopId) return null;
+  return { flow: flow as PayOSCheckoutFlow, reference, shopId };
+};
