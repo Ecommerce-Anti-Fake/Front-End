@@ -42,8 +42,9 @@ for (const flow of flows) {
    await page.goto(url);
    await expect(page.locator("#payos-checkout-frame iframe")).toHaveCount(1);
    const frameUrl = new URL(await page.locator("#payos-checkout-frame iframe").getAttribute("src") as string);
-   expect(new URL(frameUrl.searchParams.get("redirect_uri")!).searchParams.get("flow")).toBe(flow);
-   expect(new URL(frameUrl.searchParams.get("redirect_uri")!).searchParams.get("reference")).toBe(flow === "ORDER" ? "order-1" : "link-1");
+   expect(frameUrl.searchParams.get("redirect_uri")).toBe("http://127.0.0.1:4173/payment");
+   expect(new URL(page.url()).searchParams.get("flow")).toBe(flow);
+   expect(new URL(page.url()).searchParams.get("reference")).toBe(flow === "ORDER" ? "order-1" : "link-1");
    await expect(page.getByRole("button", { name: "Mở biểu mẫu PayOS" })).toHaveCount(0);
    await expect(page.getByRole("button", { name: "Kiểm tra trạng thái" })).toHaveCount(0);
    await expect(page.locator(".payment-countdown")).toContainText(/0[89]:[0-5][0-9]/);

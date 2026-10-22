@@ -96,8 +96,7 @@ export default function PaymentModel({ onBack, onSupport }: PaymentModelProps) {
     let disposed = false;
     const reconcile = () => { if (!disposed) void refresh(); };
     const client = sdk.usePayOS({
-      // The SDK concatenates this value without encoding its nested query.
-      RETURN_URL: encodeURIComponent(getPayOSEmbeddedReturnUrl(window.location.origin, reference ?? undefined)), ELEMENT_ID: "payos-checkout-frame",
+      RETURN_URL: getPayOSEmbeddedReturnUrl(window.location.href), ELEMENT_ID: "payos-checkout-frame",
       CHECKOUT_URL: checkoutUrl, embedded: true, onSuccess: reconcile, onCancel: reconcile, onExit: reconcile,
     });
     try { client.open(); } catch { container.textContent = "Không thể tải PayOS. Vui lòng tải lại trang."; }

@@ -252,6 +252,16 @@ test("checkout parser retains actual server lifecycle and official QR", () => {
  assert.equal(state.serverTime, "2026-10-22T00:01:00Z");
 });
 
-test("embedded return retains server-owned transaction reference", () => {
- assert.equal(getPayOSEmbeddedReturnUrl("https://antifake.io.vn", { flow: "ORDER", reference: "order-1" }), "https://antifake.io.vn/payment?flow=ORDER&reference=order-1");
+test("embedded provider return is path-only while parent URL retains transaction identity", async () => {
+ const { paymentPath, parsePaymentReference } = await import("../src/components/payment/payosCheckoutState.ts");
+ for (const ref of [
+  { flow: "ORDER", reference: "order-1" },
+  { flow: "USER_WALLET_TOP_UP", reference: "link-1" },
+  { flow: "SHOP_WALLET_TOP_UP", reference: "link-2", shopId: "shop-1" },
+ ]) {
+  const parent = new URL(paymentPath(ref), "https://antifake.io.vn");
+  const target = getPayOSEmbeddedReturnUrl(parent.href);
+  assert.equal(target, "https://antifake.io.vn/payment");
+  assert.deepEqual(parsePaymentReference(parent.search), { ...ref, shopId: ref.shopId });
+ }
 });
